@@ -1,0 +1,127 @@
+
+:root{
+  --azul: #0071ce;
+  --azul-oscuro: #005a9c;
+  --bg: #f6f8fb;
+  --texto: #1e293b;
+  --borde: #e2e8f0;
+}
+
+*{ box-sizing: border-box; }
+html, body{ height:100%; }
+body{
+  font-family: Arial, sans-serif;
+  margin:0;
+  background: var(--bg);
+  color: var(--texto);
+}
+
+.topbar{
+  background: var(--azul);
+  color:#fff;
+  height: 70px;       
+  padding: 0 20px;   
+  display:flex;
+  align-items:center;
+  gap:12px;
+  overflow: visible;  
+}
+
+.logo{
+  height:150px;      
+  width:auto;
+}
+
+
+
+
+.auth-wrap{
+  min-height: calc(100vh - 60px - 56px); 
+  display:grid;
+  place-items:center;
+  padding: 24px 16px;
+}
+
+
+.card{
+  width: 100%;
+  max-width: 420px;
+  background:#fff;
+  padding: 24px;
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  border: 1px solid var(--borde);
+}
+.card h2{
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+.sub{
+  margin: 0 0 18px;
+  color:#475569;
+  font-size:14px;
+}
+
+
+.form{ display:flex; flex-direction:column; gap:12px; }
+
+.label{
+  font-size: 13px;
+  color:#334155;
+}
+
+.input{
+  width:100%;
+  padding: 10px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background:#fff;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.input:focus{
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(0,113,206,.15);
+}
+
+
+.btn{
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .04s ease, box-shadow .2s, background .2s;
+}
+.btn.primary{
+  background: var(--azul);
+  color:#fff;
+  box-shadow: 0 6px 16px rgba(0,113,206,.25);
+}
+.btn.primary:hover{ background: var(--azul-oscuro); }
+.btn:active{ transform: translateY(1px); }
+
+
+.extras{
+  margin-top: 6px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:center;
+  font-size: 14px;
+}
+.extras a{
+  color: var(--azul);
+  text-decoration: none;
+}
+.extras a:hover{ text-decoration: underline; }
+.dot{ color:#94a3b8; }
+
+
+
+
+@media (max-width: 420px){
+  .card{ padding: 20px; }
+  .title{ font-size: 18px; }
+}
