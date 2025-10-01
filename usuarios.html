@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Usuarios — Admin</title>
+  <link rel="stylesheet" href="style/usuarios.css" />
+</head>
+<body>
+
+  
+  <header class="topbar">
+    <div class="topbar__left">
+      <img src="Imagenes/logo.png" alt="Mi Walmart" class="logo">
+      <h1 class="brand">Mi Walmart — Usuarios</h1>
+    </div>
+  </header>
+
+  <main class="content">
+   
+    <section class="toolbar card">
+      <div class="left">
+        <a class="btn primary" href="#modal-crear">+ Nuevo usuario</a>
+      </div>
+      <div class="right">
+        <input type="search" class="input" placeholder="Buscar por nombre o correo…">
+        <select class="input">
+          <option value="">Rol</option>
+          <option>Administrador</option>
+          <option>Empleado</option>
+          <option>Supervisor</option>
+        </select>
+        <select class="input">
+          <option value="">Estado</option>
+          <option>Activo</option>
+          <option>Inactivo</option>
+        </select>
+      </div>
+    </section>
+
+  
+    <section class="card table-wrap">
+      <div class="table-head">
+        <h2 class="section-title">Usuarios</h2>
+      </div>
+
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th style="width:160px">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>#U-101</td>
+              <td>Ana López</td>
+              <td>ana.lopez@miwalmart.com</td>
+              <td>Administrador</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#modal-editar-101" class="link">Editar</a>
+                <a href="#modal-eliminar-101" class="link danger">Eliminar</a>
+              </td>
+            </tr>
+            <tr>
+              <td>#U-102</td>
+              <td>Juan Pérez</td>
+              <td>juan.perez@miwalmart.com</td>
+              <td>Empleado</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#modal-editar-102" class="link">Editar</a>
+                <a href="#modal-eliminar-102" class="link danger">Eliminar</a>
+              </td>
+            </tr>
+            <tr>
+              <td>#U-103</td>
+              <td>María Díaz</td>
+              <td>maria.diaz@miwalmart.com</td>
+              <td>Supervisor</td>
+              <td><span class="badge warn">Inactivo</span></td>
+              <td class="row-actions">
+                <a href="#modal-editar-103" class="link">Editar</a>
+                <a href="#modal-eliminar-103" class="link danger">Eliminar</a>
+              </td>
+            </tr>
+            <tr>
+              <td>#U-104</td>
+              <td>Ricardo Gómez</td>
+              <td>ricardo.gomez@miwalmart.com</td>
+              <td>Empleado</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#modal-editar-104" class="link">Editar</a>
+                <a href="#modal-eliminar-104" class="link danger">Eliminar</a>
+              </td>
+            </tr>
+            <tr>
+              <td>#U-105</td>
+              <td>Laura Ruiz</td>
+              <td>laura.ruiz@miwalmart.com</td>
+              <td>Empleado</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#modal-editar-105" class="link">Editar</a>
+                <a href="#modal-eliminar-105" class="link danger">Eliminar</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-foot">
+        <div class="pagination">
+          <button class="btn ghost" disabled>«</button>
+          <button class="btn ghost active">1</button>
+          <button class="btn ghost">2</button>
+          <button class="btn ghost">3</button>
+          <button class="btn ghost">»</button>
+        </div>
+      </div>
+    </section>
+
+   
+  </main>
+
+ 
+  <section class="modal" id="modal-crear" aria-hidden="true">
+    <div class="modal__dialog card">
+      <h3 class="section-title">Nuevo usuario</h3>
+      <form action="usuarios_crear.php" method="post" class="form">
+        <label class="label">Nombre
+          <input class="input" type="text" name="nombre" required>
+        </label>
+        <label class="label">Correo
+          <input class="input" type="email" name="correo" required>
+        </label>
+        <label class="label">Rol
+          <select class="input" name="rol" required>
+            <option>Administrador</option>
+            <option>Supervisor</option>
+            <option selected>Empleado</option>
+          </select>
+        </label>
+        <label class="label">Estado
+          <select class="input" name="estado" required>
+            <option selected>Activo</option>
+            <option>Inactivo</option>
+          </select>
+        </label>
+        <div class="modal__actions">
+          <button class="btn primary" type="submit">Crear</button>
+          <a class="btn ghost" href="#">Cancelar</a>
+        </div>
+      </form>
+    </div>
+    <a class="modal__overlay" href="#"></a>
+  </section>
+
+ 
+  <section class="modal" id="modal-editar-101" aria-hidden="true">
+    <div class="modal__dialog card">
+      <h3 class="section-title">Editar usuario #U-101</h3>
+      <form action="usuarios_actualizar.php" method="post" class="form">
+        <input type="hidden" name="id" value="U-101">
+        <label class="label">Nombre
+          <input class="input" type="text" name="nombre" value="Ana López" required>
+        </label>
+        <label class="label">Correo
+          <input class="input" type="email" name="correo" value="ana.lopez@miwalmart.com" required>
+        </label>
+        <label class="label">Rol
+          <select class="input" name="rol" required>
+            <option selected>Administrador</option>
+            <option>Supervisor</option>
+            <option>Empleado</option>
+          </select>
+        </label>
+        <label class="label">Estado
+          <select class="input" name="estado" required>
+            <option selected>Activo</option>
+            <option>Inactivo</option>
+          </select>
+        </label>
+        <div class="modal__actions">
+          <button class="btn primary" type="submit">Guardar cambios</button>
+          <a class="btn ghost" href="#">Cancelar</a>
+        </div>
+      </form>
+    </div>
+    <a class="modal__overlay" href="#"></a>
+  </section>
+
+  <section class="modal" id="modal-editar-102" aria-hidden="true">
+    <div class="modal__dialog card">
+      <h3 class="section-title">Editar usuario #U-102</h3>
+      <form action="usuarios_actualizar.php" method="post" class="form">
+        <input type="hidden" name="id" value="U-102">
+        <label class="label">Nombre
+          <input class="input" type="text" name="nombre" value="Juan Pérez" required>
+        </label>
+        <label class="label">Correo
+          <input class="input" type="email" name="correo" value="juan.perez@miwalmart.com" required>
+        </label>
+        <label class="label">Rol
+          <select class="input" name="rol" required>
+            <option>Administrador</option>
+            <option>Supervisor</option>
+            <option selected>Empleado</option>
+          </select>
+        </label>
+        <label class="label">Estado
+          <select class="input" name="estado" required>
+            <option selected>Activo</option>
+            <option>Inactivo</option>
+          </select>
+        </label>
+        <div class="modal__actions">
+          <button class="btn primary" type="submit">Guardar cambios</button>
+          <a class="btn ghost" href="#">Cancelar</a>
+        </div>
+      </form>
+    </div>
+    <a class="modal__overlay" href="#"></a>
+  </section>
+
+
+  <section class="modal" id="modal-eliminar-101" aria-hidden="true">
+    <div class="modal__dialog card">
+      <h3 class="section-title">Eliminar usuario</h3>
+      <p>¿Seguro que deseas eliminar al usuario <strong>#U-101 — Ana López</strong>?</p>
+      <form action="usuarios_eliminar.php" method="post" class="form inline">
+        <input type="hidden" name="id" value="U-101">
+        <button class="btn danger" type="submit">Eliminar</button>
+        <a class="btn ghost" href="#">Cancelar</a>
+      </form>
+    </div>
+    <a class="modal__overlay" href="#"></a>
+  </section>
+
+  <section class="modal" id="modal-eliminar-102" aria-hidden="true">
+    <div class="modal__dialog card">
+      <h3 class="section-title">Eliminar usuario</h3>
+      <p>¿Seguro que deseas eliminar al usuario <strong>#U-102 — Juan Pérez</strong>?</p>
+      <form action="usuarios_eliminar.php" method="post" class="form inline">
+        <input type="hidden" name="id" value="U-102">
+        <button class="btn danger" type="submit">Eliminar</button>
+        <a class="btn ghost" href="#">Cancelar</a>
+      </form>
+    </div>
+    <a class="modal__overlay" href="#"></a>
+  </section>
+
+</body>
+</html>
