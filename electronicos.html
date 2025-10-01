@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Electrónica — Mi Tienda</title>
+  <link rel="stylesheet" href="style/electronicos.css" />
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar__left">
+      <img src="Imagenes/logo.png" alt="Mi Tienda" class="logo" />
+      <h1 class="brand">Electrónica</h1>
+    </div>
+    <div class="topbar__right">
+      <input class="search" type="search" placeholder="Buscar en Electrónica…" aria-label="Buscar productos" />
+      <select class="input" aria-label="Ordenar por">
+        <option>Ordenar por</option>
+        <option>Precio: menor a mayor</option>
+        <option>Precio: mayor a menor</option>
+        <option>Más vendidos</option>
+        <option>Novedades</option>
+      </select>
+      <a href="carrito.html" class="icon-btn" title="Ver carrito">
+        <img src="Imagenes/carrito.png" alt="Carrito" />
+      </a>
+    </div>
+  </header>
+
+  <!-- Subcategorías (visual) -->
+  <nav class="subnav">
+    <a href="#" class="pill active">Todos</a>
+    <a href="#" class="pill">TV & Video</a>
+    <a href="#" class="pill">Celulares</a>
+    <a href="#" class="pill">Laptops</a>
+    <a href="#" class="pill">Audio</a>
+    <a href="#" class="pill">Gaming</a>
+    <a href="#" class="pill">Redes</a>
+    <a href="#" class="pill">Cámaras</a>
+  </nav>
+
+  <!-- Grid de productos -->
+  <main class="content">
+    <section class="grid">
+      <!-- 1 -->
+      <article class="item card">
+        <img src="Imagenes/pantalla.png" alt="Televisor 50” 4K UHD" class="thumb" />
+        <h3 class="title">Televisor 50” 4K UHD</h3>
+        <div class="stars" aria-label="4.5 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$8,999</ins>
+          <del>$11,299</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 2 -->
+      <article class="item card">
+        <img src="Imagenes/iphone.png" alt="Smartphone 5G 128 GB" class="thumb" />
+        <h3 class="title">Smartphone 5G 128 GB</h3>
+        <div class="stars" aria-label="4 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$9,799</ins>
+          <del>$10,499</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 3 -->
+      <article class="item card">
+        <img src="Imagenes/laptop.png" alt="Laptop 15” Pro, 16 GB RAM, 512 GB SSD" class="thumb" />
+        <h3 class="title">Laptop 15” Pro 16/512</h3>
+        <div class="stars" aria-label="5 de 5">★★★★★</div>
+        <div class="price">
+          <ins>$14,999</ins>
+          <del>$16,499</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 4 -->
+      <article class="item card">
+        <img src="Imagenes/audifonos.png" alt="Audífonos inalámbricos ANC" class="thumb" />
+        <h3 class="title">Audífonos Inalámbricos ANC</h3>
+        <div class="stars" aria-label="4 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$1,299</ins>
+          <del>$1,799</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 5 -->
+      <article class="item card">
+        <img src="Imagenes/smart.png" alt="Smartwatch con GPS y SpO2" class="thumb" />
+        <h3 class="title">Smartwatch GPS</h3>
+        <div class="stars" aria-label="3.5 de 5">★★★☆☆</div>
+        <div class="price">
+          <ins>$1,899</ins>
+          <del>$2,299</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 6 -->
+      <article class="item card">
+        <img src="Imagenes/tablet.png" alt="Tablet 10” 64 GB" class="thumb" />
+        <h3 class="title">Tablet 10” 64 GB</h3>
+        <div class="stars" aria-label="4 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$3,399</ins>
+          <del>$3,999</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 7 -->
+      <article class="item card">
+        <img src="Imagenes/camara.png" alt="Cámara mirrorless 24 MP" class="thumb" />
+        <h3 class="title">Cámara Mirrorless 24 MP</h3>
+        <div class="stars" aria-label="4.5 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$12,499</ins>
+          <del>$13,999</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 8 -->
+      <article class="item card">
+        <img src="Imagenes/soundbar.png" alt="Barra de sonido 2.1" class="thumb" />
+        <h3 class="title">Barra de Sonido 2.1</h3>
+        <div class="stars" aria-label="4 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$2,799</ins>
+          <del>$3,299</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 9 -->
+      <article class="item card">
+        <img src="Imagenes/router.png" alt="Router Wi-Fi 6 AX3000" class="thumb" />
+        <h3 class="title">Router Wi-Fi 6 AX3000</h3>
+        <div class="stars" aria-label="4 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$1,999</ins>
+          <del>$2,399</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 10 -->
+      <article class="item card">
+        <img src="Imagenes/monitor.png" alt="Monitor 27” 144 Hz" class="thumb" />
+        <h3 class="title">Monitor 27” 144 Hz</h3>
+        <div class="stars" aria-label="5 de 5">★★★★★</div>
+        <div class="price">
+          <ins>$5,899</ins>
+          <del>$6,499</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 11 -->
+      <article class="item card">
+        <img src="Imagenes/electro/earbuds.png" alt="Audífonos tipo earbuds BT" class="thumb" />
+        <h3 class="title">Earbuds BT</h3>
+        <div class="stars" aria-label="4 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$799</ins>
+          <del>$999</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+      <!-- 12 -->
+      <article class="item card">
+        <img src="Imagenes/electro/console.png" alt="Consola de videojuegos 1 TB" class="thumb" />
+        <h3 class="title">Consola 1 TB</h3>
+        <div class="stars" aria-label="4.5 de 5">★★★★☆</div>
+        <div class="price">
+          <ins>$9,499</ins>
+          <del>$10,499</del>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Agregar al carrito</button>
+        </div>
+      </article>
+
+    </section>
+
+    <div class="pager">
+      <button class="btn ghost" disabled>«</button>
+      <button class="btn ghost active">1</button>
+      <button class="btn ghost">2</button>
+      <button class="btn ghost">3</button>
+      <button class="btn ghost">»</button>
+    </div>
+
+    <footer class="foot">
+      <small>© 2025 Mi Tienda — Electrónica</small>
+    </footer>
+  </main>
+</body>
+</html>
+
