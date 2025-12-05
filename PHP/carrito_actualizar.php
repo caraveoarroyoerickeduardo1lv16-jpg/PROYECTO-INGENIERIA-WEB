@@ -17,7 +17,7 @@ try {
         exit;
     }
 
-    $conn = new mysqli("localhost", "root", "", "walmart");
+    $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
     $conn->set_charset("utf8mb4");
 
     /* 1) Buscar carrito (por usuario si está logueado, o por session_id si es invitado) */

@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = 1; // usuario de prueba
 }
 
-$conn = new mysqli("localhost", "root", "", "walmart");
+$conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
 // Leer todos los productos

@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Saber si el usuario está logueado (lo manda PHP en el <body>)
     const estaLogueado = document.body.dataset.logged === "1";
-    const urlLogin = "http://localhost/proyectofinalbien/PHP/login.php";
 
     // =========================
     // MANEJO DE TARJETAS Y CARRITO
@@ -64,9 +63,9 @@ document.addEventListener("DOMContentLoaded", () => {
             btnAgregar.addEventListener("click", async (e) => {
                 e.stopPropagation(); // que no dispare el click de la tarjeta
 
-                // Si NO está logueado, mandarlo a login
+                // Si NO está logueado, mostrar advertencia y NO redirigir
                 if (!estaLogueado) {
-                    window.location.href = urlLogin;
+                    alert("Por favor inicia sesión para agregar productos al carrito.");
                     return;
                 }
 
@@ -91,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.stopPropagation();
 
                 if (!estaLogueado) {
-                    window.location.href = urlLogin;
+                    alert("Por favor inicia sesión para modificar el carrito.");
                     return;
                 }
 
@@ -113,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.stopPropagation();
 
                 if (!estaLogueado) {
-                    window.location.href = urlLogin;
+                    alert("Por favor inicia sesión para modificar el carrito.");
                     return;
                 }
 
@@ -251,4 +250,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
 

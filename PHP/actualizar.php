@@ -14,7 +14,7 @@ if ($producto_id <= 0 || !in_array($accion, ['add','remove','delete'], true)) {
     exit;
 }
 
-$conn = new mysqli("localhost", "root", "", "walmart");
+$conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
 /* 1) Buscar carrito según esté logueado o no */

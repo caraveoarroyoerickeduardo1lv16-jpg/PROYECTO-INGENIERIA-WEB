@@ -8,7 +8,7 @@ $sessionId    = session_id();
 $estaLogueado = !empty($_SESSION['user_id']);
 $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 
-$conn = new mysqli("localhost", "root", "", "walmart");
+$conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
 /* ==========================================================
@@ -178,7 +178,7 @@ if ($productoId > 0 && count($productos) === 1) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../CSS/index.css">
 </head>
-<body>
+<body data-logged="<?php echo $estaLogueado ? '1' : '0'; ?>">
 
 <!---------------- HEADER ---------------->
 <header class="header">
@@ -304,32 +304,22 @@ if ($productoId > 0 && count($productos) === 1) {
                             </div>
                         </a>
 
-                        <!-- ZONA DE BOTONES (AGREGAR / CANTIDAD / LOGIN) -->
+                        <!-- ZONA DE BOTONES (AGREGAR / CANTIDAD) -->
                         <div class="producto-actions">
+                            <button
+                                class="btn-agregar"
+                                style="<?php echo $estaEnCarrito ? 'display:none;' : ''; ?>"
+                            >
+                                + Agregar
+                            </button>
 
-                            <?php if (!$estaLogueado): ?>
-                                <!-- SI NO HA INICIADO SESIÓN, EL BOTÓN MANDA A LOGIN -->
-                                <a href="../PHP/login.php" class="btn-agregar">
-                                    + Agregar
-                                </a>
-                            <?php else: ?>
-                                <!-- SI ESTÁ LOGUEADO, BOTONES REALES DEL CARRITO -->
-                                <button
-                                    class="btn-agregar"
-                                    style="<?php echo $estaEnCarrito ? 'display:none;' : ''; ?>"
-                                >
-                                    + Agregar
-                                </button>
-
-                                <div class="cantidad-control <?php echo $estaEnCarrito ? '' : 'oculto'; ?>">
-                                    <button class="btn-menos">−</button>
-                                    <span class="cantidad">
-                                        <?php echo $estaEnCarrito ? $cantEnCarrito : 0; ?>
-                                    </span>
-                                    <button class="btn-mas">+</button>
-                                </div>
-                            <?php endif; ?>
-
+                            <div class="cantidad-control <?php echo $estaEnCarrito ? '' : 'oculto'; ?>">
+                                <button class="btn-menos">−</button>
+                                <span class="cantidad">
+                                    <?php echo $estaEnCarrito ? $cantEnCarrito : 0; ?>
+                                </span>
+                                <button class="btn-mas">+</button>
+                            </div>
                         </div>
 
                     </article>
@@ -345,6 +335,7 @@ if ($productoId > 0 && count($productos) === 1) {
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
 </html>
+
 
 
 

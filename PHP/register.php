@@ -6,7 +6,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 // CONEXIÓN BD walmart
-$conn = new mysqli("localhost", "root", "", "walmart");
+$conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset('utf8mb4');
 
 $errores = [];

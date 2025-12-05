@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
 
-$conn = new mysqli("localhost", "root", "", "walmart");
+$conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
 $q = trim($_GET['q'] ?? '');

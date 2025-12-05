@@ -11,7 +11,7 @@ if (empty($_SESSION['user_id'])) {
 
 $usuario_id = (int)$_SESSION['user_id'];
 
-$conn = new mysqli("localhost", "root", "", "walmart");
+$conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
 // Leer pedidos del usuario
