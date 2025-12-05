@@ -1,0 +1,322 @@
+/* =========================
+   RESETEO BÁSICO
+   ========================= */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+}
+
+/* =========================
+   HEADER (igual estilo que index)
+   ========================= */
+
+.header {
+    background-color: #0071ce;
+    color: #ffffff;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.logo-icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #ffc220;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+}
+
+.logo-text {
+    font-size: 1.1rem;
+}
+
+.search-bar {
+    flex: 1;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 6px 12px;
+    border-radius: 18px;
+    border: none;
+    outline: none;
+    font-size: 0.9rem;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.header-link {
+    color: #ffffff;
+    text-decoration: none;
+    margin-right: 8px;
+}
+
+.header-link:hover {
+    text-decoration: underline;
+}
+
+.header-items {
+    font-weight: 500;
+}
+
+.header-price {
+    font-weight: 600;
+}
+
+.header-cart-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.header-cart {
+    font-size: 1.3rem;
+}
+
+/* =========================
+   LAYOUT PRINCIPAL
+   ========================= */
+
+.contenedor {
+    padding: 24px 40px 40px;
+}
+
+.contenedor h1 {
+    font-size: 1.7rem;
+    margin-bottom: 4px;
+}
+
+.contenedor > p {
+    margin-bottom: 20px;
+    color: #555;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(280px, 1.5fr);
+    gap: 24px;
+}
+
+/* =========================
+   LISTA DE PRODUCTOS
+   ========================= */
+
+.productos {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 16px 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.productos > p {
+    padding: 0 24px;
+}
+
+.item {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr) 100px;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #eee;
+    column-gap: 16px;
+}
+
+.item:last-child {
+    border-bottom: none;
+}
+
+.item-img img {
+    max-width: 90px;
+    max-height: 90px;
+    object-fit: contain;
+}
+
+.item-info h3 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.item-info .marca {
+    font-size: 0.85rem;
+    color: #777;
+    margin-bottom: 8px;
+}
+
+.acciones {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.cantidad {
+    min-width: 18px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.btn-mas,
+.btn-menos {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    background-color: #0071ce;
+    color: #ffffff;
+}
+
+.btn-mas:hover,
+.btn-menos:hover {
+    background-color: #005fae;
+}
+
+.btn-eliminar {
+    margin-left: 10px;
+    border-radius: 999px;
+    border: 1px solid #ccc;
+    background-color: #ffffff;
+    cursor: pointer;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+}
+
+.btn-eliminar:hover {
+    background-color: #f0f0f0;
+}
+
+.precio {
+    text-align: right;
+    font-weight: 700;
+    color: #00843d;
+}
+
+/* =========================
+   RESUMEN DERECHA
+   ========================= */
+
+.resumen {
+    align-self: flex-start;
+}
+
+.card-resumen {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 20px 22px 18px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.btn-comprar {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    background-color: #0071ce;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 12px 0;
+    margin-bottom: 16px;
+    cursor: pointer;
+}
+
+.btn-comprar:hover {
+    background-color: #005fae;
+}
+
+.card-resumen p {
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.subtotal span,
+.ahorro span,
+.total span {
+    font-weight: 500;
+}
+
+.ahorro span {
+    color: #00843d;
+}
+
+.card-resumen hr {
+    margin: 10px 0;
+    border: none;
+    border-top: 1px solid #ddd;
+}
+
+.total {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .item {
+        grid-template-columns: 100px minmax(0, 1fr);
+        grid-template-rows: auto auto;
+    }
+
+    .precio {
+        grid-column: 2 / 3;
+        text-align: left;
+        margin-top: 6px;
+    }
+}
+
+.mensaje {
+    margin: 10px 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.mensaje-error {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.mensaje-exito {
+    background: #dcfce7;
+    color: #166534;
+}
+
+

@@ -1,0 +1,157 @@
+/* ===== PANTALLA EDITAR PRODUCTO ===== */
+
+.admin-main {
+    max-width: 1100px;
+    margin: 24px auto 40px;
+    padding: 0 16px 32px;
+}
+
+.edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 10px;
+}
+
+.edit-header h1 {
+    margin: 0;
+    font-size: 26px;
+}
+
+.btn-volver {
+    text-decoration: none;
+    color: #0071e3;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Tarjeta blanca */
+.edit-card {
+    background-color: #ffffff;
+    border-radius: 18px;
+    padding: 20px 20px 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* Formulario */
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.edit-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.edit-col {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.edit-col.full-width {
+    flex: 1 1 100%;
+}
+
+.edit-col label {
+    font-size: 13px;
+    color: #374151;
+}
+
+.edit-col input {
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    outline: none;
+}
+
+.edit-col input:focus {
+    border-color: #0071e3;
+}
+
+/* Vista previa de imagen */
+.edit-preview {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.edit-preview img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Botones */
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.btn-guardar {
+    background-color: #0071e3;
+    color: #ffffff;
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-guardar:hover {
+    background-color: #005bb5;
+}
+
+/* Botón blanco de cerrar sesión (mismo estilo que antes) */
+.logout-container {
+    width: 100%;
+    background: transparent;
+    padding: 12px 0;
+    display: flex;
+    justify-content: flex-end;
+    max-width: 1100px;
+    padding-right: 25px;
+    margin: 0 auto;
+}
+
+.logout-button {
+    background: #ffffff;
+    color: #0071e3;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 14px;
+    border: 2px solid #0071e3;
+    transition: 0.2s;
+}
+
+.logout-button:hover {
+    background: #0071e3;
+    color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+    .edit-card {
+        padding: 16px 14px;
+    }
+
+    .edit-row {
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,181 @@
+/* ===== INVENTARIO – ESTILO TIPO WALMART ===== */
+
+/* Fondo y layout principal del inventario */
+.admin-main {
+    max-width: 1100px;
+    margin: 24px auto 40px;
+    padding: 0 16px 32px;
+}
+
+/* Títulos */
+.inventory-header h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+}
+
+.inventory-header h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+/* Parte superior: filtro + botón Añadir */
+.inventory-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Filtro de categoría */
+.inventory-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.inventory-filter label {
+    font-size: 14px;
+    color: #111827;
+}
+
+.inventory-filter select {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    background: #fff;
+}
+
+/* Botón "Añadir producto" arriba a la derecha */
+.btn-add-producto {
+    background-color: #0071e3;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    display: inline-block;
+}
+
+.btn-add-producto:hover {
+    background-color: #005bb5;
+}
+
+/* Tarjeta blanca que envuelve la tabla */
+.inventory-card {
+    background-color: #ffffff;
+    border-radius: 18px;
+    padding: 16px 18px 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    margin-top: 8px;
+}
+
+/* Tabla de inventario */
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.inventory-table thead th {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #111827;
+    font-weight: 600;
+}
+
+.inventory-table tbody td {
+    padding: 10px 6px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+.inventory-empty {
+    text-align: center;
+    padding: 18px 0;
+    color: #6b7280;
+}
+
+/* Columna de producto con imagen + nombre */
+.prod-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prod-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.prod-name {
+    font-weight: 500;
+}
+
+/* Botón azul "Editar" en cada fila */
+.btn-editar {
+    display: inline-block;
+    background-color: #0071e3;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.btn-editar:hover {
+    background-color: #005bb5;
+}
+
+/* ===== BOTÓN BLANCO DE CERRAR SESIÓN (HEREDADO) ===== */
+
+.logout-container {
+    width: 100%;
+    background: transparent;
+    padding: 12px 0;
+    display: flex;
+    justify-content: flex-end;
+    max-width: 1100px;
+    padding-right: 25px;  /* lo empuja a la derecha */
+    margin: 0 auto;
+}
+
+.logout-button {
+    background: #ffffff;
+    color: #0071e3;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 14px;
+    border: 2px solid #0071e3;
+    transition: 0.2s;
+}
+
+.logout-button:hover {
+    background: #0071e3;
+    color: #ffffff;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 800px) {
+    .inventory-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .inventory-card {
+        padding: 12px 12px 8px;
+    }
+}

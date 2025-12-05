@@ -1,0 +1,371 @@
+/* ====== LAYOUT GENERAL DEL DETALLE ====== */
+
+.detalle-container {
+    max-width: 1400px;           /* un poco más ancho */
+    margin: 32px auto 60px;
+    padding: 0 24px;
+    display: flex;
+    gap: 50px;                   /* más espacio entre imagen e info */
+}
+
+/* Columna izquierda: galería */
+.detalle-galeria {
+    flex: 1.4;                   /* darle MÁS espacio a la galería */
+    display: flex;
+    gap: 18px;
+}
+
+/* Miniaturas verticales */
+.detalle-thumbs {
+    width: 95px;                 /* más anchas */
+    max-height: 650px;           /* más altas también */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.thumb-img {
+    width: 82px;                 /* miniaturas más grandes */
+    height: 82px;
+    object-fit: contain;
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    padding: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.thumb-img:hover {
+    border-color: #a4cdf3;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.thumb-img.activa {
+    border-color: #0071ce;
+}
+
+/* Imagen principal: MUCHO más grande */
+.detalle-imagen-principal {
+    flex: 1;
+    background-color: transparent;
+    padding: 0;
+    box-shadow: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* le damos un alto mínimo grande para que “abra” espacio */
+    min-height: 520px;
+}
+
+.detalle-imagen-principal img {
+    width: 520px;         /* tamaño base enorme */
+    max-width: 100%;      /* pero sin salirse del contenedor */
+    height: auto;
+    object-fit: contain;
+}
+
+/* Columna derecha: info del producto */
+.detalle-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Marca tipo enlace */
+.detalle-marca {
+    font-size: 0.9rem;
+    color: #0071ce;
+    font-weight: 600;
+}
+
+/* Título del producto */
+.detalle-titulo {
+    font-size: 1.8rem;
+    line-height: 1.3;
+    color: #111111;
+    margin-bottom: 4px;
+}
+
+/* Rating promedio arriba */
+.detalle-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95rem;
+    margin: 4px 0 8px;
+}
+
+.rating-num {
+    font-weight: 700;
+}
+
+.rating-stars {
+    font-size: 1.1rem;
+    color: #f5a623; /* dorado */
+}
+
+.rating-count {
+    color: #666666;
+    font-size: 0.85rem;
+}
+
+/* Precio y stock */
+.detalle-precio {
+    font-size: 2rem;
+    color: #00843d;
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+.detalle-stock {
+    font-size: 0.95rem;
+    color: #555555;
+}
+
+/* ====== CONTROLES DE CARRITO EN DETALLE ====== */
+
+.detalle-actions {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+/* Botón grande "Agregar al carrito" */
+.detalle-btn-agregar {
+    background-color: #0071ce;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.detalle-btn-agregar:hover {
+    background-color: #005fae;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+/* Controles de cantidad, similar a index */
+.detalle-cantidad-control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.detalle-cantidad-control.oculto {
+    display: none;
+}
+
+.detalle-btn-menos,
+.detalle-btn-mas {
+    background-color: #0071ce;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.detalle-btn-menos:hover,
+.detalle-btn-mas:hover {
+    background-color: #005fae;
+}
+
+.detalle-cantidad {
+    min-width: 26px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Texto pequeño debajo de botones (opcional) */
+.detalle-extra-info {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: #555555;
+}
+
+/* ====== MENSAJES DE RESEÑA ====== */
+
+.detalle-mensaje-ok {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: #e6f6e9;
+    color: #137333;
+    font-size: 0.85rem;
+}
+
+.detalle-mensaje-error {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: #fde7e9;
+    color: #c5221f;
+    font-size: 0.85rem;
+}
+
+/* ====== SECCIÓN DE RESEÑAS ====== */
+
+.detalle-resenas {
+    margin-top: 32px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+}
+
+.detalle-resenas h2 {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+}
+
+/* Formulario de reseña */
+.resena-form {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+
+.resena-form label {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+/* Estrellas clicables para calificación del usuario */
+.resena-estrellas {
+    display: flex;               /* izq → der */
+    flex-direction: row;
+    gap: 6px;
+    margin: 8px 0 12px;
+}
+
+.resena-estrella {
+    font-size: 28px;
+    color: #ccc;
+    cursor: pointer;
+    transition: color .15s ease, transform .1s ease;
+}
+
+.resena-estrella:hover {
+    transform: scale(1.1);
+}
+
+.resena-estrella.activa {
+    color: #f5a623;  /* dorado */
+}
+
+.resena-form textarea {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+    border-radius: 8px;
+    border: 1px solid #d0d0d0;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+}
+
+.resena-form textarea:focus {
+    outline: none;
+    border-color: #0071ce;
+    box-shadow: 0 0 0 2px rgba(0,113,206,0.15);
+}
+
+.resena-form button {
+    margin-top: 10px;
+    background-color: #0071ce;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.resena-form button:hover {
+    background-color: #005fae;
+}
+
+/* Lista de reseñas */
+.lista-resenas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.resena-item {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    font-size: 0.9rem;
+}
+
+.resena-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.resena-usuario {
+    font-weight: 600;
+    color: #333333;
+}
+
+.resena-fecha {
+    font-size: 0.8rem;
+    color: #777777;
+}
+
+.resena-rating {
+    font-size: 0.95rem;
+    color: #f5a623;
+    margin-bottom: 4px;
+}
+
+.resena-comentario {
+    color: #333333;
+    white-space: pre-wrap;
+}
+
+/* ====== RESPONSIVE ====== */
+
+@media (max-width: 900px) {
+    .detalle-container {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .detalle-galeria {
+        width: 100%;
+    }
+
+    .detalle-imagen-principal {
+        min-height: 380px;
+    }
+
+    .detalle-imagen-principal img {
+        width: 100%;
+        max-height: 400px;
+    }
+}
+
