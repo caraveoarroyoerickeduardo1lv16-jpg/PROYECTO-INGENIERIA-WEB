@@ -102,7 +102,8 @@ $stmt->close();
                 </form>
 
                 <!-- Botón añadir producto (por ahora placeholder) -->
-                <a href="#" class="btn-add-producto">Añadir producto</a>
+                <a href="admin_nuevo_producto.php" class="btn-add-producto">Añadir producto</a>
+
             </div>
         </section>
 
