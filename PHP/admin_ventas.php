@@ -15,29 +15,18 @@ $conn->set_charset("utf8mb4");
 // 1) PRODUCTO MÁS VENDIDO DEL MES
 // ===============================
 
-// Inicio de mes actual y primer día del siguiente mes
 $inicioMes    = date('Y-m-01');
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
 
-/*
-   Aquí usamos:
-   - pedidos.carrito_id      -> relaciona con carrito_detalle.carrito_id
-   - carrito_detalle         -> ahí están los productos comprados
-   - producto                -> para obtener el nombre del producto
-
-   Ajusta nombres de columnas si en tu BD varían:
-   - carrito_detalle.cantidad
-   - carrito_detalle.precio_unit (si se llama distinto, cámbialo)
-*/
-
 $sqlMasVendido = "
-    SELECT p.id,
-           p.nombre,
-           SUM(cd.cantidad)                     AS total_vendida,
-           SUM(cd.cantidad * cd.precio_unit)    AS total_importe
+    SELECT 
+        p.id,
+        p.nombre,
+        SUM(cd.cantidad) AS total_vendida,
+        SUM(cd.subtotal) AS total_importe
     FROM pedidos pe
     INNER JOIN carrito_detalle cd ON cd.carrito_id = pe.carrito_id
-    INNER JOIN producto        p  ON cd.producto_id = p.id
+    INNER JOIN producto p ON p.id = cd.producto_id
     WHERE pe.creada_en >= ? AND pe.creada_en < ?
     GROUP BY p.id, p.nombre
     ORDER BY total_vendida DESC
