@@ -78,34 +78,52 @@ body {
    TABLAS
 =========================== */
 
+/* ======= TABLAS DE REPORTES (admin_ventas) ======= */
+
 table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
-    background: white;
+    background: #ffffff;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 thead {
-    background: #0155a5;
-    color: white;
+    background: #f0f0f0;   /* fondo gris claro */
 }
 
 th, td {
     padding: 10px 12px;
     font-size: 14px;
     text-align: center;
+    border-bottom: 1px solid #ddd;
 }
 
+/* TÍTULOS DE LAS TABLAS EN NEGRO Y NEGRITAS */
+th {
+    color: #000000;        /* texto negro */
+    font-weight: 700;      /* negritas */
+}
+
+/* Filas alternadas del cuerpo */
 tbody tr:nth-child(odd) {
-    background: #f7f9fc;
+    background: #f9f9f9;
 }
 
 tbody tr:hover {
     background: #e9f2ff;
 }
+
+/* Título de sección arriba de cada tabla */
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000;          /* título en negro */
+    margin: 25px 0 10px;
+}
+
 
 /* ===========================
    RESPONSIVE DESIGN

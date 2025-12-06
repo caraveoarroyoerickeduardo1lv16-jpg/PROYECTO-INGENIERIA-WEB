@@ -193,7 +193,7 @@ if (!$confirmado) {
             }
         }
 
-        // ========== 💥 NUEVO: VERIFICAR STOCK ANTES DEL PEDIDO ==========
+        // ========== 💥 VERIFICAR STOCK ANTES DEL PEDIDO ==========
         if (empty($errores) && $metodo_id_real) {
 
             // 1) Leer productos del carrito con su stock actual
@@ -267,22 +267,40 @@ if (!$confirmado) {
                 );
                 $stmt->execute();
                 $pedido_id = $conn->insert_id;
+                $stmt->close();
 
-                // 4) Vaciar carrito (detalle + carrito)
+                // 4) NUEVO: Copiar detalle del carrito a pedido_detalle
+                $stmt = $conn->prepare("
+                    INSERT INTO pedido_detalle (pedido_id, producto_id, cantidad, precio_unit)
+                    SELECT ?, cd.producto_id, cd.cantidad,
+                           CASE 
+                               WHEN cd.cantidad > 0 THEN cd.subtotal / cd.cantidad
+                               ELSE 0
+                           END AS precio_unit
+                    FROM carrito_detalle cd
+                    WHERE cd.carrito_id = ?
+                ");
+                $stmt->bind_param("ii", $pedido_id, $carrito_id);
+                $stmt->execute();
+                $stmt->close();
+
+                // 5) Vaciar carrito (detalle + carrito)
                 $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
                 $stmt->bind_param("i", $carrito_id);
                 $stmt->execute();
+                $stmt->close();
 
                 $stmt = $conn->prepare("DELETE FROM carrito WHERE id = ?");
                 $stmt->bind_param("i", $carrito_id);
                 $stmt->execute();
+                $stmt->close();
 
-                // 5) Limpiar sesión relacionada al envío
+                // 6) Limpiar sesión relacionada al envío
                 unset($_SESSION['horario_envio'], $_SESSION['direccion_id']);
 
                 $conn->commit();
 
-                // 6) Redirigir a pantalla de pago confirmado
+                // 7) Redirigir a pantalla de pago confirmado
                 header("Location: pago.php?confirmado=1&pedido_id=" . $pedido_id);
                 exit;
 
@@ -464,7 +482,6 @@ if (!$confirmado) {
 
 </body>
 </html>
-
 
 
 
