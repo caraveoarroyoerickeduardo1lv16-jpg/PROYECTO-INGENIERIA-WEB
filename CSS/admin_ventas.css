@@ -1,0 +1,131 @@
+/* ===========================
+   ESTILO GENERAL
+=========================== */
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f6f8;
+    margin: 0;
+    padding: 0;
+}
+
+.reports-main {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 10px 20px;
+}
+
+.reports-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #0155a5;
+}
+
+/* ===========================
+   LINK VOLVER
+=========================== */
+
+.back-link {
+    text-decoration: none;
+    color: #0155a5;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* ===========================
+   SECCIONES
+=========================== */
+
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 25px 0 10px;
+    color: #333;
+}
+
+/* ===========================
+   TARJETA DESTACADA
+=========================== */
+
+.highlight-card {
+    background: #ffffff;
+    border: 1px solid #dce3f0;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    max-width: 500px;
+}
+
+.highlight-card h2 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #0155a5;
+}
+
+.highlight-row {
+    font-size: 14px;
+    margin: 4px 0;
+}
+
+/* ===========================
+   TABLAS
+=========================== */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+thead {
+    background: #0155a5;
+    color: white;
+}
+
+th, td {
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: center;
+}
+
+tbody tr:nth-child(odd) {
+    background: #f7f9fc;
+}
+
+tbody tr:hover {
+    background: #e9f2ff;
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+=========================== */
+
+@media (max-width: 600px) {
+    .highlight-card {
+        width: 100%;
+        padding: 15px;
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 8px;
+    }
+
+    .reports-title {
+        font-size: 20px;
+    }
+}

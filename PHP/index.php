@@ -332,6 +332,16 @@ if ($productoId > 0 && count($productos) === 1) {
 
 </main>
 
+<!-- ======================= FOOTER AGREGADO ======================= -->
+<footer class="footer">
+    <div class="footer-content">
+        <h3>Mi Tiendita</h3>
+        <p>Teléfono de contacto: <strong>55-8923-4417</strong></p>
+        <p>Correo de contacto: <strong>soporte@mitiendita.com</strong></p>
+    </div>
+</footer>
+<!-- =============================================================== -->
+
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
 </html>

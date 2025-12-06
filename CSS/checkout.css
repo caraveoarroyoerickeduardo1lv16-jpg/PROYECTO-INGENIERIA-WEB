@@ -217,10 +217,24 @@ body {
     cursor: pointer;
 }
 
-.btn-primary {
-    background: #0052cc;
+/* Que los links con clase btn-primary se vean como botón */
+a.btn-primary {
+    display: inline-block;
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 10px 24px;
+    font-weight: 600;
+    text-align: center;
+    background-color: #0062e6;
     color: #fff;
 }
+
+/* Que ocupe todo el ancho como los otros botones largos */
+a.btn-primary.btn-full {
+    display: block;
+    width: 100%;
+}
+
 
 .btn-secondary {
     background: #e1e1e1;
@@ -419,5 +433,14 @@ body {
     text-align: center;
     padding: 8px 16px;
 }
+
+/* Quitar flechas de inputs type="number" en Chrome, Edge, Safari */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
 
 

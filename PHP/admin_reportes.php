@@ -52,13 +52,14 @@ $clientesTotal = $res->fetch_assoc()['num_clientes'] ?? 0;
     <!-- TARJETAS DE RESUMEN -->
     <section class="reports-cards">
 
-        <!-- VENTAS (solo resumen, sin Ver más) -->
+        <!-- VENTAS (ahora con botón Ver más) -->
         <article class="report-card">
             <div class="report-header">Ventas</div>
             <div class="report-icon">📈</div>
             <div class="report-main">
                 $<?= number_format($ventasTotal, 2) ?>
             </div>
+            <a href="admin_ventas.php" class="btn-more">Ver más</a>
         </article>
 
         <!-- PEDIDOS (con botón Ver más) -->
@@ -87,5 +88,6 @@ $clientesTotal = $res->fetch_assoc()['num_clientes'] ?? 0;
 
 </body>
 </html>
+
 
 

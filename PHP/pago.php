@@ -133,7 +133,7 @@ if (!$confirmado) {
             }
 
             if (strlen($numero) < 13 || strlen($numero) > 19) {
-                $errores[] = "El número de tarjeta no es válido.";
+                $errores[] = "El número de tarjeta tiene que tener 16 digitos numericos";
             }
 
             if ($mes_exp < 1 || $mes_exp > 12) {
