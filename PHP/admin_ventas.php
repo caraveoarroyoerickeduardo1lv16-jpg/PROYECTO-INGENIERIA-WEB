@@ -20,22 +20,19 @@ $inicioMes    = date('Y-m-01');
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
 
 /*
-   IMPORTANTE:
-   - Tabla de pedidos:      pedidos
-   - Columna de fecha:      creada_en
-   - Tabla de detalle:      pedido_detalle  (si se llama distinto, solo cambia este nombre)
-   - Columnas detalle:      pedido_id, producto_id, cantidad, precio_unit
-   - Tabla producto:        producto
+   Aquí suponemos:
+   - pedido_detalle.pedido_id guarda el carrito_id
+   - pedidos.carrito_id es el que se relaciona con ese campo
 */
 
 $sqlMasVendido = "
     SELECT p.id,
            p.nombre,
-           SUM(d.cantidad)                         AS total_vendida,
-           SUM(d.cantidad * d.precio_unit)         AS total_importe
+           SUM(d.cantidad)                 AS total_vendida,
+           SUM(d.cantidad * d.precio_unit) AS total_importe
     FROM pedido_detalle d
-    INNER JOIN pedidos   pe ON d.pedido_id   = pe.id
-    INNER JOIN producto  p  ON d.producto_id = p.id
+    INNER JOIN pedidos  pe ON d.pedido_id   = pe.carrito_id
+    INNER JOIN producto p  ON d.producto_id = p.id
     WHERE pe.creada_en >= ? AND pe.creada_en < ?
     GROUP BY p.id, p.nombre
     ORDER BY total_vendida DESC
@@ -193,4 +190,5 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
 
 </body>
 </html>
+
 
