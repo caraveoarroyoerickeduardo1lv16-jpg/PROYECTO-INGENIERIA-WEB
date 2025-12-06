@@ -20,19 +20,24 @@ $inicioMes    = date('Y-m-01');
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
 
 /*
-   Aquí suponemos:
-   - pedido_detalle.pedido_id guarda el carrito_id
-   - pedidos.carrito_id es el que se relaciona con ese campo
+   Aquí usamos:
+   - pedidos.carrito_id      -> relaciona con carrito_detalle.carrito_id
+   - carrito_detalle         -> ahí están los productos comprados
+   - producto                -> para obtener el nombre del producto
+
+   Ajusta nombres de columnas si en tu BD varían:
+   - carrito_detalle.cantidad
+   - carrito_detalle.precio_unit (si se llama distinto, cámbialo)
 */
 
 $sqlMasVendido = "
     SELECT p.id,
            p.nombre,
-           SUM(d.cantidad)                 AS total_vendida,
-           SUM(d.cantidad * d.precio_unit) AS total_importe
-    FROM pedido_detalle d
-    INNER JOIN pedidos  pe ON d.pedido_id   = pe.carrito_id
-    INNER JOIN producto p  ON d.producto_id = p.id
+           SUM(cd.cantidad)                     AS total_vendida,
+           SUM(cd.cantidad * cd.precio_unit)    AS total_importe
+    FROM pedidos pe
+    INNER JOIN carrito_detalle cd ON cd.carrito_id = pe.carrito_id
+    INNER JOIN producto        p  ON cd.producto_id = p.id
     WHERE pe.creada_en >= ? AND pe.creada_en < ?
     GROUP BY p.id, p.nombre
     ORDER BY total_vendida DESC
