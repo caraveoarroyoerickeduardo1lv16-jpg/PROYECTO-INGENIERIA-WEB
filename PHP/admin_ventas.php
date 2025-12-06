@@ -22,11 +22,11 @@ $sqlMasVendido = "
     SELECT 
         p.id,
         p.nombre,
-        SUM(cd.cantidad) AS total_vendida,
-        SUM(cd.subtotal) AS total_importe
+        SUM(d.cantidad)                 AS total_vendida,
+        SUM(d.cantidad * d.precio_unit) AS total_importe
     FROM pedidos pe
-    INNER JOIN carrito_detalle cd ON cd.carrito_id = pe.carrito_id
-    INNER JOIN producto p ON p.id = cd.producto_id
+    INNER JOIN pedido_detalle d ON d.pedido_id = pe.id
+    INNER JOIN producto p       ON p.id        = d.producto_id
     WHERE pe.creada_en >= ? AND pe.creada_en < ?
     GROUP BY p.id, p.nombre
     ORDER BY total_vendida DESC
@@ -184,5 +184,6 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
 
 </body>
 </html>
+
 
 
