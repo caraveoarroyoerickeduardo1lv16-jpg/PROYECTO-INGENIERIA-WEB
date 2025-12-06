@@ -19,18 +19,24 @@ $conn->set_charset("utf8mb4");
 $inicioMes    = date('Y-m-01');
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
 
-// Ajusta nombres de tablas/columnas si en tu BD son diferentes:
-// - pedido_detalle  (detalle de pedidos)
-// - pedidos.fecha   (fecha del pedido)
+/*
+   IMPORTANTE:
+   - Tabla de pedidos:      pedidos
+   - Columna de fecha:      creada_en
+   - Tabla de detalle:      pedido_detalle  (si se llama distinto, solo cambia este nombre)
+   - Columnas detalle:      pedido_id, producto_id, cantidad, precio_unit
+   - Tabla producto:        producto
+*/
+
 $sqlMasVendido = "
     SELECT p.id,
            p.nombre,
-           SUM(d.cantidad) AS total_vendida,
-           SUM(d.subtotal) AS total_importe
+           SUM(d.cantidad)                         AS total_vendida,
+           SUM(d.cantidad * d.precio_unit)         AS total_importe
     FROM pedido_detalle d
-    INNER JOIN pedidos pe   ON d.pedido_id   = pe.id
-    INNER JOIN producto p   ON d.producto_id = p.id
-    WHERE pe.fecha >= ? AND pe.fecha < ?
+    INNER JOIN pedidos   pe ON d.pedido_id   = pe.id
+    INNER JOIN producto  p  ON d.producto_id = p.id
+    WHERE pe.creada_en >= ? AND pe.creada_en < ?
     GROUP BY p.id, p.nombre
     ORDER BY total_vendida DESC
     LIMIT 1
@@ -47,13 +53,12 @@ $stmt->close();
 // 2) REPORTE DE VENTAS DIARIO
 // ===============================
 
-// Últimos 30 días, agrupado por fecha
 $sqlVentasDiarias = "
-    SELECT DATE(fecha) AS dia,
-           COUNT(*)     AS num_pedidos,
-           SUM(total)   AS total_ventas
+    SELECT DATE(creada_en) AS dia,
+           COUNT(*)        AS num_pedidos,
+           SUM(total)      AS total_ventas
     FROM pedidos
-    GROUP BY DATE(fecha)
+    GROUP BY DATE(creada_en)
     ORDER BY dia DESC
     LIMIT 30
 ";
@@ -65,11 +70,11 @@ $ventasDiarias = $resDiario->fetch_all(MYSQLI_ASSOC);
 // ===============================
 
 $sqlVentasMensuales = "
-    SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes,
-           COUNT(*)                    AS num_pedidos,
-           SUM(total)                  AS total_ventas
+    SELECT DATE_FORMAT(creada_en, '%Y-%m') AS mes,
+           COUNT(*)                        AS num_pedidos,
+           SUM(total)                      AS total_ventas
     FROM pedidos
-    GROUP BY DATE_FORMAT(fecha, '%Y-%m')
+    GROUP BY DATE_FORMAT(creada_en, '%Y-%m')
     ORDER BY mes DESC
     LIMIT 12
 ";
@@ -188,3 +193,4 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
 
 </body>
 </html>
+
