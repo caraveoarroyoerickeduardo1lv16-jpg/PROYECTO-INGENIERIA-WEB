@@ -19,9 +19,36 @@ if ($id <= 0) {
 }
 
 /* ==========================================================
-   1) SI VIENE POR POST, ACTUALIZAR PRODUCTO + IMÁGENES EXTRA
+   1) SI VIENE POR POST
+      - ELIMINAR PRODUCTO (si se pidió)
+      - O ACTUALIZAR PRODUCTO + IMÁGENES EXTRA
    ========================================================== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    /* ---------- ELIMINAR PRODUCTO ---------- */
+    if (isset($_POST['eliminar_producto'])) {
+        $idEliminar = (int)$_POST['eliminar_producto'];
+
+        if ($idEliminar > 0) {
+            // Borrar imágenes extra
+            $stmt = $conn->prepare("DELETE FROM producto_imagen WHERE producto_id = ?");
+            $stmt->bind_param("i", $idEliminar);
+            $stmt->execute();
+            $stmt->close();
+
+            // Borrar producto principal
+            $stmt = $conn->prepare("DELETE FROM producto WHERE id = ?");
+            $stmt->bind_param("i", $idEliminar);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        // Regresar al inventario
+        header("Location: admin_inventario.php?eliminado=1");
+        exit;
+    }
+
+    /* ---------- ACTUALIZAR PRODUCTO ---------- */
     $nombre     = $_POST['nombre']     ?? '';
     $precio     = $_POST['precio']     ?? '0';
     $stock      = $_POST['stock']      ?? '0';
@@ -288,6 +315,15 @@ $stmt->close();
 
                 <div class="edit-actions">
                     <button type="submit" class="btn-guardar">Guardar cambios</button>
+
+                    <!-- BOTÓN ROJO ELIMINAR PRODUCTO -->
+                    <button
+                        type="button"
+                        class="btn-eliminar"
+                        onclick="confirmarEliminar(<?php echo (int)$producto['id']; ?>)"
+                    >
+                        Eliminar producto
+                    </button>
                 </div>
 
             </form>
@@ -298,6 +334,23 @@ $stmt->close();
 </div>
 
 <script>
+function confirmarEliminar(id) {
+    if (confirm("¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer.")) {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = ""; // mismo archivo
+
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "eliminar_producto";
+        input.value = id;
+
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const contenedor = document.getElementById('extraImagesContainer');
     const btnAgregar = document.getElementById('btnAgregarImagen');
@@ -338,5 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 

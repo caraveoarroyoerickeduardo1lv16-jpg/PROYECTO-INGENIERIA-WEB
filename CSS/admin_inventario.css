@@ -1,13 +1,10 @@
-/* ===== INVENTARIO – ESTILO TIPO WALMART ===== */
-
-/* Fondo y layout principal del inventario */
 .admin-main {
     max-width: 1100px;
     margin: 24px auto 40px;
     padding: 0 16px 32px;
 }
 
-/* Títulos */
+
 .inventory-header h1 {
     margin: 0 0 4px;
     font-size: 28px;
@@ -19,7 +16,7 @@
     font-weight: 500;
 }
 
-/* Parte superior: filtro + botón Añadir */
+
 .inventory-top {
     display: flex;
     justify-content: space-between;
@@ -29,7 +26,7 @@
     gap: 10px;
 }
 
-/* Filtro de categoría */
+/* Filtro por categoría */
 .inventory-filter {
     display: flex;
     align-items: center;
@@ -49,7 +46,7 @@
     background: #fff;
 }
 
-/* Botón "Añadir producto" arriba a la derecha */
+/* Botón Añadir producto */
 .btn-add-producto {
     background-color: #0071e3;
     color: #fff;
@@ -66,7 +63,7 @@
     background-color: #005bb5;
 }
 
-/* Tarjeta blanca que envuelve la tabla */
+/* Tarjeta blanca de la tabla */
 .inventory-card {
     background-color: #ffffff;
     border-radius: 18px;
@@ -102,7 +99,7 @@
     color: #6b7280;
 }
 
-/* Columna de producto con imagen + nombre */
+/* Columna de producto imagen y nombre */
 .prod-info {
     display: flex;
     align-items: center;
@@ -120,7 +117,7 @@
     font-weight: 500;
 }
 
-/* Botón azul "Editar" en cada fila */
+/* Botón Editar" en cada fila */
 .btn-editar {
     display: inline-block;
     background-color: #0071e3;
@@ -137,7 +134,6 @@
     background-color: #005bb5;
 }
 
-/* ===== BOTÓN BLANCO DE CERRAR SESIÓN (HEREDADO) ===== */
 
 .logout-container {
     width: 100%;
@@ -146,7 +142,7 @@
     display: flex;
     justify-content: flex-end;
     max-width: 1100px;
-    padding-right: 25px;  /* lo empuja a la derecha */
+    padding-right: 25px; 
     margin: 0 auto;
 }
 
@@ -167,7 +163,7 @@
     color: #ffffff;
 }
 
-/* ===== RESPONSIVE ===== */
+
 
 @media (max-width: 800px) {
     .inventory-top {

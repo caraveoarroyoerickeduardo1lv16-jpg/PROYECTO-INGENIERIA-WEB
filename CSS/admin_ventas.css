@@ -1,6 +1,4 @@
-/* ===========================
-   ESTILO GENERAL
-=========================== */
+
 
 body {
     font-family: Arial, sans-serif;
@@ -22,9 +20,7 @@ body {
     color: #0155a5;
 }
 
-/* ===========================
-   LINK VOLVER
-=========================== */
+
 
 .back-link {
     text-decoration: none;
@@ -39,9 +35,7 @@ body {
     text-decoration: underline;
 }
 
-/* ===========================
-   SECCIONES
-=========================== */
+
 
 .section-title {
     font-size: 20px;
@@ -50,9 +44,7 @@ body {
     color: #333;
 }
 
-/* ===========================
-   TARJETA DESTACADA
-=========================== */
+
 
 .highlight-card {
     background: #ffffff;
@@ -74,11 +66,7 @@ body {
     margin: 4px 0;
 }
 
-/* ===========================
-   TABLAS
-=========================== */
-
-/* ======= TABLAS DE REPORTES (admin_ventas) ======= */
+/* TABLAS */
 
 table {
     width: 100%;
@@ -91,7 +79,7 @@ table {
 }
 
 thead {
-    background: #f0f0f0;   /* fondo gris claro */
+    background: #f0f0f0;   
 }
 
 th, td {
@@ -101,13 +89,13 @@ th, td {
     border-bottom: 1px solid #ddd;
 }
 
-/* TÍTULOS DE LAS TABLAS EN NEGRO Y NEGRITAS */
+/* TÍTULOS DE LAS TABLAS  */
 th {
-    color: #000000;        /* texto negro */
-    font-weight: 700;      /* negritas */
+    color: #000000;       
+    font-weight: 700;      
 }
 
-/* Filas alternadas del cuerpo */
+
 tbody tr:nth-child(odd) {
     background: #f9f9f9;
 }
@@ -116,18 +104,16 @@ tbody tr:hover {
     background: #e9f2ff;
 }
 
-/* Título de sección arriba de cada tabla */
+
 .section-title {
     font-size: 20px;
     font-weight: 700;
-    color: #000;          /* título en negro */
+    color: #000;          
     margin: 25px 0 10px;
 }
 
 
-/* ===========================
-   RESPONSIVE DESIGN
-=========================== */
+
 
 @media (max-width: 600px) {
     .highlight-card {

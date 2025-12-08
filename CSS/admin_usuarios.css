@@ -8,7 +8,7 @@ body {
     min-height: 100vh;
 }
 
-/* TOPBAR */
+
 .topbar {
     background: #0071e3;
     padding: 12px 0;
@@ -50,7 +50,7 @@ body {
     font-weight: bold;
 }
 
-/* CERRAR SESIÓN */
+
 .logout-button {
     background: #fff;
     color: #0071e3;
@@ -68,7 +68,7 @@ body {
     border-color: #fff;
 }
 
-/* MAIN */
+
 .main {
     max-width: 1100px;
     margin: 30px auto;
@@ -79,7 +79,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* TABS */
+
 .tabs {
     display: flex;
     gap: 20px;
@@ -100,7 +100,7 @@ h1 {
     color: #fff;
 }
 
-/* TABLA */
+
 .tabla {
     width: 100%;
     border-collapse: collapse;
@@ -124,7 +124,7 @@ h1 {
     border-bottom: 1px solid #e5e5e5;
 }
 
-/* ROL BADGES */
+
 .rol {
     padding: 4px 10px;
     border-radius: 12px;
@@ -137,7 +137,7 @@ h1 {
 .rol.operador       { background: #fbbf24; color: #000; }
 .rol.cliente        { background: #6b7280; }
 
-/* BOTÓN EDITAR */
+
 .btn-editar {
     background: #0071e3;
     color: #fff;
@@ -152,7 +152,7 @@ h1 {
     background: #005bb5;
 }
 
-/* ===== PANTALLA EDITAR USUARIO ===== */
+
 
 .edit-header {
     display: flex;
@@ -227,7 +227,7 @@ h1 {
     background: #005bb5;
 }
 
-/* Mensajes de error */
+
 .alert-error {
     background: #fee2e2;
     color: #b91c1c;
@@ -237,7 +237,7 @@ h1 {
     font-size: 14px;
 }
 
-/* Botón "Agregar usuario" en las tabs */
+
 .tabs {
     display: flex;
     align-items: center;
@@ -260,7 +260,7 @@ h1 {
     background: #005bb5;
 }
 
-/* Formulario de agregar usuario */
+
 .form-usuario {
     max-width: 500px;
     background: #fff;
@@ -325,7 +325,7 @@ h1 {
     background: #005bb5;
 }
 
-/* Mensajes de error */
+
 .alert-error {
     background: #fee2e2;
     color: #b91c1c;

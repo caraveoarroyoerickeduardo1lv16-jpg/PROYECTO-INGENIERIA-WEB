@@ -1,4 +1,4 @@
-/* ======== RESET BÁSICO ======== */
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -11,7 +11,7 @@ body {
     color: #111;
 }
 
-/* ======== LAYOUT GENERAL ======== */
+
 .page {
     max-width: 600px;
     margin: 20px auto 40px;
@@ -37,7 +37,7 @@ body {
     margin-top: 2px;
 }
 
-/* ======== CONTENEDOR DE CADA PASO ======== */
+
 .checkout-container {
     background: #fff;
     border-radius: 10px;
@@ -50,7 +50,7 @@ body {
     display: none;
 }
 
-/* ======== TABS DE DÍAS ======== */
+/*TABS DE DÍAS*/
 .days-tabs {
     display: flex;
     gap: 10px;
@@ -78,7 +78,7 @@ body {
     color: #fff;
 }
 
-/* ======== TEXTO TIENDA Y ALERTA ======== */
+/* TEXTO TIENDA Y ALERTA */
 .from-store {
     font-size: 13px;
     margin-bottom: 10px;
@@ -110,7 +110,7 @@ body {
     text-decoration: underline;
 }
 
-/* ======== SLOTS DE HORARIOS ======== */
+/* SLOTS DE HORARIOS */
 .slots-group {
     display: flex;
     flex-direction: column;
@@ -164,7 +164,7 @@ body {
     border: 2px solid #0052cc;
 }
 
-/* ======== FORMULARIO DIRECCIÓN ======== */
+/* FORMULARIO DE DIRECCIÓN  */
 .use-location {
     display: flex;
     align-items: center;
@@ -206,7 +206,7 @@ body {
     font-size: 13px;
 }
 
-/* ======== BOTONES ======== */
+/* BOTONES */
 .btn-primary,
 .btn-secondary,
 .btn-outline {
@@ -229,7 +229,7 @@ a.btn-primary {
     color: #fff;
 }
 
-/* Que ocupe todo el ancho como los otros botones largos */
+
 a.btn-primary.btn-full {
     display: block;
     width: 100%;
@@ -258,7 +258,7 @@ a.btn-primary.btn-full {
     gap: 10px;
 }
 
-/* ======== CABECERA PASO 3 ======== */
+
 .step-header {
     display: flex;
     align-items: center;
@@ -286,7 +286,7 @@ a.btn-primary.btn-full {
     color: #666;
 }
 
-/* ======== ESTADOS Y RESUMEN ======== */
+/*ESTADOS Y RESUMEN */
 .status-hoy {
     font-size: 12px;
     color: #999;
@@ -434,7 +434,7 @@ a.btn-primary.btn-full {
     padding: 8px 16px;
 }
 
-/* Quitar flechas de inputs type="number" en Chrome, Edge, Safari */
+/* Quitar las flechas en la parte del check */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
