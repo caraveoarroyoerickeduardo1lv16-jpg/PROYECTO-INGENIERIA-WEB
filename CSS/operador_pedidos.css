@@ -8,7 +8,7 @@ body {
     min-height: 100vh;
 }
 
-/* TOPBAR */
+
 .topbar {
     background: #0071e3;
     padding: 12px 0;
@@ -57,7 +57,7 @@ body {
     border: 2px solid #fff;
 }
 
-/* TÍTULO */
+
 .main {
     max-width: 1100px;
     margin: 28px auto;
@@ -68,7 +68,7 @@ main h1 {
     margin: 0 0 18px;
 }
 
-/* TABS */
+
 .tabs {
     display: flex;
     gap: 20px;
@@ -87,7 +87,7 @@ main h1 {
     border-bottom: 3px solid #0071e3;
 }
 
-/* CARDS */
+
 .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -134,7 +134,7 @@ main h1 {
     text-decoration: none;
 }
 
-/* ===== FORMULARIO DE ESTATUS ===== */
+
 
 .status-form {
     margin-top: 10px;
