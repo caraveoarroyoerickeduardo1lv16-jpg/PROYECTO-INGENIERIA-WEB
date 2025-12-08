@@ -11,9 +11,7 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 
 $errorResena = "";
 
-/* ==========================================================
-   0) MANEJAR ENVÍO DE RESEÑA (POST)
-   ========================================================== */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva_resena') {
     $productoPostId = isset($_POST['producto_id']) ? (int)$_POST['producto_id'] : 0;
     $calif          = isset($_POST['calificacion']) ? (int)$_POST['calificacion'] : 0;
@@ -26,8 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
     } elseif ($comentario === '') {
         $errorResena = "Escribe un comentario sobre el producto.";
     } else {
-        // IMPORTANTE: para permitir reseñas de invitados,
-        // en la BD: resena_producto.usuario_id debe permitir NULL.
+      
         if ($estaLogueado) {
             $stmt = $conn->prepare("
                 INSERT INTO resena_producto (producto_id, usuario_id, calificacion, comentario)
@@ -35,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
             ");
             $stmt->bind_param("iiis", $productoPostId, $usuario_id, $calif, $comentario);
         } else {
-            // invitado (usuario_id = NULL)
+            // invitado usuario_id = NULL
             $stmt = $conn->prepare("
                 INSERT INTO resena_producto (producto_id, calificacion, comentario)
                 VALUES (?, ?, ?)
@@ -74,18 +71,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
     }
 }
 
-/* ==========================================================
-   1) OBTENER ID DE PRODUCTO
-   ========================================================== */
+/* 1) OBTENER ID DE PRODUCTO */
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     header("Location: index.php");
     exit;
 }
 
-/* ==========================================================
-   2) LEER CATEGORÍAS PARA EL MENÚ
-   ========================================================== */
+/*2) LEER CATEGORÍAS PARA EL MENÚ */
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -94,9 +87,7 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-/* ==========================================================
-   3) LEER CARRITO ACTUAL (para header)
-   ========================================================== */
+/* 3) LEER CARRITO ACTUAL  */
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -133,9 +124,7 @@ if ($carrito_id) {
     $stmt->close();
 }
 
-/* ==========================================================
-   4) LEER DATOS DEL PRODUCTO
-   ========================================================== */
+/* 4) LEER DATOS DEL PRODUCTO*/
 $stmt = $conn->prepare("
     SELECT id, nombre, precio, stock, imagen_url, marca, categoria,
            calificacion, num_resenas
@@ -172,9 +161,7 @@ if ($carrito_id) {
 }
 $estaEnCarrito = $cantidadEnCarrito > 0;
 
-/* ==========================================================
-   5) LEER IMÁGENES DEL PRODUCTO (CARRUSEL)
-   ========================================================== */
+/* 5) LEER IMÁGENES DEL PRODUCT */
 $stmt = $conn->prepare("
     SELECT url
     FROM producto_imagen
@@ -191,9 +178,7 @@ if (count($imagenes) === 0 && !empty($producto['imagen_url'])) {
     $imagenes[] = ['url' => $producto['imagen_url']];
 }
 
-/* ==========================================================
-   6) LEER RESEÑAS DEL PRODUCTO
-   ========================================================== */
+/* 6) LEER RESEÑAS DEL PRODUCTO*/
 $stmt = $conn->prepare("
     SELECT r.calificacion, r.comentario, r.creado_en,
            u.usuario
@@ -221,7 +206,7 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
 </head>
 <body>
 
-<!-- ============ HEADER (igual que index) ============ -->
+
 <header class="header">
     <div class="header-left">
         <div class="logo">
@@ -259,7 +244,7 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
     </div>
 </header>
 
-<!-- ============ NAV CATEGORÍAS ============ -->
+<!--  NAV CATEGORÍAS -->
 <nav class="nav-categorias">
     <a href="index.php" class="nav-item">Inicio</a>
     <?php foreach ($categorias as $cat): ?>
@@ -269,10 +254,10 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
     <?php endforeach; ?>
 </nav>
 
-<!-- ============ CONTENIDO DETALLE ============ -->
+
 <main class="detalle-container">
 
-    <!-- Columna izquierda: galería -->
+   
     <section class="detalle-galeria">
         <div class="detalle-thumbs">
             <?php foreach ($imagenes as $idx => $img): ?>
@@ -375,7 +360,7 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
             </div>
         <?php endif; ?>
 
-        <!-- ======== SECCIÓN DE RESEÑAS ======== -->
+   
         <section class="detalle-resenas">
             <h2>Opiniones del producto</h2>
 
@@ -438,9 +423,9 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
 
 </main>
 
-<!-- ============ SCRIPTS ============ -->
+
 <script>
-// ===== GALERÍA DE IMÁGENES =====
+//  GALERÍA DE IMÁGENES 
 const thumbs   = document.querySelectorAll('.thumb-img');
 const mainImg  = document.getElementById('mainImage');
 let currentIdx = 0;
@@ -465,7 +450,7 @@ if (thumbs.length > 1) {
     }, 4000);
 }
 
-// ===== CARRITO EN DETALLE =====
+
 async function actualizarCarrito(productoId, accion) {
     const formData = new FormData();
     formData.append("producto_id", productoId);
@@ -483,7 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!acciones) return;
 
     const estaLogueado = acciones.dataset.logged === "1";
-    // Si NO está logueado, no montamos lógica de carrito (el botón ya es enlace a login)
+
     if (!estaLogueado) {
         return;
     }
@@ -554,7 +539,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ===== ESTRELLAS DINÁMICAS PARA RESEÑA (izquierda → derecha) =====
+    //  ESTRELLAS DINÁMICAS 
     const estrellasContainer = document.getElementById("resenaEstrellas");
     const inputCalif         = document.getElementById("inputCalificacion");
 

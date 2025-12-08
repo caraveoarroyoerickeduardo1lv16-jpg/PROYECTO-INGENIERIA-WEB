@@ -9,7 +9,7 @@ $estaLogueado = !empty($_SESSION['user_id']);
 $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 $sessionId    = session_id();
 
-/* 1) OBTENER CARRITO ACTUAL (Misma lógica que en index.php) */
+/* 1) OBTENER CARRITO ACTUAL */
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -35,7 +35,7 @@ if (!$carrito) {
 
 $carrito_id = (int)$carrito['id'];
 
-/* 2) LEER DETALLES DEL CARRITO + STOCK ACTUAL DEL PRODUCTO */
+/* 2) LEER DETALLES DEL CARRITO  STOCK ACTUAL DEL PRODUCTO */
 $stmt = $conn->prepare("
     SELECT cd.producto_id,
            cd.cantidad,
@@ -84,7 +84,7 @@ if (!empty($faltantes)) {
     exit;
 }
 
-/* 4) HAY STOCK → DESCONTARLO Y (OPCIONAL) CREAR PEDIDO */
+/* 4) HAY STOCK  DESCONTARLO Y  CREAR PEDIDO */
 $conn->begin_transaction();
 
 try {
@@ -103,7 +103,6 @@ try {
     }
     $stmtUpd->close();
 
-    // Aquí podrías crear el pedido y pedido_detalle si ya tienes esas tablas
 
     // Vaciar carrito
     $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");

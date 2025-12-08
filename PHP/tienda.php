@@ -1,12 +1,12 @@
 <?php
-// HTML/tienda.php
+
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 session_start();
 
-// ⚠ PARA PROBAR SIN LOGIN (quítalo cuando uses login real)
+
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 1; // usuario de prueba
+    $_SESSION['user_id'] = 1; 
 }
 
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
@@ -81,7 +81,7 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
                         $<?php echo number_format($p['precio'], 2); ?>
                     </div>
                     <div class="marca">
-                        <!-- Puedes crear una columna marca; por ahora fijo -->
+                       
                         Samsung
                     </div>
                     <div class="titulo">

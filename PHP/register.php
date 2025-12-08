@@ -1,22 +1,22 @@
 <?php
-// PHP/register.php – Formulario y lógica de registro
+
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// CONEXIÓN BD walmart
+
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset('utf8mb4');
 
 $errores = [];
 $exito   = "";
 
-// Valores para repoblar formulario
+
 $nombre  = "";
 $correo  = "";
 
-// SI VIENE POST => PROCESA REGISTRO
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $nombre     = trim($_POST['nombre'] ?? '');
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $usuario = $correo;
                 $tipo    = "cliente";
 
-                // GUARDAR SIN HASH (como pediste)
+                
                 $stmt = $conn->prepare("
                     INSERT INTO usuarios (usuario, contrasena, correo, nombre, tipo, creado_en)
                     VALUES (?, ?, ?, ?, ?, NOW())

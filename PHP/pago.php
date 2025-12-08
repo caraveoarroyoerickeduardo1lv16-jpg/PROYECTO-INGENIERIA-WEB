@@ -1,5 +1,5 @@
 <?php
-// pago.php  (está dentro de /PHP/)
+
 session_start();
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -12,22 +12,22 @@ if (!$usuario_id) {
     exit;
 }
 
-/* ¿Venimos ya de un pago confirmado? */
+
 $confirmado = isset($_GET['confirmado']) && $_GET['confirmado'] == '1';
 $pedido_id_confirm = $confirmado ? (int)($_GET['pedido_id'] ?? 0) : 0;
 
 $errores = [];
 $mensaje_exito = "";
 
-/* Para mostrar productos sin stock, si aplica */
+
 $faltantes = [];
 
-/* Si viene horario por POST (desde checkout.php), lo guardamos en sesión */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['horario'])) {
     $_SESSION['horario_envio'] = $_POST['horario'];
 }
 
-/* Si NO es pantalla de confirmación, asegurarnos de que haya dirección y horario */
+
 if (!$confirmado) {
     if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
         header("Location: checkout.php");
@@ -35,9 +35,7 @@ if (!$confirmado) {
     }
 }
 
-/* =========================
-   SI YA ESTÁ CONFIRMADO
-   ========================= */
+
 if ($confirmado) {
     if ($pedido_id_confirm > 0) {
         $mensaje_exito = "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}";
@@ -45,18 +43,16 @@ if ($confirmado) {
         $mensaje_exito = "Tu pago se realizó correctamente.";
     }
 
-    // No necesitamos cargar carrito ni dirección aquí.
+   
 }
 
-/* =========================
-   FLUJO NORMAL (NO CONFIRMADO)
-   ========================= */
+
 if (!$confirmado) {
 
     $direccion_id  = (int)$_SESSION['direccion_id'];
     $horario_envio = $_SESSION['horario_envio'];
 
-    // ---------- Carrito ----------
+    // Carrito 
     $stmt = $conn->prepare("
         SELECT id, total
         FROM carrito
@@ -79,7 +75,7 @@ if (!$confirmado) {
     $costo_envio = 49.00;
     $total_pagar = $subtotal + $costo_envio;
 
-    // ---------- Dirección ----------
+    // Dirección 
     $stmt = $conn->prepare("
         SELECT etiqueta, calle, colonia, ciudad, estado, cp
         FROM direcciones
@@ -95,7 +91,7 @@ if (!$confirmado) {
         exit;
     }
 
-    // ---------- Métodos de pago guardados ----------
+    // Métodos de pago guardados
     $stmt = $conn->prepare("
         SELECT id, alias, marca, ultimos4, mes_exp, anio_exp
         FROM metodos_pago
@@ -110,7 +106,7 @@ if (!$confirmado) {
         $metodos_guardados[] = $row;
     }
 
-    // ---------- Procesar pago ----------
+    //  Procesar pago 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
         $metodo_pago_id = $_POST['metodo_pago_id'] ?? null;
 
@@ -120,7 +116,7 @@ if (!$confirmado) {
 
         $metodo_id_real = null;
 
-        // === Nueva tarjeta ===
+        //  Nueva tarjeta 
         if ($metodo_pago_id === 'nuevo') {
             $alias    = trim($_POST['alias'] ?? '');
             $titular  = trim($_POST['titular'] ?? '');
@@ -179,7 +175,7 @@ if (!$confirmado) {
             }
 
         } else {
-            // === Método guardado ===
+            //  Método guardado 
             $id_mp = (int)$metodo_pago_id;
 
             $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ?");
@@ -193,7 +189,7 @@ if (!$confirmado) {
             }
         }
 
-        // ========== 💥 VERIFICAR STOCK ANTES DEL PEDIDO ==========
+        //  VERIFICAR STOCK ANTES DEL PEDIDo
         if (empty($errores) && $metodo_id_real) {
 
             // 1) Leer productos del carrito con su stock actual
@@ -229,7 +225,7 @@ if (!$confirmado) {
             }
         }
 
-        // === Registrar pedido SOLO si no hay errores y sí hay stock ===
+       
         if (empty($errores) && $metodo_id_real) {
             $estado = 'pagado';
 
@@ -269,7 +265,7 @@ if (!$confirmado) {
                 $pedido_id = $conn->insert_id;
                 $stmt->close();
 
-                // 4) NUEVO: Copiar detalle del carrito a pedido_detalle
+                // 4) Copiar detalle del carrito a pedido_detalle
                 $stmt = $conn->prepare("
                     INSERT INTO pedido_detalle (pedido_id, producto_id, cantidad, precio_unit)
                     SELECT ?, cd.producto_id, cd.cantidad,
@@ -284,7 +280,7 @@ if (!$confirmado) {
                 $stmt->execute();
                 $stmt->close();
 
-                // 5) Vaciar carrito (detalle + carrito)
+                // 5) Vaciar carrito 
                 $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
                 $stmt->bind_param("i", $carrito_id);
                 $stmt->execute();
@@ -319,7 +315,7 @@ if (!$confirmado) {
     <title>Pago - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
     <style>
-        /* Por si acaso el botón se ve como link, lo dejamos forzado aquí */
+        
         a.btn-primary {
             display: inline-block;
             text-decoration: none;
@@ -346,7 +342,7 @@ if (!$confirmado) {
 
     <?php if ($confirmado): ?>
 
-        <!-- ================= PANTALLA DE PAGO EXITOSO ================= -->
+        <!--PANTALLA DE PAGO EXITOSO -->
         <div class="checkout-container">
             <h2>Pago exitoso</h2>
             <p><?= htmlspecialchars($mensaje_exito) ?></p>
@@ -358,7 +354,7 @@ if (!$confirmado) {
 
     <?php else: ?>
 
-        <!-- ================= PANTALLA NORMAL DE PAGO ================= -->
+      
         <?php if (!empty($errores)): ?>
             <div class="alert-error">
                 <ul>
