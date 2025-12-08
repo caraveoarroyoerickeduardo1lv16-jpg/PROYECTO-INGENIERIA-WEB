@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Panel del Empleado - Mi Walmart</title>
+  <link rel="stylesheet" href="style/empleado.css" />
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar__left">
+      <img src="Imagenes/logo.png" alt="Mi Walmart" class="logo">
+      <h1 class="brand">Mi Tienda — Empleado</h1>
+    </div>
+  </header>
+
+  <main class="content">
+    <!-- KPI (Órdenes procesadas) + Reportar incidencia al lado -->
+    <section class="cards">
+      <article class="card kpi kpi-wide">
+        <div class="kpi__label">Órdenes procesadas</div>
+        <div class="kpi__value">28</div>
+      </article>
+
+      <article class="card quick-card">
+        <h2 class="section-title">Reportar incidencia</h2>
+        <p class="muted">Describe el problema para que el supervisor lo revise.</p>
+        <button class="btn primary block">Reportar incidencia</button>
+      </article>
+    </section>
+
+    <!-- Pedidos en curso -->
+    <section class="card table-wrap">
+      <div class="table-head">
+        <h2 class="section-title">Pedidos en curso</h2>
+      </div>
+
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th style="width:220px">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>#P-501</td>
+              <td>Ana López</td>
+              <td>$9,199</td>
+              <td><span class="badge warn">Contra Entrega</span></td>
+              <td class="row-actions">
+                <button class="btn small primary">Despachar pedido</button>
+                <button class="btn small danger">Cancelar pedido</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#P-502</td>
+              <td>Juan Pérez</td>
+              <td>$12,999</td>
+              <td><span class="badge ok">Pagado</span></td>
+              <td class="row-actions">
+                <button class="btn small primary">Despachar pedido</button>
+                <button class="btn small danger">Cancelar pedido</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#P-503</td>
+              <td>María Díaz</td>
+              <td>$7,200</td>
+              <td><span class="badge warn">Contra Entrega</span></td>
+              <td class="row-actions">
+                <button class="btn small primary">Despachar pedido</button>
+                <button class="btn small danger">Cancelar pedido</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#P-504</td>
+              <td>Ricardo Gómez</td>
+              <td>$10,299</td>
+              <td><span class="badge ok">Pagado</span></td>
+              <td class="row-actions">
+                <button class="btn small primary">Despachar pedido</button>
+                <button class="btn small danger">Cancelar pedido</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#P-505</td>
+              <td>Laura Ruiz</td>
+              <td>$14,999</td>
+              <td><span class="badge warn">Contra Entrega</span></td>
+              <td class="row-actions">
+                <button class="btn small primary">Despachar pedido</button>
+                <button class="btn small danger">Cancelar pedido</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  
+  </main>
+</body>
+</html>
+
+
+
+
