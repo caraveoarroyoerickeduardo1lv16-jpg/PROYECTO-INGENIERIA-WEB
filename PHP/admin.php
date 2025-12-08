@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Solo admins pueden entrar aquí
+// Solo admins 
 if (empty($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'administrador') {
     header("Location: login.php");
     exit;
@@ -18,7 +18,7 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'administr
 
 <div class="page">
 
-    <!-- BARRA AZUL SUPERIOR -->
+    
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
@@ -33,7 +33,7 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'administr
 
 
 
-    <!-- CONTENIDO PRINCIPAL -->
+   
     <main class="admin-main">
         <section class="admin-header">
             <h1>Panel de administrador</h1>
@@ -54,7 +54,7 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'administr
                    
             </article>
 
-            <!-- CARD INVENTARIO -->
+           
           <!-- CARD INVENTARIO -->
     <article class="admin-card">
         <div class="card-icon box-icon">📦</div>

@@ -11,21 +11,18 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// ID del producto (por GET)
+// ID del producto 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     header("Location: admin_inventario.php");
     exit;
 }
 
-/* ==========================================================
-   1) SI VIENE POR POST
-      - ELIMINAR PRODUCTO (si se pidió)
-      - O ACTUALIZAR PRODUCTO + IMÁGENES EXTRA
-   ========================================================== */
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* ---------- ELIMINAR PRODUCTO ---------- */
+    /* ELIMINAR PRODUCTO */
     if (isset($_POST['eliminar_producto'])) {
         $idEliminar = (int)$_POST['eliminar_producto'];
 
@@ -36,10 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
-
-            // 2) Borrar reseñas del producto
-            // ⚠️ IMPORTANTE: si tu tabla de reseñas tiene OTRO nombre,
-            // cambia 'resenas' por el nombre correcto (ej. 'producto_resenas')
+ 
            // 2) Borrar reseñas del producto
             $stmt = $conn->prepare("DELETE FROM resena_producto WHERE producto_id = ?");
             $stmt->bind_param("i", $idEliminar);
@@ -70,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    /* ---------- ACTUALIZAR PRODUCTO ---------- */
+    /*  ACTUALIZAR PRODUCTO */
     $nombre     = $_POST['nombre']     ?? '';
     $precio     = $_POST['precio']     ?? '0';
     $stock      = $_POST['stock']      ?? '0';
@@ -92,10 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $stmt->close();
 
-    // IMÁGENES EXTRA (producto_imagen)
+    // IMÁGENES EXTRA 
     $imagenesExtra = $_POST['imagenes_extra'] ?? [];
 
-    // Limpiar: quitar vacíos y espacios
+    // Limpiar quitar vacíos y espacios
     $urlsLimpias = [];
     foreach ($imagenesExtra as $url) {
         $u = trim($url);
@@ -110,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $stmt->close();
 
-    // Insertamos las nuevas (si hay)
+    // Insertamos las nuevas 
     if (count($urlsLimpias) > 0) {
         $orden = 1;
         $stmt = $conn->prepare("
@@ -130,9 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-/* ==========================================================
-   2) SI VIENE POR GET, LEER DATOS ACTUALES
-   ========================================================== */
+
 $stmt = $conn->prepare("
     SELECT id, nombre, precio, stock, imagen_url, marca, categoria
     FROM producto
@@ -175,7 +167,7 @@ $stmt->close();
 
 <div class="page">
 
-    <!-- BARRA AZUL SUPERIOR -->
+   
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
@@ -187,12 +179,12 @@ $stmt->close();
         </div>
     </header>
 
-    <!-- BOTÓN CERRAR SESIÓN -->
+    
     <div class="logout-container">
         <a href="logout.php" class="logout-button">Cerrar sesión</a>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
+   
     <main class="admin-main">
 
         <section class="edit-header">
@@ -262,7 +254,7 @@ $stmt->close();
                     </div>
                 </div>
 
-                <!-- IMAGEN PRINCIPAL -->
+               
                 <div class="edit-row">
                     <div class="edit-col full-width">
                         <label>URL de la imagen principal</label>
@@ -283,7 +275,7 @@ $stmt->close();
                     </div>
                 </div>
 
-                <!-- IMÁGENES EXTRA (N veces) -->
+               
                 <div class="edit-row">
                     <div class="edit-col full-width">
                         <label>Imágenes adicionales del producto</label>
@@ -310,7 +302,7 @@ $stmt->close();
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <!-- Al menos un campo vacío por defecto -->
+                              
                                 <div class="extra-image-row">
                                     <input
                                         type="text"
@@ -337,7 +329,7 @@ $stmt->close();
                 <div class="edit-actions">
                     <button type="submit" class="btn-guardar">Guardar cambios</button>
 
-                    <!-- BOTÓN ROJO ELIMINAR PRODUCTO -->
+                   
                     <button
                         type="button"
                         class="btn-eliminar"
@@ -360,7 +352,7 @@ function confirmarEliminar(id) {
     if (confirm("¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer.")) {
         const form = document.createElement("form");
         form.method = "POST";
-        form.action = ""; // mismo archivo
+        form.action = ""; 
 
         const input = document.createElement("input");
         input.type = "hidden";

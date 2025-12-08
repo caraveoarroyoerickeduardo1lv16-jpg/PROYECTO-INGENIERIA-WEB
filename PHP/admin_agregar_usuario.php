@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = "El rol seleccionado no es válido.";
     }
 
-    // ¿Usuario ya existe?
+    // checar si elUsuario ya existe
     if (empty($errores)) {
         $stmt = $conn->prepare("SELECT id FROM usuarios WHERE usuario = ? OR correo = ? LIMIT 1");
         $stmt->bind_param("ss", $usuario, $correo);
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
 
-        // Regresar al listado
+        
         header("Location: admin_usuarios.php?filtro=todos");
         exit;
     }

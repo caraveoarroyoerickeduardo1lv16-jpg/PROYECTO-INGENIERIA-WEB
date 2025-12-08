@@ -11,9 +11,9 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// ===============================
+
 // 1) PRODUCTO MÁS VENDIDO DEL MES
-// ===============================
+
 
 $inicioMes    = date('Y-m-01');
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
@@ -40,9 +40,9 @@ $resMasVendido = $stmt->get_result();
 $productoMes   = $resMasVendido->fetch_assoc();
 $stmt->close();
 
-// ===============================
+
 // 2) REPORTE DE VENTAS DIARIO
-// ===============================
+
 
 $sqlVentasDiarias = "
     SELECT DATE(creada_en) AS dia,
@@ -56,9 +56,9 @@ $sqlVentasDiarias = "
 $resDiario     = $conn->query($sqlVentasDiarias);
 $ventasDiarias = $resDiario->fetch_all(MYSQLI_ASSOC);
 
-// ===============================
+
 // 3) REPORTE DE VENTAS MENSUAL
-// ===============================
+
 
 $sqlVentasMensuales = "
     SELECT DATE_FORMAT(creada_en, '%Y-%m') AS mes,

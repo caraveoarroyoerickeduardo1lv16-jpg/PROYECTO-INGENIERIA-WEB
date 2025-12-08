@@ -51,15 +51,14 @@ $stmt->close();
     <main class="main">
         <h1>Usuarios</h1>
 
-        <!-- TABS FILTRO -->
-               <!-- TABS FILTRO -->
+      
         <div class="tabs">
             <a href="?filtro=todos" class="tab <?= $filtro==='todos'?'active':'' ?>">Todos</a>
             <a href="?filtro=administrador" class="tab <?= $filtro==='administrador'?'active':'' ?>">Administradores</a>
             <a href="?filtro=operador" class="tab <?= $filtro==='operador'?'active':'' ?>">Operadores</a>
             <a href="?filtro=cliente" class="tab <?= $filtro==='cliente'?'active':'' ?>">Clientes</a>
 
-            <!-- 🔹 NUEVO BOTÓN -->
+           
             <a href="admin_agregar_usuario.php" class="btn-add-user">
                 Agregar usuario
             </a>

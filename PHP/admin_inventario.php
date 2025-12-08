@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Solo admins pueden entrar aquí
+// Solo admins pueden entrar
 if (empty($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'administrador') {
     header("Location: login.php");
     exit;
@@ -20,7 +20,7 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-// Filtro por categoría (opcional)
+// Filtro por categoría 
 $categoriaActual = $_GET['categoria'] ?? '';
 
 if ($categoriaActual !== '') {
@@ -56,7 +56,7 @@ $stmt->close();
 
 <div class="page">
 
-    <!-- BARRA AZUL SUPERIOR (MISMA QUE admin.php) -->
+    
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
@@ -68,12 +68,12 @@ $stmt->close();
         </div>
     </header>
 
-    <!-- BOTÓN CERRAR SESIÓN (EL BLANCO QUE YA TENEMOS) -->
+    
     <div class="logout-container">
         <a href="logout.php" class="logout-button">Cerrar sesión</a>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
+
     <main class="admin-main">
 
         <section class="inventory-header">
@@ -81,7 +81,7 @@ $stmt->close();
             <h2>Inventario</h2>
 
             <div class="inventory-top">
-                <!-- Filtro por categoría -->
+                
                 <form method="get" class="inventory-filter">
                     <label for="categoria">Categoría:</label>
                     <select
@@ -101,7 +101,7 @@ $stmt->close();
                     </select>
                 </form>
 
-                <!-- Botón añadir producto (por ahora placeholder) -->
+                <!-- Botón añadir producto por ahora placeholder -->
                 <a href="admin_nuevo_producto.php" class="btn-add-producto">Añadir producto</a>
 
             </div>

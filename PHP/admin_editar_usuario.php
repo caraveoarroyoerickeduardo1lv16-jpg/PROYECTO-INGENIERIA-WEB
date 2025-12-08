@@ -19,7 +19,7 @@ if ($id <= 0) {
 $errores = [];
 $mensaje_ok = "";
 
-/* ========== PROCESAR POST (GUARDAR CAMBIOS) ========== */
+/* PROCESAR POST GUARDAR CAMBIOS */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario    = trim($_POST['usuario'] ?? '');
     $contrasena = trim($_POST['contrasena'] ?? '');
@@ -45,13 +45,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
 
-        // Después de guardar puedes regresar a la lista:
+        
         header("Location: admin_usuarios.php");
         exit;
     }
 }
 
-/* ========== CARGAR DATOS DEL USUARIO ========== */
+/* CARGAR DATOS DEL USUARIO */
 $stmt = $conn->prepare("
     SELECT id, usuario, contrasena, correo, nombre, tipo, creado_en
     FROM usuarios

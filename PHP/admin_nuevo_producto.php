@@ -11,9 +11,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-/* ==========================================================
-   1) SI VIENE POR POST, INSERTAR PRODUCTO + IMÁGENES EXTRA
-   ========================================================== */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre     = $_POST['nombre']     ?? '';
     $precio     = $_POST['precio']     ?? '0';
@@ -36,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nuevoId = $stmt->insert_id;
     $stmt->close();
 
-    // IMÁGENES EXTRA (producto_imagen)
+    // IMÁGENES EXTRA 
     $imagenesExtra = $_POST['imagenes_extra'] ?? [];
 
     $urlsLimpias = [];
@@ -61,14 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    // Regresar al inventario
+    
     header("Location: admin_inventario.php");
     exit;
 }
 
-/* ==========================================================
-   2) SI VIENE POR GET, MOSTRAR FORM VACÍO
-   ========================================================== */
+
 $producto = [
     'id'         => '',
     'nombre'     => '',
@@ -79,7 +75,7 @@ $producto = [
     'categoria'  => ''
 ];
 
-$imagenesExtra = []; // vacío por defecto
+$imagenesExtra = []; 
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -93,7 +89,7 @@ $imagenesExtra = []; // vacío por defecto
 
 <div class="page">
 
-    <!-- BARRA AZUL SUPERIOR -->
+    
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
@@ -110,7 +106,7 @@ $imagenesExtra = []; // vacío por defecto
         <a href="logout.php" class="logout-button">Cerrar sesión</a>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
+    
     <main class="admin-main">
 
         <section class="edit-header">
@@ -192,7 +188,7 @@ $imagenesExtra = []; // vacío por defecto
                     </div>
                 </div>
 
-                <!-- IMÁGENES EXTRA (N veces) -->
+                <!-- IMÁGENES EXTRA N vece -->
                 <div class="edit-row">
                     <div class="edit-col full-width">
                         <label>Imágenes adicionales del producto</label>
@@ -262,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Eliminar fila al hacer clic en "Eliminar"
+    
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('btn-eliminar-imagen')) {
             const row = e.target.closest('.extra-image-row');

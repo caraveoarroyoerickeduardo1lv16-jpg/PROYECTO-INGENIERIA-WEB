@@ -10,10 +10,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-/*
-Tabla pedidos:
-id | usuario_id | carrito_id | direccion_id | total | estado | metodo_pago_id | horario_envio | creada_en
-*/
+
 
 // Traer todos los pedidos
 $sql = "SELECT id, total, estado, creada_en FROM pedidos ORDER BY creada_en DESC";

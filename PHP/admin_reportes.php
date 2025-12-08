@@ -11,9 +11,8 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// === ESTADÍSTICAS BÁSICAS ===
 
-// Total de ventas (suma de total en pedidos)
+// Total de ventas suma de total en pedidos
 $res = $conn->query("SELECT IFNULL(SUM(total),0) AS total_ventas FROM pedidos");
 $ventasTotal = $res->fetch_assoc()['total_ventas'] ?? 0;
 
@@ -52,7 +51,7 @@ $clientesTotal = $res->fetch_assoc()['num_clientes'] ?? 0;
     <!-- TARJETAS DE RESUMEN -->
     <section class="reports-cards">
 
-        <!-- VENTAS (ahora con botón Ver más) -->
+        <!-- VENTAS  -->
         <article class="report-card">
             <div class="report-header">Ventas</div>
             <div class="report-icon">📈</div>
@@ -62,7 +61,7 @@ $clientesTotal = $res->fetch_assoc()['num_clientes'] ?? 0;
             <a href="admin_ventas.php" class="btn-more">Ver más</a>
         </article>
 
-        <!-- PEDIDOS (con botón Ver más) -->
+        <!-- PEDIDOS  -->
         <article class="report-card">
             <div class="report-header">Pedidos</div>
             <div class="report-icon">📦</div>
@@ -72,7 +71,7 @@ $clientesTotal = $res->fetch_assoc()['num_clientes'] ?? 0;
             <a href="admin_pedidos.php" class="btn-more">Ver más</a>
         </article>
 
-        <!-- CLIENTES (con botón Ver más) -->
+        <!-- CLIENTES  -->
         <article class="report-card">
             <div class="report-header">Clientes</div>
             <div class="report-icon">👤</div>
