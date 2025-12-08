@@ -11,7 +11,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// ID del producto
+// ID del producto (por GET)
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     header("Location: admin_inventario.php");
@@ -30,13 +30,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $idEliminar = (int)$_POST['eliminar_producto'];
 
         if ($idEliminar > 0) {
-            // Borrar imágenes extra
+
+            // 1) Borrar imágenes extra
             $stmt = $conn->prepare("DELETE FROM producto_imagen WHERE producto_id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
 
-            // Borrar producto principal
+            // 2) Borrar reseñas del producto
+            // ⚠️ IMPORTANTE: si tu tabla de reseñas tiene OTRO nombre,
+            // cambia 'resenas' por el nombre correcto (ej. 'producto_resenas')
+           // 2) Borrar reseñas del producto
+            $stmt = $conn->prepare("DELETE FROM resena_producto WHERE producto_id = ?");
+            $stmt->bind_param("i", $idEliminar);
+            $stmt->execute();
+            $stmt->close();
+
+            // 3) Borrar detalles de pedidos que usan este producto
+            $stmt = $conn->prepare("DELETE FROM pedido_detalle WHERE producto_id = ?");
+            $stmt->bind_param("i", $idEliminar);
+            $stmt->execute();
+            $stmt->close();
+
+            // 4) Borrar detalles de carritos que usan este producto
+            $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE producto_id = ?");
+            $stmt->bind_param("i", $idEliminar);
+            $stmt->execute();
+            $stmt->close();
+
+            // 5) Borrar producto principal
             $stmt = $conn->prepare("DELETE FROM producto WHERE id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
@@ -71,7 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
 
     // IMÁGENES EXTRA (producto_imagen)
-    // Recibimos un arreglo de URLs: imagenes_extra[]
     $imagenesExtra = $_POST['imagenes_extra'] ?? [];
 
     // Limpiar: quitar vacíos y espacios
@@ -334,6 +355,7 @@ $stmt->close();
 </div>
 
 <script>
+// Confirmar eliminación y mandar POST
 function confirmarEliminar(id) {
     if (confirm("¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer.")) {
         const form = document.createElement("form");
@@ -377,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Eliminar fila al hacer clic en "Eliminar"
+    // Eliminar fila al hacer clic en "Eliminar" (de una imagen extra)
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('btn-eliminar-imagen')) {
             const row = e.target.closest('.extra-image-row');
@@ -391,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
