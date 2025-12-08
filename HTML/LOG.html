@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Iniciar sesión</title>
+  <link rel="stylesheet" href="style/login.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <img src="Imagenes/logo.png" alt="Mi Tienda" class="logo">
+    
+  </header>
+
+  <main class="auth-wrap">
+    <section class="card">
+      <h2>Bienvenido</h2>
+      <p class="sub">Ingresa tus credenciales para continuar</p>
+
+      <form action="usu.php" method="post" class="form">
+        <label class="label" for="usuario">Usuario</label>
+        <input class="input" type="text" id="usuario" name="usuario" required>
+
+        <label class="label" for="contrasena">Contraseña</label>
+        <input class="input" type="password" id="contrasena" name="contraseña" required>
+
+        <button class="btn primary" type="submit">Iniciar sesión</button>
+
+        <div class="extras">
+          <a href="recuperar.html">¿Olvidaste tu contraseña?</a>
+          <span class="dot">•</span>
+          <a href="registro.html">Crear cuenta</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  
+
+</body>
+</html>
