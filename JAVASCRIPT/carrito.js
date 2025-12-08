@@ -1,6 +1,4 @@
-// =========================
-// FUNCION PARA ACTUALIZAR EL CARRITO (MISMO PHP QUE EL INDEX)
-// =========================
+
 async function actualizarCarrito(productoId, accion) {
     const formData = new FormData();
     formData.append("producto_id", productoId);
@@ -30,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const subtotalP = document.querySelector(".subtotal");
         if (subtotalP) {
-            // Texto "Subtotal (X artículos)"
+            // Texto "Subtotal X artículos"
             const textNode = Array.from(subtotalP.childNodes)
                 .find(n => n.nodeType === Node.TEXT_NODE);
             if (textNode) {
@@ -48,9 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // =========================
+
     // MANEJO DE ITEMS DEL CARRITO
-    // =========================
+    
     const items = document.querySelectorAll(".item");
     const contProductos = document.querySelector(".productos");
 
@@ -67,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const productoId = parseInt(btnMas.dataset.id, 10);
 
-        // Obtiene el precio unitario a partir del subtotal actual
+        
         function obtenerPrecioUnitario() {
             const cantActual = parseInt(spanCantidad.textContent, 10);
             const textoPrecio = divPrecio.textContent.replace("$", "").replace(/,/g, "");
@@ -76,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return subtotalActual / cantActual;
         }
 
-        // --- BOTÓN + ---
+        //  BOTÓN + 
         btnMas.addEventListener("click", async () => {
             try {
                 const data = await actualizarCarrito(productoId, "add");
@@ -100,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // --- BOTÓN - ---
+        // BOTÓN -
         btnMenos.addEventListener("click", async () => {
             try {
                 const data = await actualizarCarrito(productoId, "remove");
@@ -112,7 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const precioUnit = obtenerPrecioUnitario();
 
                 if (data.cantidad <= 0) {
-                    // Se eliminó del carrito: removemos el item del DOM
                     item.remove();
                 } else {
                     spanCantidad.textContent = data.cantidad;
@@ -134,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // --- BOTÓN ELIMINAR ---
+        // BOTÓN ELIMINAR
         btnEliminar.addEventListener("click", async () => {
             if (!confirm("¿Eliminar este producto del carrito?")) return;
 

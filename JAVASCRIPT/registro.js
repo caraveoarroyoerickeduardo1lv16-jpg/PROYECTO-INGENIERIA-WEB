@@ -1,4 +1,4 @@
-// JAVASCRIPT/registro.js – Maneja el registro por AJAX
+
 
 document.addEventListener("DOMContentLoaded", () => {
 

@@ -1,4 +1,4 @@
-//Mostrar mensaje de error si viene ?error=1 en la URL
+
 document.addEventListener("DOMContentLoaded", () => {
 
     const params   = new URLSearchParams(window.location.search);

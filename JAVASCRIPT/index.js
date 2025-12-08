@@ -1,10 +1,9 @@
-// =========================
-// FUNCIÓN PARA ACTUALIZAR CARRITO EN PHP
-// =========================
+
+// FUNCIÓN PARA ACTUALIZAR CARRITO
 async function actualizarCarrito(productoId, accion) {
     const formData = new FormData();
     formData.append("producto_id", productoId);
-    formData.append("accion", accion);  // "add" o "remove"
+    formData.append("accion", accion);  
 
     const response = await fetch("../PHP/carrito_actualizar.php", {
         method: "POST",
@@ -21,9 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Saber si el usuario está logueado (lo manda PHP en el <body>)
     const estaLogueado = document.body.dataset.logged === "1";
 
-    // =========================
-    // MANEJO DE TARJETAS Y CARRITO
-    // =========================
     const cards          = document.querySelectorAll(".producto-card");
     const cartTotalItems = document.getElementById("cartTotalItems");
     const cartTotalPrice = document.getElementById("cartTotalPrice");
@@ -46,24 +42,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let cantidadLocal = 0;
 
-        // =========================
-        // LÓGICA DE CARRITO (solo si existen los elementos)
-        // =========================
+    
         if (btnAgregar && controlCant && btnMas && btnMenos && spanCantidad) {
 
             cantidadLocal = parseInt(spanCantidad.textContent, 10) || 0;
 
-            // Si ya hay cantidad > 0 (venimos del carrito), mostrar control
+            // Si ya hay cantidad > 0 venimos del carrito, mostrar control
             if (cantidadLocal > 0) {
                 btnAgregar.style.display = "none";
                 controlCant.classList.remove("oculto");
             }
 
-            // ----- CLIC EN "+ AGREGAR" -----
+            
             btnAgregar.addEventListener("click", async (e) => {
-                e.stopPropagation(); // que no dispare el click de la tarjeta
+                e.stopPropagation(); 
 
-                // Si NO está logueado, mostrar advertencia y NO redirigir
+                // Si no hay logueado, mostrar advertencia y NO redirigir
                 if (!estaLogueado) {
                     alert("Por favor inicia sesión para agregar productos al carrito.");
                     return;
@@ -85,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 actualizarHeader(data.total_items, data.total_carrito);
             });
 
-            // ----- CLIC EN "+" -----
+            // CLIC EN +
             btnMas.addEventListener("click", async (e) => {
                 e.stopPropagation();
 
@@ -107,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 actualizarHeader(data.total_items, data.total_carrito);
             });
 
-            // ----- CLIC EN "-" -----
+            // CLIC EN -
             btnMenos.addEventListener("click", async (e) => {
                 e.stopPropagation();
 
@@ -139,9 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // =========================
     // CARRUSEL DE PRODUCTOS
-    // =========================
+
     const viewport = document.querySelector(".carrusel-viewport");
     const pista    = document.querySelector(".carrusel-pista");
     const btnIzq   = document.querySelector(".btn-carrusel-izq");
@@ -150,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (viewport && pista && btnIzq && btnDer) {
 
         function getDesplazamiento() {
-            return viewport.clientWidth / 6; // 6 tarjetas visibles
+            return viewport.clientWidth / 6; 
         }
 
         btnDer.addEventListener("click", () => {
@@ -162,9 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // =========================
-    // BUSCADOR CON SUGERENCIAS
-    // =========================
+    
     const searchInput    = document.getElementById("searchInput");
     const suggestionsBox = document.getElementById("searchSuggestions");
 
@@ -223,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 div.appendChild(spanTxt);
                 div.appendChild(spanIcon);
 
-                // Al hacer clic en la sugerencia, vamos a index.php con ese producto
+                
                 div.addEventListener("click", () => {
                     const id = item.id;
                     if (id) {

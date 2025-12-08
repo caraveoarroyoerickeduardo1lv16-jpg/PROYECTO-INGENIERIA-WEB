@@ -1,4 +1,4 @@
-// JAVASCRIPT/tienda.js
+
 
 async function actualizarCarrito(productoId, accion) {
     const formData = new FormData();

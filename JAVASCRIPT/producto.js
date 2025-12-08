@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!card) return;
 
-    const productoId = 1; // ← ID REAL del producto en tu base de datos
+    const productoId = 1;
 
     const btnAgregar   = card.querySelector(".btn-agregar");
     const controlCantidad = card.querySelector(".cantidad-control");

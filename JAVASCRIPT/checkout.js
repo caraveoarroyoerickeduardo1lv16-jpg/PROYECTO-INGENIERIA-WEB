@@ -1,6 +1,3 @@
-// checkout.js
-
-// Mostrar/ocultar secciones
 function mostrarPaso(num) {
     ['paso1', 'paso2', 'paso3'].forEach(id => {
         const el = document.getElementById(id);
@@ -11,15 +8,13 @@ function mostrarPaso(num) {
 }
 
 // Filtra los horarios según el día seleccionado (0=hoy,1=mañana,2=pasado)
-// stepId: 1 ó 3  (para aplicar en la seccion correspondiente)
 function aplicarFiltroSlots(stepId, selectedDay) {
     const cont = document.getElementById('paso' + stepId);
     if (!cont) return;
 
     const now = new Date();
     const currentHour = now.getHours();
-    const limitHour = currentHour + 2; // 2 horas de colchón
-
+    const limitHour = currentHour + 2; // 2 horas
     const slots = cont.querySelectorAll('.slot');
     const statusHoy = cont.querySelector('.status-hoy');
 
@@ -27,7 +22,7 @@ function aplicarFiltroSlots(stepId, selectedDay) {
     let firstRadio = null;
 
     slots.forEach(slot => {
-        const startHour = parseInt(slot.dataset.hora, 10); // 9..20
+        const startHour = parseInt(slot.dataset.hora, 10); 
         let show = true;
 
         if (selectedDay === 0) {
@@ -50,7 +45,7 @@ function aplicarFiltroSlots(stepId, selectedDay) {
         }
     });
 
-    // Mensaje "Hoy agotado"
+    // Mensaje Hoy agotado
     if (statusHoy) {
         if (selectedDay === 0 && visibles === 0) {
             statusHoy.textContent = 'Hoy: Agotado';
@@ -60,14 +55,14 @@ function aplicarFiltroSlots(stepId, selectedDay) {
         }
     }
 
-    // Seleccionar primer radio visible (solo en paso 3)
+    
     if (stepId === 3 && firstRadio) {
         firstRadio.checked = true;
         actualizarSeleccionHorario();
     }
 }
 
-// Actualiza resumen (solo paso 3)
+
 function actualizarSeleccionHorario() {
     const resumen = document.getElementById('resumenHorario');
     if (!resumen) return;
@@ -91,7 +86,7 @@ function actualizarSeleccionHorario() {
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('formCheckout');
 
-    // -------- Paso 1 -> Paso 2 ----------
+
     const btnAgregarDireccion = document.getElementById('btnAgregarDireccion');
     if (btnAgregarDireccion) {
         btnAgregarDireccion.addEventListener('click', (e) => {
@@ -114,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // -------- Tabs de día (paso 1 y paso 3) ----------
+    // Tabs de día 
     const dayButtons = document.querySelectorAll('.day-button');
     const selectedDayByStep = { 1: 0, 3: 0 };
 
@@ -125,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             selectedDayByStep[step] = dia;
 
-            // Quitar 'active' solo dentro del paso correspondiente
+        
             const cont = document.getElementById('paso' + step);
             cont.querySelectorAll('.day-button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -134,13 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // -------- Radios de horario (paso 3) ----------
+    // Radios de horario 
     const radiosHorario = document.querySelectorAll('#paso3 input[name="horario"]');
     radiosHorario.forEach(r => r.addEventListener('change', actualizarSeleccionHorario));
 
-    // Filtro inicial
-    aplicarFiltroSlots(1, selectedDayByStep[1]); // paso 1 (vista previa)
-    aplicarFiltroSlots(3, selectedDayByStep[3]); // paso 3 (selección real)
+    
+    aplicarFiltroSlots(1, selectedDayByStep[1]); 
+    aplicarFiltroSlots(3, selectedDayByStep[3]); 
     actualizarSeleccionHorario();
 });
 
