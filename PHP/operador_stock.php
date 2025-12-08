@@ -11,11 +11,11 @@ if (!isset($_SESSION["user_id"]) || ($_SESSION["user_tipo"] ?? '') !== "operador
     exit;
 }
 
-/* ========== 0) MENSAJE DE ERROR DE STOCK (SI LO HUBO) ========== */
+/*  MENSAJE DE ERROR DE STOCK  */
 $stockError = $_SESSION['stock_error'] ?? '';
 unset($_SESSION['stock_error']);
 
-/* ========== 1) ACTUALIZAR STOCK (POST) ========== */
+/* 1) ACTUALIZAR STOCK */
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['producto_id'], $_POST['accion'], $_POST['cantidad'])
@@ -54,7 +54,7 @@ if (
 
             $stockActual = $res ? (int)$res['stock'] : 0;
 
-            // 2) Si intenta quitar más de lo que hay → NO permitir
+            // 2) Si intenta quitar más de lo que hay  NO permitir
             if ($cantidad > $stockActual) {
                 $_SESSION['stock_error'] = "No puedes quitar más unidades de las que hay en stock (stock actual: {$stockActual}).";
 
@@ -78,14 +78,14 @@ if (
     exit;
 }
 
-/* ========== 2) LEER CATEGORÍAS ========== */
+/* 2) LEER CATEGORÍAS  */
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto WHERE TRIM(categoria) <> '' ORDER BY categoria");
 while ($rowCat = $resCat->fetch_assoc()) {
     $categorias[] = $rowCat['categoria'];
 }
 
-/* ========== 3) FILTRO POR CATEGORÍA + PRODUCTOS ========== */
+/*3) FILTRO POR CATEGORÍA  */
 $categoriaFiltro = $_GET['categoria'] ?? 'todas';
 
 if ($categoriaFiltro === 'todas' || $categoriaFiltro === '') {
@@ -119,7 +119,7 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
 
 <div class="page">
 
-    <!-- BARRA AZUL SUPERIOR -->
+
     <header class="topbar">
         <div class="topbar-inner">
             <a href="operador.php" class="logo-link">
@@ -131,7 +131,7 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
         </div>
     </header>
 
-    <!-- CONTENIDO PRINCIPAL -->
+
     <main class="main">
         <h1>Panel de operador</h1>
         <h2 class="subtitle">Existencias</h2>

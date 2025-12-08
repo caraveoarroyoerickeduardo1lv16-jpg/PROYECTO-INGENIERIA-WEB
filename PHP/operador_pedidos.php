@@ -11,7 +11,7 @@ if (!isset($_SESSION["user_id"]) || ($_SESSION["user_tipo"] ?? '') !== "operador
     exit;
 }
 
-/* ========== 1) MANEJAR CAMBIO DE ESTATUS (POST) ========== */
+/* 1) MANEJAR CAMBIO DE ESTATUS  */
 $estatusPosibles = ['en preparación', 'en ruta', 'entregado'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pedido_id'], $_POST['nuevo_estatus'])) {
@@ -26,12 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pedido_id'], $_POST['
         $stmt->close();
     }
 
-    // Redirigimos para evitar reenvío de formulario
+    
     header("Location: operador_pedidos.php?filtro=" . urlencode($filtro_post));
     exit;
 }
 
-/* ========== 2) MOSTRAR LISTA SEGÚN FILTRO ========== */
+/* 2) MOSTRAR LISTA SEGÚN FILTRO  */
 
 // FILTRO
 $filtro = $_GET["filtro"] ?? "preparacion";

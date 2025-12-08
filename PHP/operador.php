@@ -19,7 +19,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'operador
 
 <div class="page">
 
-    <!-- BARRA AZUL SUPERIOR -->
+    
     <header class="topbar">
         <div class="topbar-inner">
             <a href="operador.php" class="logo-link">
@@ -35,11 +35,11 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'operador
         </div>
     </header>
 
-    <!-- CONTENIDO PRINCIPAL -->
+   
     <main class="op-main">
         <h1>Panel del operador</h1>
 
-        <!-- TABS (Pedidos / Stock) -->
+        <
        
         <!-- TARJETAS -->
         <section class="op-cards">

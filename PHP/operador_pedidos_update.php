@@ -36,6 +36,5 @@ $stmt->bind_param("si", $nuevoEstatus, $id);
 $stmt->execute();
 $stmt->close();
 
-// Volver a lista
 header("Location: operador_pedidos.php");
 exit;

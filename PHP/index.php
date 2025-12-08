@@ -1,5 +1,5 @@
 <?php
-// PHP/index.php – Home principal con productos dinámicos, carrito, categorías y buscador
+
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 session_start();
@@ -11,15 +11,12 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-/* ==========================================================
-   0) SI ES INVITADO: BORRAR CARRITO SOLO EN ENTRADAS "NUEVAS"
-   (recarga directa o llegada desde otra página que no sea carrito.php)
-   ========================================================== */
+
 
 $referrer = $_SERVER['HTTP_REFERER'] ?? '';
 
 if (!$estaLogueado) {
-    // Si NO vienes de carrito.php, consideramos entrada nueva o recarga
+    
     if ($referrer === '' || strpos($referrer, 'carrito.php') === false) {
 
         // Buscar carrito temporal de ESTA sesión
@@ -54,9 +51,7 @@ if (!$estaLogueado) {
     }
 }
 
-/* ==========================================================
-   1) LEER CATEGORÍAS (para el menú)
-   ========================================================== */
+/* 1) LEER CATEGORÍAS para el menú*/
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -65,15 +60,13 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-/* ==========================================================
-   2) LEER PRODUCTOS (FILTRADOS POR PRODUCTO O CATEGORÍA)
-   ========================================================== */
+/* 2) LEER PRODUCTOS (FILTRADOS POR PRODUCTO O CATEGORÍA) */
 
 $categoriaActual = trim($_GET['categoria'] ?? '');
 $productoId      = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
 if ($productoId > 0) {
-    // SOLO UN PRODUCTO (cuando vienes de la barra de búsqueda)
+    
     $stmt = $conn->prepare("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
@@ -106,9 +99,7 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
 }
 
-/* ==========================================================
-   3) LEER CARRITO ACTUAL (por usuario o por sesión)
-   ========================================================== */
+
 
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
@@ -132,9 +123,7 @@ $carrito_id    = $carrito['id']   ?? null;
 $total_carrito = (float)($carrito['total'] ?? 0.0);
 $total_items   = 0;
 
-/* ==========================================================
-   4) LEER CANTIDAD POR PRODUCTO DEL CARRITO
-   ========================================================== */
+/* 4) LEER CANTIDAD POR PRODUCTO DEL CARRITO */
 
 $cantidadesPorProducto = [];
 
@@ -157,9 +146,7 @@ if ($carrito_id) {
     $stmt->close();
 }
 
-/* ==========================================================
-   5) TÍTULO DE LA SECCIÓN
-   ========================================================== */
+
 
 if ($productoId > 0 && count($productos) === 1) {
     $tituloSeccion = $productos[0]['nombre'];
@@ -180,7 +167,7 @@ if ($productoId > 0 && count($productos) === 1) {
 </head>
 <body data-logged="<?php echo $estaLogueado ? '1' : '0'; ?>">
 
-<!---------------- HEADER ---------------->
+<!-- HEADER -->
 <header class="header">
     <div class="header-left">
         <div class="logo">
@@ -229,14 +216,13 @@ if ($productoId > 0 && count($productos) === 1) {
             $<?php echo number_format($total_carrito, 2); ?>
         </span>
 
-        <!-- Icono de carrito que lleva al carrito -->
+        
         <a href="../PHP/carrito.php" class="header-cart-link">
             <span class="header-cart">🛒</span>
         </a>
     </div>
 </header>
 
-<!---------------- MENU ---------------->
 <nav class="nav-categorias">
     <a href="index.php" class="nav-item <?php echo ($categoriaActual === '' && $productoId === 0) ? 'activo' : ''; ?>">
         Inicio
@@ -259,7 +245,6 @@ if ($productoId > 0 && count($productos) === 1) {
 </nav>
 
 
-<!---------------- CONTENIDO ---------------->
 <main class="main-container">
     <h2 class="titulo-seccion">
         <?php echo htmlspecialchars($tituloSeccion); ?>
@@ -280,7 +265,7 @@ if ($productoId > 0 && count($productos) === 1) {
                              data-id="<?php echo $pid; ?>"
                              data-precio="<?php echo $p['precio']; ?>">
 
-                        <!-- ZONA CLICABLE: enlace al detalle -->
+                        
                         <a href="producto_detalle.php?id=<?php echo $pid; ?>" class="producto-link">
                             <div class="badge-rebaja">Rebaja</div>
 
@@ -304,7 +289,7 @@ if ($productoId > 0 && count($productos) === 1) {
                             </div>
                         </a>
 
-                        <!-- ZONA DE BOTONES (AGREGAR / CANTIDAD) -->
+                        <!-- BOTONES AGREGAR / CANTIDAD -->
                         <div class="producto-actions">
                             <button
                                 class="btn-agregar"
@@ -332,7 +317,7 @@ if ($productoId > 0 && count($productos) === 1) {
 
 </main>
 
-<!-- ======================= FOOTER AGREGADO ======================= -->
+<!-- FOOTER AGREGADO  -->
 <footer class="footer">
     <div class="footer-content">
         <h3>Mi Tiendita</h3>
@@ -340,7 +325,7 @@ if ($productoId > 0 && count($productos) === 1) {
         <p>Correo de contacto: <strong>soporte@mitiendita.com</strong></p>
     </div>
 </footer>
-<!-- =============================================================== -->
+
 
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
