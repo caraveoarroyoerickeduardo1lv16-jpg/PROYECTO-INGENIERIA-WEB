@@ -1,5 +1,5 @@
 <?php
-// carrito_actualizar.php – Manejo del carrito (invitado + logueado)
+// Manejo del carrito invitado o logueado
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 header('Content-Type: application/json; charset=utf-8');
@@ -10,7 +10,7 @@ try {
     $usuario_id = $_SESSION['user_id'] ?? null;
 
     $producto_id = (int)($_POST['producto_id'] ?? 0);
-    $accion      = $_POST['accion'] ?? ''; // add | remove | delete
+    $accion      = $_POST['accion'] ?? ''; 
 
     if ($producto_id <= 0 || !in_array($accion, ['add', 'remove', 'delete'], true)) {
         echo json_encode(["success" => false, "message" => "Datos inválidos."]);
@@ -20,7 +20,7 @@ try {
     $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
     $conn->set_charset("utf8mb4");
 
-    /* 1) Buscar carrito (por usuario si está logueado, o por session_id si es invitado) */
+    /* 1) Buscar carrito por usuario si está logueado, o por session_id si es invitado */
     if ($usuario_id) {
         $stmt = $conn->prepare("SELECT id FROM carrito WHERE usuario_id = ? LIMIT 1");
         $stmt->bind_param("i", $usuario_id);
@@ -92,7 +92,7 @@ try {
         $cantidad = 0;
     }
 
-    /* 5) Actualizar / borrar detalle */
+    /* 5) Actualizar y borrar detalle */
     if ($cantidad <= 0) {
         $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ? AND producto_id = ?");
         $stmt->bind_param("ii", $carrito_id, $producto_id);
@@ -142,7 +142,7 @@ try {
     exit;
 
 } catch (Throwable $e) {
-    // Si algo truena, devolvemos error en JSON (para que no rompa response.json())
+    
     echo json_encode([
         "success" => false,
         "message" => "Error en el servidor: " . $e->getMessage()

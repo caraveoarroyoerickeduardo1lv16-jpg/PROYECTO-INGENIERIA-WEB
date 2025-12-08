@@ -1,5 +1,5 @@
 <?php
-// PHP/buscar_productos.php – Devuelve sugerencias de productos en JSON
+
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 ini_set('display_errors', 1);

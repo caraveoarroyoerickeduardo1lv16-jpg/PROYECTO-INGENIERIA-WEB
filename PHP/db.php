@@ -1,9 +1,9 @@
 <?php
 
 $host = "localhost";
-$db   = "walmart"; // <-- CAMBIA ESTO AL NOMBRE DE TU BD
+$db   = "walmart"; 
 $user = "walmartuser";
-$pass = "1234"; // si tienes contraseña en MySQL cámbiala aquí
+$pass = "1234"; 
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [

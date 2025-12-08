@@ -1,5 +1,5 @@
 <?php
-// HTML/carrito.php – Carrito con diseño tipo Walmart
+
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 session_start();
@@ -11,9 +11,7 @@ $estaLogueado = !empty($_SESSION['user_id']);
 $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 $sessionId    = session_id();
 
-/* ============================
-   1) Obtener carrito actual
-   ============================ */
+/* 1) Obtener carrito actual */
 if ($estaLogueado) {
     // carrito del usuario
     $stmt = $conn->prepare("
@@ -42,9 +40,7 @@ $stmt->close();
 $carrito_id    = $carrito['id'] ?? null;
 $total_carrito = (float)($carrito['total'] ?? 0);
 
-/* ============================
-   2) Obtener detalle de productos
-   ============================ */
+/* 2) Obtener detalle de productos */
 $productos   = [];
 $total_items = 0;
 

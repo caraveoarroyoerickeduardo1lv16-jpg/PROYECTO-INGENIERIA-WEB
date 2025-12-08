@@ -1,5 +1,5 @@
 <?php
-// checkout.php
+
 session_start();
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -21,17 +21,17 @@ $paso   = isset($_GET['paso']) ? (int)$_GET['paso'] : 1;
 $error  = '';
 $direccionesUsuario = [];
 
-/* ================== PETICIONES POST ================== */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* ---- usar dirección existente ---- */
+    /* usar dirección existente  */
     if (isset($_POST['usar_direccion'])) {
         $_SESSION['direccion_id'] = (int)$_POST['usar_direccion'];
         header("Location: checkout.php?paso=3");
         exit;
     }
 
-    /* ---- guardar nueva dirección ---- */
+    /*  guardar nueva dirección  */
     if (isset($_POST['guardar_direccion'])) {
         $etiqueta = $_POST['etiqueta'] ?? 'Casa';
         $calle    = trim($_POST['calle'] ?? '');
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($usuario_id && $calle !== '' && $colonia !== '' && $ciudad !== '' && $estado !== '' && $cp !== '') {
 
-            // Validación de CP: exactamente 5 dígitos numéricos
+            // Validación de CP
             if (!preg_match('/^\d{5}$/', $cp)) {
                 $error = "El código postal debe tener exactamente 5 dígitos numéricos.";
                 $paso  = 2;
@@ -64,11 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    /* OJO: el botón Continuar al pago ya NO se procesa aquí,
-       porque lo mandamos directamente a pago.php */
+    
 }
 
-/* ================== DIRECCIONES GUARDADAS ================== */
+/*  DIRECCIONES GUARDADAS */
 if ($usuario_id) {
     $stmt = $conn->prepare("
         SELECT id, etiqueta, calle, colonia, ciudad, estado, cp
@@ -120,10 +119,10 @@ $datos = [
         <div style="color:red; margin-bottom:10px;"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <!-- Un solo form -->
+    
     <form method="post" id="formCheckout">
 
-        <!-- =============== PASO 1 =============== -->
+     
         <section id="paso1" class="checkout-container <?= $paso === 1 ? '' : 'hidden' ?>">
             <div class="days-tabs">
                 <button type="button" class="day-button active" data-dia="0" data-step="1">
@@ -161,7 +160,7 @@ $datos = [
             </div>
         </section>
 
-        <!-- =============== PASO 2: DIRECCIÓN =============== -->
+        <!--DIRECCIÓN -->
         <section id="paso2" class="checkout-container <?= $paso === 2 ? '' : 'hidden' ?>">
             <h2>Agregar dirección</h2>
 
@@ -259,7 +258,7 @@ $datos = [
             </div>
         </section>
 
-        <!-- =============== PASO 3: HORARIO =============== -->
+        <!--  HORARIO  -->
         <section id="paso3" class="checkout-container <?= $paso === 3 ? '' : 'hidden' ?>">
             <header class="step-header">
                 <button type="button" class="back-icon" id="btnVolverPaso2">←</button>
