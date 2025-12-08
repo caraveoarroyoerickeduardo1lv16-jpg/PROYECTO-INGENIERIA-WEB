@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Panel de Administración - Mi Walmart</title>
+  <link rel="stylesheet" href="style/admin.css" />
+</head>
+<body>
+
+
+  <header class="topbar">
+    <div class="topbar__left">
+      <img src="Imagenes/logo.png" alt="Mi Walmart" class="logo">
+      <h1 class="brand">Mi Tienda — Admin</h1>
+    </div>
+  </header>
+
+  <main class="content">
+ 
+    <section class="cards">
+      <article class="card kpi">
+        <div class="kpi__label">Ventas de hoy</div>
+        <div class="kpi__value">$ 85,420</div>
+      </article>
+      <article class="card kpi">
+        <div class="kpi__label">Órdenes</div>
+        <div class="kpi__value">1,248</div>
+      </article>
+      <article class="card kpi">
+        <div class="kpi__label">Productos activos</div>
+        <div class="kpi__value">12,531</div>
+      </article>
+    </section>
+
+  
+    <section class="actions card">
+    
+      <div class="actions__row">
+        <button class="btn primary">+ Nuevo producto</button>
+      </div>
+    </section>
+
+
+    <section class="card table-wrap">
+      <div class="table-head">
+        <h2 class="section-title">Productos recientes</h2>
+        <div class="table-tools">
+          <input type="search" class="input search" placeholder="Buscar productos…">
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Estado</th>
+              <th style="width:120px">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>#10021</td>
+              <td>Televisor 50” 4K</td>
+              <td>Electrónica</td>
+              <td>$8,999</td>
+              <td>36</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#" class="link">Editar</a>
+                <button class="link danger">Eliminar</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#10022</td>
+              <td>iPhone 5G</td>
+              <td>Electrónica</td>
+              <td>$12,499</td>
+              <td>0</td>
+              <td><span class="badge warn">Agotado</span></td>
+              <td class="row-actions">
+                <a href="#" class="link">Editar</a>
+                <button class="link danger">Eliminar</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#10023</td>
+              <td>Lavadora Ultra</td>
+              <td>Hogar</td>
+              <td>$7,200</td>
+              <td>12</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#" class="link">Editar</a>
+                <button class="link danger">Eliminar</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#10024</td>
+              <td>Consola X-Next</td>
+              <td>Juguetes</td>
+              <td>$9,499</td>
+              <td>5</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#" class="link">Editar</a>
+                <button class="link danger">Eliminar</button>
+              </td>
+            </tr>
+            <tr>
+              <td>#10025</td>
+              <td>Laptop 15” Pro</td>
+              <td>Electrónica</td>
+              <td>$14,999</td>
+              <td>24</td>
+              <td><span class="badge ok">Activo</span></td>
+              <td class="row-actions">
+                <a href="#" class="link">Editar</a>
+                <button class="link danger">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-foot">
+        <div class="pagination">
+          <button class="btn ghost" disabled>«</button>
+          <button class="btn ghost active">1</button>
+          <button class="btn ghost">2</button>
+          <button class="btn ghost">3</button>
+          <button class="btn ghost">»</button>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="grid-2">
+      <article class="card">
+        <h3 class="section-title">Bajo inventario</h3>
+        <ul class="list warn-list">
+          <li>Router AX — <strong>3 uds</strong></li>
+          <li>Consola X-Next — <strong>5 uds</strong></li>
+          <li>Aspiradora Pro — <strong>2 uds</strong></li>
+        </ul>
+        <button class="btn primary">Reabastecer</button>
+      </article>
+    </section>
+
+    <footer class="foot">
+      <small>© 2025 Mi Walmart — Panel administrador</small>
+    </footer>
+  </main>
+</body>
+</html>
+
+
+
