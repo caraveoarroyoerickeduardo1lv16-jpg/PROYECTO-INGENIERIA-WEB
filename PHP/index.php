@@ -1,6 +1,5 @@
+
 <?php
-
-
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 session_start();
 
@@ -11,15 +10,10 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-
-
 $referrer = $_SERVER['HTTP_REFERER'] ?? '';
 
 if (!$estaLogueado) {
-    
     if ($referrer === '' || strpos($referrer, 'carrito.php') === false) {
-
-        // Buscar carrito temporal de ESTA sesión
         $stmt = $conn->prepare("
             SELECT id
             FROM carrito
@@ -36,13 +30,11 @@ if (!$estaLogueado) {
         if ($carTmp) {
             $cid = (int)$carTmp['id'];
 
-            // Borrar detalle
             $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
             $stmt->bind_param("i", $cid);
             $stmt->execute();
             $stmt->close();
 
-            // Borrar carrito
             $stmt = $conn->prepare("DELETE FROM carrito WHERE id = ?");
             $stmt->bind_param("i", $cid);
             $stmt->execute();
@@ -51,7 +43,7 @@ if (!$estaLogueado) {
     }
 }
 
-/* 1) LEER CATEGORÍAS para el menú*/
+/* 1) CATEGORÍAS */
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -60,13 +52,11 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-/* 2) LEER PRODUCTOS (FILTRADOS POR PRODUCTO O CATEGORÍA) */
-
+/* 2) PRODUCTOS */
 $categoriaActual = trim($_GET['categoria'] ?? '');
 $productoId      = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
 if ($productoId > 0) {
-    
     $stmt = $conn->prepare("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
@@ -79,7 +69,6 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 } elseif ($categoriaActual !== '') {
-    // Filtrar por categoría
     $stmt = $conn->prepare("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
@@ -91,7 +80,6 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 } else {
-    // Todos los productos
     $resProd = $conn->query("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
@@ -99,8 +87,7 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
 }
 
-
-
+/* 3) CARRITO */
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -123,10 +110,8 @@ $carrito_id    = $carrito['id']   ?? null;
 $total_carrito = (float)($carrito['total'] ?? 0.0);
 $total_items   = 0;
 
-/* 4) LEER CANTIDAD POR PRODUCTO DEL CARRITO */
-
+/* 4) CANTIDADES POR PRODUCTO */
 $cantidadesPorProducto = [];
-
 if ($carrito_id) {
     $stmt = $conn->prepare("
         SELECT producto_id, cantidad
@@ -146,8 +131,6 @@ if ($carrito_id) {
     $stmt->close();
 }
 
-
-
 if ($productoId > 0 && count($productos) === 1) {
     $tituloSeccion = $productos[0]['nombre'];
 } elseif ($categoriaActual !== '') {
@@ -155,7 +138,6 @@ if ($productoId > 0 && count($productos) === 1) {
 } else {
     $tituloSeccion = "Lo más comprado";
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -167,7 +149,6 @@ if ($productoId > 0 && count($productos) === 1) {
 </head>
 <body data-logged="<?php echo $estaLogueado ? '1' : '0'; ?>">
 
-<!-- HEADER -->
 <header class="header">
     <div class="header-left">
         <div class="logo">
@@ -177,7 +158,6 @@ if ($productoId > 0 && count($productos) === 1) {
             <h1>Mi Tiendita</h1>
         </div>
 
-        <!-- Barra de búsqueda con sugerencias -->
         <div class="search-bar">
             <input
                 type="text"
@@ -186,6 +166,9 @@ if ($productoId > 0 && count($productos) === 1) {
                 autocomplete="off"
             >
             <div id="searchSuggestions" class="search-suggestions"></div>
+
+            <!-- Mensaje cuando dan ENTER y no existe -->
+            <div id="searchNotFound" class="search-notfound">Producto no encontrado</div>
         </div>
     </div>
 
@@ -199,24 +182,14 @@ if ($productoId > 0 && count($productos) === 1) {
             <a href="../PHP/login.php" class="header-link">Iniciar sesión</a>
         <?php endif; ?>
 
-        <!-- Totales leídos desde la BD -->
-        <span
-            id="cartTotalItems"
-            class="header-items"
-            data-items="<?php echo $total_items; ?>"
-        >
+        <span id="cartTotalItems" class="header-items" data-items="<?php echo $total_items; ?>">
             <?php echo $total_items; ?> artículo<?php echo $total_items === 1 ? '' : 's'; ?>
         </span>
 
-        <span
-            id="cartTotalPrice"
-            class="header-price"
-            data-total="<?php echo $total_carrito; ?>"
-        >
+        <span id="cartTotalPrice" class="header-price" data-total="<?php echo $total_carrito; ?>">
             $<?php echo number_format($total_carrito, 2); ?>
         </span>
 
-        
         <a href="../PHP/carrito.php" class="header-cart-link">
             <span class="header-cart">🛒</span>
         </a>
@@ -244,7 +217,6 @@ if ($productoId > 0 && count($productos) === 1) {
     <?php endif; ?>
 </nav>
 
-
 <main class="main-container">
     <h2 class="titulo-seccion">
         <?php echo htmlspecialchars($tituloSeccion); ?>
@@ -258,25 +230,32 @@ if ($productoId > 0 && count($productos) === 1) {
                 <?php foreach ($productos as $p): ?>
                     <?php
                         $pid            = (int)$p['id'];
+                        $stock          = (int)$p['stock'];
                         $cantEnCarrito  = $cantidadesPorProducto[$pid] ?? 0;
                         $estaEnCarrito  = $cantEnCarrito > 0;
-                    ?>
-                    <article class="producto-card"
-                             data-id="<?php echo $pid; ?>"
-                             data-precio="<?php echo $p['precio']; ?>">
 
-                        
+                        $sinStock = ($stock <= 0);
+                        // Si no está en carrito y sin stock: deshabilita Agregar
+                        $disabledAgregar = (!$estaEnCarrito && $sinStock);
+                    ?>
+                    <article
+                        class="producto-card"
+                        data-id="<?php echo $pid; ?>"
+                        data-precio="<?php echo (float)$p['precio']; ?>"
+                        data-stock="<?php echo $stock; ?>"
+                    >
                         <a href="producto_detalle.php?id=<?php echo $pid; ?>" class="producto-link">
-                            <div class="badge-rebaja">Rebaja</div>
 
                             <div class="producto-img-wrapper">
-                                <img src="<?php echo htmlspecialchars($p['imagen_url']); ?>"
-                                     alt="<?php echo htmlspecialchars($p['nombre']); ?>">
+                                <img
+                                    src="<?php echo htmlspecialchars($p['imagen_url']); ?>"
+                                    alt="<?php echo htmlspecialchars($p['nombre']); ?>"
+                                >
                             </div>
 
                             <div class="producto-info">
                                 <div class="precio-actual">
-                                    $<?php echo number_format($p['precio'], 2); ?>
+                                    $<?php echo number_format((float)$p['precio'], 2); ?>
                                 </div>
 
                                 <div class="marca">
@@ -286,27 +265,30 @@ if ($productoId > 0 && count($productos) === 1) {
                                 <div class="titulo">
                                     <?php echo htmlspecialchars($p['nombre']); ?>
                                 </div>
+
+                                <?php if ($sinStock): ?>
+                                    <div class="stock-label">Sin stock</div>
+                                <?php endif; ?>
                             </div>
                         </a>
 
-                        <!-- BOTONES AGREGAR / CANTIDAD -->
                         <div class="producto-actions">
                             <button
                                 class="btn-agregar"
+                                <?php echo $disabledAgregar ? 'disabled' : ''; ?>
                                 style="<?php echo $estaEnCarrito ? 'display:none;' : ''; ?>"
                             >
-                                + Agregar
+                                <?php echo $disabledAgregar ? 'Sin stock' : '+ Agregar'; ?>
                             </button>
 
                             <div class="cantidad-control <?php echo $estaEnCarrito ? '' : 'oculto'; ?>">
                                 <button class="btn-menos">−</button>
                                 <span class="cantidad">
-                                    <?php echo $estaEnCarrito ? $cantEnCarrito : 0; ?>
+                                    <?php echo $estaEnCarrito ? (int)$cantEnCarrito : 0; ?>
                                 </span>
-                                <button class="btn-mas">+</button>
+                                <button class="btn-mas" <?php echo ($sinStock ? 'disabled' : ''); ?>>+</button>
                             </div>
                         </div>
-
                     </article>
                 <?php endforeach; ?>
             </section>
@@ -314,10 +296,8 @@ if ($productoId > 0 && count($productos) === 1) {
 
         <button class="btn-carrusel btn-carrusel-der">&#10095;</button>
     </div>
-
 </main>
 
-<!-- FOOTER AGREGADO  -->
 <footer class="footer">
     <div class="footer-content">
         <h3>Mi Tiendita</h3>
@@ -326,13 +306,21 @@ if ($productoId > 0 && count($productos) === 1) {
     </div>
 </footer>
 
+<!-- MODAL LOGIN -->
+<div id="loginModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+        <h3>Iniciar sesión</h3>
+        <p>Para agregar o modificar productos en el carrito necesitas iniciar sesión.</p>
+        <div class="modal-actions">
+            <button id="modalGoLogin" class="modal-btn modal-btn-primary">Iniciar sesión</button>
+            <button id="modalClose" class="modal-btn">Cancelar</button>
+        </div>
+    </div>
+</div>
 
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
 </html>
-
-
-
 
 
 
