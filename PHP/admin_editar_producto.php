@@ -11,72 +11,61 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// ID del producto 
+// ID del producto (NO se muestra, solo se usa internamente)
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     header("Location: admin_inventario.php");
     exit;
 }
 
-
-
+/* =========================
+   PROCESAR POST
+   ========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* ELIMINAR PRODUCTO */
+    /* ---- ELIMINAR PRODUCTO ---- */
     if (isset($_POST['eliminar_producto'])) {
         $idEliminar = (int)$_POST['eliminar_producto'];
 
         if ($idEliminar > 0) {
-
-            // 1) Borrar imágenes extra
             $stmt = $conn->prepare("DELETE FROM producto_imagen WHERE producto_id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
- 
-           // 2) Borrar reseñas del producto
+
             $stmt = $conn->prepare("DELETE FROM resena_producto WHERE producto_id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
 
-            // 3) Borrar detalles de pedidos que usan este producto
             $stmt = $conn->prepare("DELETE FROM pedido_detalle WHERE producto_id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
 
-            // 4) Borrar detalles de carritos que usan este producto
             $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE producto_id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
 
-            // 5) Borrar producto principal
             $stmt = $conn->prepare("DELETE FROM producto WHERE id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
         }
 
-        // Regresar al inventario
         header("Location: admin_inventario.php?eliminado=1");
         exit;
     }
 
-    /*  ACTUALIZAR PRODUCTO */
+    /* ---- ACTUALIZAR PRODUCTO ---- */
     $nombre     = $_POST['nombre']     ?? '';
-    $precio     = $_POST['precio']     ?? '0';
-    $stock      = $_POST['stock']      ?? '0';
+    $precio     = (float)($_POST['precio'] ?? 0);
+    $stock      = (int)($_POST['stock'] ?? 0);
     $imagen_url = $_POST['imagen_url'] ?? '';
     $marca      = $_POST['marca']      ?? '';
     $categoria  = $_POST['categoria']  ?? '';
 
-    // Convertir números
-    $precio = (float)$precio;
-    $stock  = (int)$stock;
-
-    // Actualizar producto principal
     $stmt = $conn->prepare("
         UPDATE producto
         SET nombre = ?, precio = ?, stock = ?, imagen_url = ?, marca = ?, categoria = ?
@@ -86,25 +75,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $stmt->close();
 
-    // IMÁGENES EXTRA 
+    /* ---- IMÁGENES EXTRA ---- */
     $imagenesExtra = $_POST['imagenes_extra'] ?? [];
 
-    // Limpiar quitar vacíos y espacios
     $urlsLimpias = [];
     foreach ($imagenesExtra as $url) {
         $u = trim($url);
-        if ($u !== '') {
-            $urlsLimpias[] = $u;
-        }
+        if ($u !== '') $urlsLimpias[] = $u;
     }
 
-    // Borramos las imágenes actuales de este producto
     $stmt = $conn->prepare("DELETE FROM producto_imagen WHERE producto_id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $stmt->close();
 
-    // Insertamos las nuevas 
     if (count($urlsLimpias) > 0) {
         $orden = 1;
         $stmt = $conn->prepare("
@@ -119,12 +103,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    // Regresar al inventario
     header("Location: admin_inventario.php");
     exit;
 }
 
-
+/* =========================
+   CARGAR PRODUCTO
+   ========================= */
 $stmt = $conn->prepare("
     SELECT id, nombre, precio, stock, imagen_url, marca, categoria
     FROM producto
@@ -133,8 +118,7 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("i", $id);
 $stmt->execute();
-$res = $stmt->get_result();
-$producto = $res->fetch_assoc();
+$producto = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$producto) {
@@ -142,7 +126,7 @@ if (!$producto) {
     exit;
 }
 
-// Leer imágenes extra de producto_imagen
+/* IMÁGENES EXTRA */
 $stmt = $conn->prepare("
     SELECT url
     FROM producto_imagen
@@ -151,8 +135,7 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("i", $id);
 $stmt->execute();
-$resImg = $stmt->get_result();
-$imagenesExtra = $resImg->fetch_all(MYSQLI_ASSOC);
+$imagenesExtra = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 ?>
 <!DOCTYPE html>
@@ -167,24 +150,19 @@ $stmt->close();
 
 <div class="page">
 
-   
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
-                <div class="logo-icon">
-                    <span class="logo-star">*</span>
-                </div>
+                <div class="logo-icon"><span class="logo-star">*</span></div>
                 <span class="logo-text">Mi tiendita</span>
             </a>
         </div>
     </header>
 
-    
     <div class="logout-container">
         <a href="logout.php" class="logout-button">Cerrar sesión</a>
     </div>
 
-   
     <main class="admin-main">
 
         <section class="edit-header">
@@ -196,126 +174,69 @@ $stmt->close();
             <form method="post" class="edit-form">
 
                 <div class="edit-row">
-                    <div class="edit-col">
-                        <label>ID</label>
-                        <input type="text" value="<?php echo (int)$producto['id']; ?>" readonly>
-                    </div>
-                    <div class="edit-col">
+                    <div class="edit-col full-width">
                         <label>Nombre</label>
-                        <input
-                            type="text"
-                            name="nombre"
-                            required
-                            value="<?php echo htmlspecialchars($producto['nombre']); ?>"
-                        >
+                        <input type="text" name="nombre" required
+                               value="<?php echo htmlspecialchars($producto['nombre']); ?>">
                     </div>
                 </div>
 
                 <div class="edit-row">
                     <div class="edit-col">
                         <label>Precio</label>
-                        <input
-                            type="number"
-                            name="precio"
-                            step="0.01"
-                            min="0"
-                            required
-                            value="<?php echo htmlspecialchars($producto['precio']); ?>"
-                        >
+                        <input type="number" name="precio" step="0.01" min="0" required
+                               value="<?php echo htmlspecialchars($producto['precio']); ?>">
                     </div>
                     <div class="edit-col">
                         <label>Stock</label>
-                        <input
-                            type="number"
-                            name="stock"
-                            min="0"
-                            required
-                            value="<?php echo htmlspecialchars($producto['stock']); ?>"
-                        >
+                        <input type="number" name="stock" min="0" required
+                               value="<?php echo htmlspecialchars($producto['stock']); ?>">
                     </div>
                 </div>
 
                 <div class="edit-row">
                     <div class="edit-col">
                         <label>Marca</label>
-                        <input
-                            type="text"
-                            name="marca"
-                            value="<?php echo htmlspecialchars($producto['marca']); ?>"
-                        >
+                        <input type="text" name="marca"
+                               value="<?php echo htmlspecialchars($producto['marca']); ?>">
                     </div>
                     <div class="edit-col">
                         <label>Categoría</label>
-                        <input
-                            type="text"
-                            name="categoria"
-                            value="<?php echo htmlspecialchars($producto['categoria']); ?>"
-                        >
+                        <input type="text" name="categoria"
+                               value="<?php echo htmlspecialchars($producto['categoria']); ?>">
                     </div>
                 </div>
 
-               
                 <div class="edit-row">
                     <div class="edit-col full-width">
                         <label>URL de la imagen principal</label>
-                        <input
-                            type="text"
-                            name="imagen_url"
-                            value="<?php echo htmlspecialchars($producto['imagen_url']); ?>"
-                        >
-                        <?php if (!empty($producto['imagen_url'])): ?>
+                        <input type="text" name="imagen_url"
+                               value="<?php echo htmlspecialchars($producto['imagen_url']); ?>">
+                        <?php if ($producto['imagen_url']): ?>
                             <div class="edit-preview">
-                                <span>Vista previa:</span>
-                                <img
-                                    src="<?php echo htmlspecialchars($producto['imagen_url']); ?>"
-                                    alt="Vista previa"
-                                >
+                                <img src="<?php echo htmlspecialchars($producto['imagen_url']); ?>">
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
 
-               
                 <div class="edit-row">
                     <div class="edit-col full-width">
-                        <label>Imágenes adicionales del producto</label>
-                        <p class="help-text">
-                            Estas imágenes se mostrarán como galería / carrusel en la ficha del producto.
-                        </p>
+                        <label>Imágenes adicionales</label>
 
                         <div id="extraImagesContainer">
-                            <?php if (count($imagenesExtra) > 0): ?>
-                                <?php foreach ($imagenesExtra as $img): ?>
-                                    <div class="extra-image-row">
-                                        <input
-                                            type="text"
-                                            name="imagenes_extra[]"
-                                            placeholder="URL de imagen adicional"
-                                            value="<?php echo htmlspecialchars($img['url']); ?>"
-                                        >
-                                        <button
-                                            type="button"
-                                            class="btn-eliminar-imagen"
-                                        >
-                                            Eliminar
-                                        </button>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                              
+                            <?php foreach ($imagenesExtra as $img): ?>
                                 <div class="extra-image-row">
-                                    <input
-                                        type="text"
-                                        name="imagenes_extra[]"
-                                        placeholder="URL de imagen adicional"
-                                        value=""
-                                    >
-                                    <button
-                                        type="button"
-                                        class="btn-eliminar-imagen"
-                                    >
-                                        Eliminar
-                                    </button>
+                                    <input type="text" name="imagenes_extra[]"
+                                           value="<?php echo htmlspecialchars($img['url']); ?>">
+                                    <button type="button" class="btn-eliminar-imagen">Eliminar</button>
+                                </div>
+                            <?php endforeach; ?>
+
+                            <?php if (count($imagenesExtra) === 0): ?>
+                                <div class="extra-image-row">
+                                    <input type="text" name="imagenes_extra[]" placeholder="URL imagen extra">
+                                    <button type="button" class="btn-eliminar-imagen">Eliminar</button>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -328,13 +249,8 @@ $stmt->close();
 
                 <div class="edit-actions">
                     <button type="submit" class="btn-guardar">Guardar cambios</button>
-
-                   
-                    <button
-                        type="button"
-                        class="btn-eliminar"
-                        onclick="confirmarEliminar(<?php echo (int)$producto['id']; ?>)"
-                    >
+                    <button type="button" class="btn-eliminar"
+                            onclick="confirmarEliminar(<?php echo (int)$producto['id']; ?>)">
                         Eliminar producto
                     </button>
                 </div>
@@ -343,69 +259,40 @@ $stmt->close();
         </section>
 
     </main>
-
 </div>
 
 <script>
-// Confirmar eliminación y mandar POST
 function confirmarEliminar(id) {
-    if (confirm("¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer.")) {
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = ""; 
-
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = "eliminar_producto";
-        input.value = id;
-
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
+    if (confirm("¿Seguro que quieres eliminar este producto?")) {
+        const f = document.createElement("form");
+        f.method = "POST";
+        const i = document.createElement("input");
+        i.type = "hidden";
+        i.name = "eliminar_producto";
+        i.value = id;
+        f.appendChild(i);
+        document.body.appendChild(f);
+        f.submit();
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const contenedor = document.getElementById('extraImagesContainer');
-    const btnAgregar = document.getElementById('btnAgregarImagen');
-
-    // Agregar nueva fila de imagen extra
-    if (btnAgregar && contenedor) {
-        btnAgregar.addEventListener('click', () => {
-            const div = document.createElement('div');
-            div.className = 'extra-image-row';
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.name = 'imagenes_extra[]';
-            input.placeholder = 'URL de imagen adicional';
-
-            const btnDel = document.createElement('button');
-            btnDel.type = 'button';
-            btnDel.className = 'btn-eliminar-imagen';
-            btnDel.textContent = 'Eliminar';
-
-            div.appendChild(input);
-            div.appendChild(btnDel);
-            contenedor.appendChild(div);
-        });
+document.addEventListener("click", e => {
+    if (e.target.classList.contains("btn-eliminar-imagen")) {
+        e.target.closest(".extra-image-row").remove();
     }
+});
 
-    // Eliminar fila al hacer clic en "Eliminar" (de una imagen extra)
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('btn-eliminar-imagen')) {
-            const row = e.target.closest('.extra-image-row');
-            if (row) {
-                row.remove();
-            }
-        }
-    });
+document.getElementById("btnAgregarImagen")?.addEventListener("click", () => {
+    const div = document.createElement("div");
+    div.className = "extra-image-row";
+    div.innerHTML = `
+        <input type="text" name="imagenes_extra[]" placeholder="URL imagen extra">
+        <button type="button" class="btn-eliminar-imagen">Eliminar</button>
+    `;
+    document.getElementById("extraImagesContainer").appendChild(div);
 });
 </script>
 
 </body>
 </html>
-
-
-
 
