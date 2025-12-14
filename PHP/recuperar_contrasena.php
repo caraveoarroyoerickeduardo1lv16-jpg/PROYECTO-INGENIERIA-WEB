@@ -27,7 +27,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if (empty($errores)) {
 
-        // 1) Buscar usuario por correo
         $stmt = $conn->prepare("SELECT id, contrasena FROM usuarios WHERE correo = ? LIMIT 1");
         $stmt->bind_param("s", $correo);
         $stmt->execute();
@@ -41,7 +40,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $uid = (int)$user["id"];
             $valido = false;
 
-            // 2) Validar por CP (si lo mandó)
             if ($cp !== "") {
                 $stmt = $conn->prepare("
                     SELECT 1
@@ -55,7 +53,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $stmt->close();
             }
 
-            // 3) Validar por últimos 4 (si lo mandó)
             if (!$valido && $ultimos4 !== "") {
                 $stmt = $conn->prepare("
                     SELECT 1
@@ -63,7 +60,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     WHERE usuario_id = ? AND ultimos4 = ?
                     LIMIT 1
                 ");
-                // ✅ CORRECTO:
                 $stmt->bind_param("is", $uid, $ultimos4);
                 $stmt->execute();
                 if ($stmt->get_result()->fetch_assoc()) $valido = true;
@@ -129,13 +125,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <?php if ($exito): ?>
         <p>Esta es tu contraseña:</p>
-        <p class="pass-blue" id="passText"><?= htmlspecialchars($password) ?></p>
-        <button id="btnCopy" type="button">Copiar contraseña</button>
+        <p class="pass-blue"><?= htmlspecialchars($password) ?></p>
         <a href="login.php">Volver a iniciar sesión</a>
     <?php endif; ?>
 </div>
 
-<script src="../JAVASCRIPT/recuperar.js"></script>
 </body>
 </html>
-
