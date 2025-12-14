@@ -1,0 +1,109 @@
+.orders-header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom: 14px;
+}
+.orders-header h1{ margin:0; font-size: 28px; }
+
+.btn-volver{
+    text-decoration:none;
+    font-weight:700;
+    color:#0071e3;
+}
+.btn-volver:hover{ text-decoration: underline; }
+
+.orders-card{
+    background:#fff;
+    border-radius: 18px;
+    padding: 16px 18px 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.orders-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+}
+.orders-table th{
+    text-align:left;
+    padding: 8px 6px;
+    border-bottom: 1px solid #e5e7eb;
+    color:#111827;
+    font-weight:700;
+}
+.orders-table td{
+    padding: 10px 6px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+.orders-empty{
+    text-align:center;
+    padding: 18px 0;
+    color:#6b7280;
+}
+
+.btn-ver-detalles{
+    display:inline-block;
+    background:#0071e3;
+    color:#fff;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-weight:700;
+    text-decoration:none;
+    font-size:13px;
+}
+.btn-ver-detalles:hover{ background:#005bb5; }
+
+/* Detalle */
+.detail-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.detail-card{
+    background:#fff;
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.detail-card h3{
+    margin:0 0 10px;
+    font-size: 16px;
+}
+.kv{
+    display:flex;
+    justify-content:space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #f3f4f6;
+    gap: 10px;
+}
+.kv:last-child{ border-bottom:none; }
+.kv span{ color:#6b7280; }
+.kv.total strong{ font-size: 16px; }
+
+.mini-title{
+    margin: 0 0 10px;
+    font-size: 16px;
+}
+
+/* Producto en tabla */
+.prod-info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.prod-img{
+    width:40px;
+    height:40px;
+    object-fit:cover;
+    border-radius: 10px;
+}
+.prod-name{ font-weight:700; }
+.prod-brand{ font-size: 12px; color:#6b7280; margin-top:2px; }
+
+@media (max-width: 900px){
+    .detail-grid{ grid-template-columns: 1fr; }
+}
