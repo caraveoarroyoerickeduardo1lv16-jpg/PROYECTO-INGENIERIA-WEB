@@ -1,0 +1,52 @@
+body {
+    font-family: system-ui;
+    background:#f5f5f7;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.card{
+    background:#fff;
+    padding:30px;
+    border-radius:16px;
+    width:100%;
+    max-width:420px;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border-radius:10px;
+    border:1px solid #ccc;
+}
+
+button{
+    width:100%;
+    margin-top:15px;
+    padding:10px;
+    border:none;
+    border-radius:999px;
+    background:#0071e3;
+    color:#fff;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.pass-blue{
+    color:#0071e3;
+    font-weight:800;
+    font-size:18px;
+    word-break:break-word;
+}
+
+.alert-error{
+    background:#fee2e2;
+    color:#b91c1c;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:10px;
+}
