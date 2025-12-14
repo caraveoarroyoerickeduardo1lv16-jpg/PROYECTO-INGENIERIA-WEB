@@ -4,7 +4,6 @@
     padding: 0 16px 32px;
 }
 
-
 .inventory-header h1 {
     margin: 0 0 4px;
     font-size: 28px;
@@ -15,7 +14,6 @@
     font-size: 20px;
     font-weight: 500;
 }
-
 
 .inventory-top {
     display: flex;
@@ -46,6 +44,88 @@
     background: #fff;
 }
 
+/* Buscador (similar a index) */
+.inventory-search {
+    flex: 1;
+    max-width: 520px;
+    min-width: 220px;
+    position: relative;
+}
+
+.inventory-search input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    outline: none;
+    font-size: 14px;
+    background: #fff;
+}
+
+.inventory-search input:focus {
+    border-color: #0071e3;
+    box-shadow: 0 0 0 2px rgba(0,113,227,0.12);
+}
+
+/* panel de sugerencias */
+.search-suggestions {
+    position: absolute;
+    top: 46px;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 9999;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 12px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.suggestion-item .txt {
+    color: #111;
+}
+
+.suggestion-item .icon {
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+.suggestion-item:hover {
+    background-color: #f4f4f4;
+}
+
+/* "Producto no encontrado" flotante */
+.search-notfound {
+    position: absolute;
+    top: 46px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    color: #111;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+    padding: 12px 14px;
+    z-index: 10000;
+    display: none;
+    font-weight: 700;
+    width: max-content;
+    max-width: 100%;
+}
+
+.search-notfound.show {
+    display: block;
+}
+
 /* Botón Añadir producto */
 .btn-add-producto {
     background-color: #0071e3;
@@ -57,6 +137,7 @@
     text-decoration: none;
     border: none;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .btn-add-producto:hover {
@@ -114,10 +195,19 @@
 }
 
 .prod-name {
-    font-weight: 500;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.1;
 }
 
-/* Botón Editar" en cada fila */
+.prod-brand {
+    margin-top: 3px;
+    font-weight: 500;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+/* Botón Editar */
 .btn-editar {
     display: inline-block;
     background-color: #0071e3;
@@ -134,7 +224,7 @@
     background-color: #005bb5;
 }
 
-
+/* logout */
 .logout-container {
     width: 100%;
     background: transparent;
@@ -142,7 +232,7 @@
     display: flex;
     justify-content: flex-end;
     max-width: 1100px;
-    padding-right: 25px; 
+    padding-right: 25px;
     margin: 0 auto;
 }
 
@@ -163,12 +253,36 @@
     color: #ffffff;
 }
 
+.filter-chip {
+    margin-top: 10px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    color: #111827;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
 
+.chip-link {
+    margin-left: 8px;
+    color: #0071e3;
+    font-weight: 700;
+    text-decoration: none;
+}
+.chip-link:hover { text-decoration: underline; }
+
+@media (max-width: 900px) {
+    .inventory-search {
+        max-width: 100%;
+        flex-basis: 100%;
+    }
+}
 
 @media (max-width: 800px) {
     .inventory-top {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
     .inventory-card {

@@ -20,24 +20,68 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-// Filtro por categoría 
-$categoriaActual = $_GET['categoria'] ?? '';
+// Filtro por categoría
+$categoriaActual = trim($_GET['categoria'] ?? '');
 
-if ($categoriaActual !== '') {
+// Para búsqueda
+$q = trim($_GET['q'] ?? '');
+$productoId = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
+
+if ($productoId > 0) {
+    // Mostrar SOLO un producto (cuando seleccionas de sugerencias)
     $stmt = $conn->prepare("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
-        WHERE categoria = ?
-        ORDER BY id
+        WHERE id = ?
+        LIMIT 1
     ");
-    $stmt->bind_param("s", $categoriaActual);
+    $stmt->bind_param("i", $productoId);
+
 } else {
-    $stmt = $conn->prepare("
-        SELECT id, nombre, precio, stock, imagen_url, marca, categoria
-        FROM producto
-        ORDER BY id
-    ");
+    // Listado normal con filtros
+    if ($categoriaActual !== '' && $q !== '') {
+        // Categoría + búsqueda
+        $like = "%{$q}%";
+        $stmt = $conn->prepare("
+            SELECT id, nombre, precio, stock, imagen_url, marca, categoria
+            FROM producto
+            WHERE categoria = ?
+              AND (nombre LIKE ? OR marca LIKE ?)
+            ORDER BY id
+        ");
+        $stmt->bind_param("sss", $categoriaActual, $like, $like);
+
+    } elseif ($categoriaActual !== '') {
+        // Solo categoría
+        $stmt = $conn->prepare("
+            SELECT id, nombre, precio, stock, imagen_url, marca, categoria
+            FROM producto
+            WHERE categoria = ?
+            ORDER BY id
+        ");
+        $stmt->bind_param("s", $categoriaActual);
+
+    } elseif ($q !== '') {
+        // Solo búsqueda
+        $like = "%{$q}%";
+        $stmt = $conn->prepare("
+            SELECT id, nombre, precio, stock, imagen_url, marca, categoria
+            FROM producto
+            WHERE (nombre LIKE ? OR marca LIKE ?)
+            ORDER BY id
+        ");
+        $stmt->bind_param("ss", $like, $like);
+
+    } else {
+        // Todos
+        $stmt = $conn->prepare("
+            SELECT id, nombre, precio, stock, imagen_url, marca, categoria
+            FROM producto
+            ORDER BY id
+        ");
+    }
 }
+
 $stmt->execute();
 $resProd = $stmt->get_result();
 $productos = $resProd->fetch_all(MYSQLI_ASSOC);
@@ -48,15 +92,14 @@ $stmt->close();
 <head>
     <meta charset="UTF-8">
     <title>Inventario - Mi tiendita</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../CSS/admin.css">
-<link rel="stylesheet" href="../CSS/admin_inventario.css">
-
+    <link rel="stylesheet" href="../CSS/admin_inventario.css">
 </head>
 <body>
 
 <div class="page">
 
-    
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
@@ -68,11 +111,9 @@ $stmt->close();
         </div>
     </header>
 
-    
     <div class="logout-container">
         <a href="logout.php" class="logout-button">Cerrar sesión</a>
     </div>
-
 
     <main class="admin-main">
 
@@ -81,14 +122,11 @@ $stmt->close();
             <h2>Inventario</h2>
 
             <div class="inventory-top">
-                
-                <form method="get" class="inventory-filter">
+
+                <!-- Filtro por categoría -->
+                <form method="get" class="inventory-filter" id="formCategoria">
                     <label for="categoria">Categoría:</label>
-                    <select
-                        id="categoria"
-                        name="categoria"
-                        onchange="this.form.submit()"
-                    >
+                    <select id="categoria" name="categoria" onchange="this.form.submit()">
                         <option value="">Todas</option>
                         <?php foreach ($categorias as $cat): ?>
                             <option
@@ -99,15 +137,42 @@ $stmt->close();
                             </option>
                         <?php endforeach; ?>
                     </select>
+
+                    <!-- mantener q si ya había búsqueda -->
+                    <?php if ($q !== '' && $productoId === 0): ?>
+                        <input type="hidden" name="q" value="<?php echo htmlspecialchars($q); ?>">
+                    <?php endif; ?>
                 </form>
 
-                <!-- Botón añadir producto por ahora placeholder -->
+                <!-- BUSCADOR -->
+                <div class="inventory-search">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Buscar producto por nombre o marca..."
+                        autocomplete="off"
+                        value="<?php echo htmlspecialchars($q); ?>"
+                    >
+                    <div id="searchSuggestions" class="search-suggestions"></div>
+                    <div id="searchNotFound" class="search-notfound">Producto no encontrado</div>
+                </div>
+
                 <a href="admin_nuevo_producto.php" class="btn-add-producto">Añadir producto</a>
 
             </div>
+
+            <?php if ($productoId > 0): ?>
+                <div class="filter-chip">
+                    Mostrando un producto seleccionado.
+                    <a class="chip-link" href="admin_inventario.php<?php echo $categoriaActual ? '?categoria=' . urlencode($categoriaActual) : ''; ?>">
+                        Quitar filtro
+                    </a>
+                </div>
+            <?php endif; ?>
+
         </section>
 
-        <!-- TARJETA CON LA TABLA DE INVENTARIO -->
+        <!-- TABLA -->
         <section class="inventory-card">
             <table class="inventory-table">
                 <thead>
@@ -122,7 +187,7 @@ $stmt->close();
                     <?php if (empty($productos)): ?>
                         <tr>
                             <td colspan="4" class="inventory-empty">
-                                No hay productos en esta categoría.
+                                No hay productos con ese filtro.
                             </td>
                         </tr>
                     <?php else: ?>
@@ -139,6 +204,7 @@ $stmt->close();
                                         <?php endif; ?>
                                         <div class="prod-name">
                                             <?php echo htmlspecialchars($p['nombre']); ?>
+                                            <div class="prod-brand"><?php echo htmlspecialchars($p['marca']); ?></div>
                                         </div>
                                     </div>
                                 </td>
@@ -163,5 +229,123 @@ $stmt->close();
 
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("searchInput");
+    const suggestionsBox = document.getElementById("searchSuggestions");
+    const notFoundBox = document.getElementById("searchNotFound");
+    const selectCategoria = document.getElementById("categoria");
+
+    function ocultarSugerencias() {
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.style.display = "none";
+    }
+
+    function mostrarNoEncontrado() {
+        notFoundBox.classList.add("show");
+        setTimeout(() => notFoundBox.classList.remove("show"), 2000);
+    }
+
+    async function buscar(q) {
+        // Reutilizamos tu buscar_productos.php
+        const resp = await fetch("../PHP/buscar_productos.php?q=" + encodeURIComponent(q));
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        return Array.isArray(data) ? data : [];
+    }
+
+    searchInput.addEventListener("input", async () => {
+        const texto = searchInput.value.trim();
+
+        if (texto.length < 1) {
+            ocultarSugerencias();
+            return;
+        }
+
+        try {
+            const data = await buscar(texto);
+
+            if (data.length === 0) {
+                ocultarSugerencias();
+                return;
+            }
+
+            suggestionsBox.innerHTML = "";
+
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "suggestion-item";
+
+                const spanTxt = document.createElement("span");
+                spanTxt.className = "txt";
+                const nombre = item.nombre || "";
+                const marca  = item.marca || "";
+                spanTxt.textContent = (marca ? marca + " " : "") + nombre;
+
+                const spanIcon = document.createElement("span");
+                spanIcon.className = "icon";
+                spanIcon.textContent = "↗";
+
+                div.appendChild(spanTxt);
+                div.appendChild(spanIcon);
+
+                div.addEventListener("click", () => {
+                    const id = item.id;
+                    const cat = (selectCategoria && selectCategoria.value) ? selectCategoria.value : "";
+
+                    // conservar categoría si está seleccionada
+                    let url = "admin_inventario.php?producto_id=" + encodeURIComponent(id);
+                    if (cat) url += "&categoria=" + encodeURIComponent(cat);
+
+                    window.location.href = url;
+                });
+
+                suggestionsBox.appendChild(div);
+            });
+
+            suggestionsBox.style.display = "block";
+
+        } catch (e) {
+            ocultarSugerencias();
+        }
+    });
+
+    // ENTER: si no encuentra, avisa; si encuentra, manda al primero
+    searchInput.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+
+        e.preventDefault();
+        const texto = searchInput.value.trim();
+        if (!texto) return;
+
+        try {
+            const data = await buscar(texto);
+
+            if (data.length === 0) {
+                ocultarSugerencias();
+                mostrarNoEncontrado();
+                return;
+            }
+
+            // Si existe, filtra la tabla con q (manteniendo categoría)
+            const cat = (selectCategoria && selectCategoria.value) ? selectCategoria.value : "";
+            let url = "admin_inventario.php?q=" + encodeURIComponent(texto);
+            if (cat) url += "&categoria=" + encodeURIComponent(cat);
+            window.location.href = url;
+
+        } catch (e2) {
+            mostrarNoEncontrado();
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
+            ocultarSugerencias();
+        }
+    });
+});
+</script>
+
 </body>
 </html>
+
