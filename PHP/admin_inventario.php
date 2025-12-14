@@ -25,12 +25,8 @@ $categoriaActual = trim($_GET['categoria'] ?? '');
 $q              = trim($_GET['q'] ?? '');
 $productoId     = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
-/* ==========================
-   CARGA DE PRODUCTOS
-   ========================== */
-
+// Carga de productos
 if ($productoId > 0) {
-    // Mostrar SOLO un producto (cuando seleccionas de sugerencias)
     $stmt = $conn->prepare("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
@@ -38,9 +34,7 @@ if ($productoId > 0) {
         LIMIT 1
     ");
     $stmt->bind_param("i", $productoId);
-
 } else {
-    // Listado normal con filtros
     if ($categoriaActual !== '' && $q !== '') {
         $like = "%{$q}%";
         $stmt = $conn->prepare("
@@ -51,7 +45,6 @@ if ($productoId > 0) {
             ORDER BY id
         ");
         $stmt->bind_param("sss", $categoriaActual, $like, $like);
-
     } elseif ($categoriaActual !== '') {
         $stmt = $conn->prepare("
             SELECT id, nombre, precio, stock, imagen_url, marca, categoria
@@ -60,7 +53,6 @@ if ($productoId > 0) {
             ORDER BY id
         ");
         $stmt->bind_param("s", $categoriaActual);
-
     } elseif ($q !== '') {
         $like = "%{$q}%";
         $stmt = $conn->prepare("
@@ -70,7 +62,6 @@ if ($productoId > 0) {
             ORDER BY id
         ");
         $stmt->bind_param("ss", $like, $like);
-
     } else {
         $stmt = $conn->prepare("
             SELECT id, nombre, precio, stock, imagen_url, marca, categoria
@@ -128,38 +119,32 @@ $stmt->close();
                     <select id="categoria" name="categoria" onchange="this.form.submit()">
                         <option value="">Todas</option>
                         <?php foreach ($categorias as $cat): ?>
-                            <option
-                                value="<?php echo htmlspecialchars($cat); ?>"
-                                <?php echo ($cat === $categoriaActual) ? 'selected' : ''; ?>
-                            >
+                            <option value="<?php echo htmlspecialchars($cat); ?>"
+                                <?php echo ($cat === $categoriaActual) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($cat); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
 
-                    <!-- Si ya había búsqueda por q y NO estamos viendo producto_id, conservar q -->
                     <?php if ($q !== '' && $productoId === 0): ?>
                         <input type="hidden" name="q" value="<?php echo htmlspecialchars($q); ?>">
                     <?php endif; ?>
                 </form>
 
-                <!-- BUSCADOR (tipo index) -->
-                <div class="inventory-search">
+                <!-- BUSCADOR (copiado visualmente de index pero con clases admin- para NO chocar) -->
+                <div class="admin-search-bar">
                     <input
                         type="text"
-                        id="searchInput"
+                        id="adminSearchInput"
                         placeholder="Buscar producto por nombre o marca..."
                         autocomplete="off"
                         value="<?php echo htmlspecialchars($q); ?>"
                     >
-                    <div id="searchSuggestions" class="search-suggestions"></div>
-
-                    <!-- IMPORTANTE: por CSS está oculto y SOLO JS lo muestra en ENTER si no hay resultados -->
-                    <div id="searchNotFound" class="search-notfound">Producto no encontrado</div>
+                    <div id="adminSearchSuggestions" class="admin-search-suggestions"></div>
+                    <div id="adminSearchNotFound" class="admin-search-notfound">Producto no encontrado</div>
                 </div>
 
                 <a href="admin_nuevo_producto.php" class="btn-add-producto">Añadir producto</a>
-
             </div>
 
             <?php if ($productoId > 0): ?>
@@ -171,10 +156,8 @@ $stmt->close();
                     </a>
                 </div>
             <?php endif; ?>
-
         </section>
 
-        <!-- TABLA -->
         <section class="inventory-card">
             <table class="inventory-table">
                 <thead>
@@ -198,27 +181,21 @@ $stmt->close();
                                 <td>
                                     <div class="prod-info">
                                         <?php if (!empty($p['imagen_url'])): ?>
-                                            <img
-                                                src="<?php echo htmlspecialchars($p['imagen_url']); ?>"
-                                                alt="<?php echo htmlspecialchars($p['nombre']); ?>"
-                                                class="prod-img"
-                                            >
+                                            <img src="<?php echo htmlspecialchars($p['imagen_url']); ?>"
+                                                 alt="<?php echo htmlspecialchars($p['nombre']); ?>"
+                                                 class="prod-img">
                                         <?php endif; ?>
                                         <div class="prod-name">
                                             <?php echo htmlspecialchars($p['nombre']); ?>
-                                            <div class="prod-brand">
-                                                <?php echo htmlspecialchars($p['marca']); ?>
-                                            </div>
+                                            <div class="prod-brand"><?php echo htmlspecialchars($p['marca']); ?></div>
                                         </div>
                                     </div>
                                 </td>
                                 <td><?php echo htmlspecialchars($p['categoria']); ?></td>
                                 <td><?php echo (int)$p['stock']; ?></td>
                                 <td>
-                                    <a
-                                        href="admin_editar_producto.php?id=<?php echo (int)$p['id']; ?>"
-                                        class="btn-editar"
-                                    >
+                                    <a href="admin_editar_producto.php?id=<?php echo (int)$p['id']; ?>"
+                                       class="btn-editar">
                                         Editar
                                     </a>
                                 </td>
@@ -230,11 +207,122 @@ $stmt->close();
         </section>
 
     </main>
-
 </div>
 
-<!-- JS separado -->
-<script src="../JAVASCRIPT/admin_inventario.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("adminSearchInput");
+    const suggestionsBox = document.getElementById("adminSearchSuggestions");
+    const notFoundBox = document.getElementById("adminSearchNotFound");
+    const selectCategoria = document.getElementById("categoria");
+
+    if (!searchInput || !suggestionsBox || !notFoundBox) return;
+
+    function hideSuggestions() {
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.style.display = "none";
+    }
+
+    function showNotFound() {
+        notFoundBox.classList.add("show");
+        setTimeout(() => notFoundBox.classList.remove("show"), 1600);
+    }
+
+    async function buscar(q) {
+        const resp = await fetch("../PHP/buscar_productos.php?q=" + encodeURIComponent(q));
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        return Array.isArray(data) ? data : [];
+    }
+
+    searchInput.addEventListener("input", async () => {
+        const texto = searchInput.value.trim();
+        notFoundBox.classList.remove("show");
+
+        if (texto.length < 1) {
+            hideSuggestions();
+            return;
+        }
+
+        try {
+            const data = await buscar(texto);
+            if (data.length === 0) {
+                hideSuggestions();
+                return;
+            }
+
+            suggestionsBox.innerHTML = "";
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "suggestion-item";
+
+                const spanTxt = document.createElement("span");
+                spanTxt.className = "txt";
+                const nombre = item.nombre || "";
+                const marca  = item.marca || "";
+                spanTxt.textContent = (marca ? marca + " " : "") + nombre;
+
+                const spanIcon = document.createElement("span");
+                spanIcon.className = "icon";
+                spanIcon.textContent = "↗";
+
+                div.appendChild(spanTxt);
+                div.appendChild(spanIcon);
+
+                div.addEventListener("click", () => {
+                    const id = item.id;
+                    const cat = selectCategoria?.value ? selectCategoria.value : "";
+                    let url = "admin_inventario.php?producto_id=" + encodeURIComponent(id);
+                    if (cat) url += "&categoria=" + encodeURIComponent(cat);
+                    window.location.href = url;
+                });
+
+                suggestionsBox.appendChild(div);
+            });
+
+            suggestionsBox.style.display = "block";
+        } catch (e) {
+            hideSuggestions();
+        }
+    });
+
+    // ENTER: si no hay resultados -> "Producto no encontrado"
+    searchInput.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+
+        e.preventDefault();
+        const texto = searchInput.value.trim();
+        if (!texto) return;
+
+        hideSuggestions();
+
+        try {
+            const data = await buscar(texto);
+
+            if (data.length === 0) {
+                showNotFound();
+                return;
+            }
+
+            // filtra por q (manteniendo categoría)
+            const cat = selectCategoria?.value ? selectCategoria.value : "";
+            let url = "admin_inventario.php?q=" + encodeURIComponent(texto);
+            if (cat) url += "&categoria=" + encodeURIComponent(cat);
+            window.location.href = url;
+
+        } catch {
+            showNotFound();
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
+            hideSuggestions();
+        }
+    });
+});
+</script>
+
 </body>
 </html>
 
