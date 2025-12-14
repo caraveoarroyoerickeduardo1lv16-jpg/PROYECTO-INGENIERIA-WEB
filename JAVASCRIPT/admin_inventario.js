@@ -1,23 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const searchInput = document.getElementById("searchInput");
-  const suggestionsBox = document.getElementById("searchSuggestions");
-  const notFoundBox = document.getElementById("searchNotFound");
+  const searchInput = document.getElementById("adminSearchInput");
+  const suggestionsBox = document.getElementById("adminSearchSuggestions");
+  const notFoundBox = document.getElementById("adminSearchNotFound");
   const selectCategoria = document.getElementById("categoria");
 
   if (!searchInput || !suggestionsBox || !notFoundBox) return;
 
-  function ocultarSugerencias() {
+  // ✅ asegurar que al cargar SIEMPRE quede oculto
+  notFoundBox.classList.remove("show");
+
+  function hideSuggestions() {
     suggestionsBox.innerHTML = "";
     suggestionsBox.style.display = "none";
   }
 
-  function ocultarNoEncontrado() {
-    notFoundBox.classList.remove("show");
-  }
-
-  function mostrarNoEncontrado() {
+  function showNotFound() {
     notFoundBox.classList.add("show");
-    setTimeout(() => notFoundBox.classList.remove("show"), 1800);
+    setTimeout(() => notFoundBox.classList.remove("show"), 1600);
   }
 
   async function buscar(q) {
@@ -27,14 +26,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return Array.isArray(data) ? data : [];
   }
 
-  // Escribir: mostrar sugerencias (NO mostrar "no encontrado" aquí)
+  // Input: solo sugerencias, nunca "no encontrado"
   searchInput.addEventListener("input", async () => {
     const texto = searchInput.value.trim();
 
-    ocultarNoEncontrado();
-
+    // ✅ si el usuario borra, ocultar todo
+    notFoundBox.classList.remove("show");
     if (texto.length < 1) {
-      ocultarSugerencias();
+      hideSuggestions();
       return;
     }
 
@@ -42,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await buscar(texto);
 
       if (data.length === 0) {
-        ocultarSugerencias();
+        hideSuggestions();
         return;
       }
 
@@ -55,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const spanTxt = document.createElement("span");
         spanTxt.className = "txt";
         const nombre = item.nombre || "";
-        const marca = item.marca || "";
+        const marca  = item.marca || "";
         spanTxt.textContent = (marca ? marca + " " : "") + nombre;
 
         const spanIcon = document.createElement("span");
@@ -77,43 +76,46 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       suggestionsBox.style.display = "block";
-    } catch (e) {
-      ocultarSugerencias();
+    } catch {
+      hideSuggestions();
     }
   });
 
-  // ENTER: aquí SÍ mostramos "no encontrado" si no hay resultados
+  // ENTER: aquí sí "no encontrado"
   searchInput.addEventListener("keydown", async (e) => {
     if (e.key !== "Enter") return;
 
     e.preventDefault();
     const texto = searchInput.value.trim();
-    if (!texto) return;
+    hideSuggestions();
 
-    ocultarSugerencias();
+    if (!texto) {
+      // ✅ si le da enter vacío, no hacer nada, y ocultar mensaje
+      notFoundBox.classList.remove("show");
+      return;
+    }
 
     try {
       const data = await buscar(texto);
 
       if (data.length === 0) {
-        mostrarNoEncontrado();
+        showNotFound();
         return;
       }
 
-      // Si existe: filtra tabla por q (manteniendo categoría)
       const cat = selectCategoria?.value ? selectCategoria.value : "";
       let url = "admin_inventario.php?q=" + encodeURIComponent(texto);
       if (cat) url += "&categoria=" + encodeURIComponent(cat);
       window.location.href = url;
-    } catch (e2) {
-      mostrarNoEncontrado();
+
+    } catch {
+      showNotFound();
     }
   });
 
-  // Click fuera: ocultar sugerencias
   document.addEventListener("click", (e) => {
     if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
-      ocultarSugerencias();
+      hideSuggestions();
     }
   });
 });

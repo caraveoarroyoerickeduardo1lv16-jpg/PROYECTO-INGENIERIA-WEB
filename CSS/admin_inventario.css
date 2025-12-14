@@ -1,76 +1,31 @@
-/* ====== CONTENEDOR INVENTARIO ====== */
-.admin-main {
-    max-width: 1100px;
-    margin: 24px auto 40px;
-    padding: 0 16px 32px;
-}
-
-.inventory-header h1 {
-    margin: 0 0 4px;
-    font-size: 28px;
-}
-
-.inventory-header h2 {
-    margin: 0 0 16px;
-    font-size: 20px;
-    font-weight: 500;
-}
-
-.inventory-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-/* ====== FILTRO CATEGORÍA ====== */
-.inventory-filter {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.inventory-filter label {
-    font-size: 14px;
-    color: #111827;
-}
-
-.inventory-filter select {
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    font-size: 14px;
-    background: #fff;
-}
-
-/* ====== BUSCADOR TIPO INDEX (pero prefijo admin- para no chocar) ====== */
-.admin-search-bar {
+/* ===== BUSCADOR ADMIN (igual al index) ===== */
+.admin-search-bar{
     flex: 1;
-    max-width: 700px;
+    max-width: 900px;
     margin: 0 auto;
     position: relative;
 }
 
-.admin-search-bar input {
+/* input igual a index: sin borde, blanco, redondeado */
+.admin-search-bar input{
     width: 100%;
     padding: 10px 16px;
     border-radius: 20px;
-    border: 1px solid #d1d5db;
+    border: none;
     outline: none;
     font-size: 0.95rem;
-    background-color: #ffffff;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
-/* SUGERENCIAS: mismas que index (centradas y fixed) */
-.admin-search-suggestions {
+/* SUGERENCIAS flotantes como index */
+.admin-search-suggestions{
     position: fixed;
-    top: 110px;                 /* ajustado para admin (topbar + espacio) */
+    top: 110px;                 /* ajusta si tu topbar cambia */
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 80px);
-    max-width: 700px;
+    max-width: 900px;
 
     background-color: #ffffff;
     border-radius: 10px;
@@ -82,8 +37,8 @@
     display: none;
 }
 
-/* Cada sugerencia */
-.admin-search-suggestions .suggestion-item {
+/* items */
+.admin-search-suggestions .suggestion-item{
     padding: 12px 16px;
     font-size: 0.9rem;
     cursor: pointer;
@@ -91,25 +46,19 @@
     align-items: center;
     justify-content: space-between;
 }
-
-.admin-search-suggestions .suggestion-item .txt { color: #111; }
-
-.admin-search-suggestions .suggestion-item .icon {
-    font-size: 0.9rem;
-    opacity: 0.6;
+.admin-search-suggestions .suggestion-item:hover{
+    background: #f4f4f4;
 }
+.admin-search-suggestions .txt{ color:#111; }
+.admin-search-suggestions .icon{ opacity:.6; }
 
-.admin-search-suggestions .suggestion-item:hover {
-    background-color: #f4f4f4;
-}
-
-/* "Producto no encontrado" SOLO ENTER */
-.admin-search-notfound {
+/* ===== "Producto no encontrado" (solo ENTER) ===== */
+/* BLINDAJE: SIEMPRE oculto al cargar */
+.admin-search-notfound{
     position: fixed;
     top: 114px;
     left: 50%;
     transform: translateX(-50%);
-
     background: #ffffff;
     color: #111;
     border-radius: 12px;
@@ -117,141 +66,13 @@
     padding: 12px 16px;
     z-index: 10000;
 
-    display: none;
     font-weight: 700;
+
+    display: none !important;  /* ✅ esto evita que se vea solo */
 }
 
-.admin-search-notfound.show { display: block; }
-
-/* ====== BOTÓN AÑADIR PRODUCTO ====== */
-.btn-add-producto {
-    background-color: #0071e3;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    display: inline-block;
-    white-space: nowrap;
-}
-
-.btn-add-producto:hover {
-    background-color: #005bb5;
-}
-
-/* ====== TABLA INVENTARIO ====== */
-.inventory-card {
-    background-color: #ffffff;
-    border-radius: 18px;
-    padding: 16px 18px 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    margin-top: 8px;
-}
-
-.inventory-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.inventory-table thead th {
-    text-align: left;
-    padding: 8px 6px;
-    border-bottom: 1px solid #e5e7eb;
-    color: #111827;
-    font-weight: 600;
-}
-
-.inventory-table tbody td {
-    padding: 10px 6px;
-    border-bottom: 1px solid #f3f4f6;
-    vertical-align: middle;
-}
-
-.inventory-empty {
-    text-align: center;
-    padding: 18px 0;
-    color: #6b7280;
-}
-
-.prod-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.prod-img {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-.prod-name {
-    font-weight: 600;
-    color: #111827;
-    line-height: 1.1;
-}
-
-.prod-brand {
-    margin-top: 3px;
-    font-weight: 500;
-    color: #6b7280;
-    font-size: 12px;
-}
-
-.btn-editar {
-    display: inline-block;
-    background-color: #0071e3;
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 999px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    text-align: center;
-}
-
-.btn-editar:hover {
-    background-color: #005bb5;
-}
-
-/* Chip */
-.filter-chip {
-    margin-top: 10px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    color: #111827;
-    padding: 10px 12px;
-    border-radius: 14px;
-    font-size: 13px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-.chip-link {
-    margin-left: 8px;
-    color: #0071e3;
-    font-weight: 700;
-    text-decoration: none;
-}
-.chip-link:hover { text-decoration: underline; }
-
-@media (max-width: 800px) {
-    .inventory-top {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .admin-search-bar {
-        max-width: 100%;
-    }
-
-    .admin-search-suggestions {
-        max-width: 100%;
-        width: calc(100% - 24px);
-        top: 120px;
-    }
+/* solo cuando JS agrega .show */
+.admin-search-notfound.show{
+    display: block !important;
 }
 
