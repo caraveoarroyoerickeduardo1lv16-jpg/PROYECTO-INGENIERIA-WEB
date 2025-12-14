@@ -1,6 +1,7 @@
 <?php
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
@@ -88,6 +89,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) 
    GUARDAR CAMBIOS
 ========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // Si viene eliminar_usuario ya salimos arriba. Aquí solo llega cuando guardas.
+    if (isset($_POST['eliminar_usuario'])) {
+        // seguridad extra
+        header("Location: admin_usuarios.php");
+        exit;
+    }
 
     $usuario    = trim($_POST['usuario'] ?? '');
     $contrasena = trim($_POST['contrasena'] ?? '');
@@ -180,7 +188,6 @@ if (!$usuarioData) {
 <form method="post" class="edit-card">
 
     <div class="form-grid">
-
         <div class="form-group">
             <label>Usuario</label>
             <input type="text" name="usuario" value="<?= htmlspecialchars($usuarioData['usuario']) ?>" required>
@@ -209,16 +216,13 @@ if (!$usuarioData) {
                 <option value="cliente" <?= $usuarioData['tipo']==='cliente'?'selected':'' ?>>Cliente</option>
             </select>
         </div>
-
     </div>
 
     <div class="edit-actions">
         <button type="submit" class="btn-guardar">Guardar cambios</button>
 
         <!-- BOTÓN ELIMINAR -->
-        <button type="button"
-                class="btn-eliminar"
-                onclick="confirmarEliminar(<?= (int)$usuarioData['id'] ?>)">
+        <button type="button" class="btn-eliminar" onclick="confirmarEliminar(<?= (int)$usuarioData['id'] ?>)">
             Eliminar usuario
         </button>
     </div>
@@ -247,4 +251,3 @@ function confirmarEliminar(id) {
 
 </body>
 </html>
-
