@@ -11,7 +11,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// Leer categorías para el combo
+// Categorías
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -73,6 +73,7 @@ $stmt->execute();
 $resProd = $stmt->get_result();
 $productos = $resProd->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -83,9 +84,6 @@ $stmt->close();
 
     <link rel="stylesheet" href="../CSS/admin.css">
     <link rel="stylesheet" href="../CSS/admin_inventario.css">
-
-    
-    <link rel="stylesheet" href="../CSS/admin_busqueda.css">
 </head>
 <body>
 
@@ -114,6 +112,7 @@ $stmt->close();
 
             <div class="inventory-top">
 
+                <!-- filtro categoría -->
                 <form method="get" class="inventory-filter" id="formCategoria">
                     <label for="categoria">Categoría:</label>
                     <select id="categoria" name="categoria" onchange="this.form.submit()">
@@ -131,32 +130,44 @@ $stmt->close();
                     <?php endif; ?>
                 </form>
 
-                
-                <div class="search-bar admin-search-bar-scope">
-                    <input
-                        type="text"
-                        id="searchInput"
-                        placeholder="Buscar producto por nombre o marca..."
-                        autocomplete="off"
-                        value="<?= htmlspecialchars($q) ?>"
-                    >
-                    <div id="searchSuggestions" class="search-suggestions"></div>
-                    <div id="searchNotFound" class="search-notfound">Producto no encontrado</div>
+                <!-- ✅ BUSCADOR BONITO (ADMIN) -->
+                <div class="inv-search">
+                    <div class="inv-search-input">
+                        <span class="inv-search-icon">🔎</span>
+                        <input
+                            type="text"
+                            id="invSearchInput"
+                            placeholder="Buscar producto por nombre o marca…"
+                            autocomplete="off"
+                            value="<?= htmlspecialchars($q) ?>"
+                        >
+                        <button type="button" id="invClearBtn" class="inv-clear" aria-label="Limpiar">✕</button>
+                    </div>
+
+                    <div id="invSearchSuggestions" class="inv-suggestions"></div>
+
+                    <div id="invNotFound" class="inv-notfound">
+                        Producto no encontrado
+                    </div>
                 </div>
 
                 <a href="admin_nuevo_producto.php" class="btn-add-producto">Añadir producto</a>
             </div>
 
-            <?php if ($productoId > 0): ?>
+            <?php if ($productoId > 0 || $q !== ''): ?>
                 <div class="filter-chip">
-                    Mostrando un producto seleccionado.
+                    <?php if ($productoId > 0): ?>
+                        Mostrando un producto seleccionado.
+                    <?php else: ?>
+                        Mostrando resultados para: <strong><?= htmlspecialchars($q) ?></strong>
+                    <?php endif; ?>
+
                     <a class="chip-link"
                        href="admin_inventario.php<?= $categoriaActual ? '?categoria=' . urlencode($categoriaActual) : '' ?>">
                         Quitar filtro
                     </a>
                 </div>
             <?php endif; ?>
-
         </section>
 
         <section class="inventory-card">
@@ -170,44 +181,47 @@ $stmt->close();
                     </tr>
                 </thead>
                 <tbody>
-                <?php if (empty($productos)): ?>
-                    <tr>
-                        <td colspan="4" class="inventory-empty">No hay productos con ese filtro.</td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($productos as $p): ?>
+                    <?php if (empty($productos)): ?>
                         <tr>
-                            <td>
-                                <div class="prod-info">
-                                    <?php if (!empty($p['imagen_url'])): ?>
-                                        <img src="<?= htmlspecialchars($p['imagen_url']); ?>"
-                                             alt="<?= htmlspecialchars($p['nombre']); ?>"
-                                             class="prod-img">
-                                    <?php endif; ?>
-                                    <div class="prod-name">
-                                        <?= htmlspecialchars($p['nombre']); ?>
-                                        <div class="prod-brand"><?= htmlspecialchars($p['marca']); ?></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><?= htmlspecialchars($p['categoria']); ?></td>
-                            <td><?= (int)$p['stock']; ?></td>
-                            <td>
-                                <a href="admin_editar_producto.php?id=<?= (int)$p['id']; ?>" class="btn-editar">
-                                    Editar
-                                </a>
-                            </td>
+                            <td colspan="4" class="inventory-empty">No hay productos con ese filtro.</td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                    <?php else: ?>
+                        <?php foreach ($productos as $p): ?>
+                            <tr>
+                                <td>
+                                    <div class="prod-info">
+                                        <?php if (!empty($p['imagen_url'])): ?>
+                                            <img
+                                                src="<?= htmlspecialchars($p['imagen_url']); ?>"
+                                                alt="<?= htmlspecialchars($p['nombre']); ?>"
+                                                class="prod-img"
+                                            >
+                                        <?php endif; ?>
+                                        <div class="prod-name">
+                                            <?= htmlspecialchars($p['nombre']); ?>
+                                            <div class="prod-brand"><?= htmlspecialchars($p['marca']); ?></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><?= htmlspecialchars($p['categoria']); ?></td>
+                                <td><?= (int)$p['stock']; ?></td>
+                                <td>
+                                    <a href="admin_editar_producto.php?id=<?= (int)$p['id']; ?>" class="btn-editar">
+                                        Editar
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </section>
 
     </main>
+
 </div>
 
-<script src="../JAVASCRIPT/admin_busqueda.js"></script>
+<script src="../JAVASCRIPT/admin_inventario.js"></script>
 </body>
 </html>
 
