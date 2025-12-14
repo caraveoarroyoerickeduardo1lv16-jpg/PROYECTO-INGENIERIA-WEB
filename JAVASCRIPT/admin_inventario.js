@@ -1,22 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const searchInput = document.getElementById("adminSearchInput");
-  const suggestionsBox = document.getElementById("adminSearchSuggestions");
-  const notFoundBox = document.getElementById("adminSearchNotFound");
-  const selectCategoria = document.getElementById("categoria");
+  const input = document.getElementById("invSearchInput");
+  const box = document.getElementById("invSearchSuggestions");
+  const notFound = document.getElementById("invSearchNotFound");
+  const categoria = document.getElementById("categoria");
 
-  if (!searchInput || !suggestionsBox || !notFoundBox) return;
+  if (!input || !box || !notFound) return;
 
-  // ✅ asegurar que al cargar SIEMPRE quede oculto
-  notFoundBox.classList.remove("show");
+  notFound.classList.remove("show");
 
-  function hideSuggestions() {
-    suggestionsBox.innerHTML = "";
-    suggestionsBox.style.display = "none";
+  function hideBox() {
+    box.innerHTML = "";
+    box.style.display = "none";
   }
 
   function showNotFound() {
-    notFoundBox.classList.add("show");
-    setTimeout(() => notFoundBox.classList.remove("show"), 1600);
+    notFound.classList.add("show");
+    setTimeout(() => notFound.classList.remove("show"), 1600);
   }
 
   async function buscar(q) {
@@ -26,96 +25,78 @@ document.addEventListener("DOMContentLoaded", () => {
     return Array.isArray(data) ? data : [];
   }
 
-  // Input: solo sugerencias, nunca "no encontrado"
-  searchInput.addEventListener("input", async () => {
-    const texto = searchInput.value.trim();
+  input.addEventListener("input", async () => {
+    const texto = input.value.trim();
+    notFound.classList.remove("show");
 
-    // ✅ si el usuario borra, ocultar todo
-    notFoundBox.classList.remove("show");
     if (texto.length < 1) {
-      hideSuggestions();
+      hideBox();
       return;
     }
 
-    try {
-      const data = await buscar(texto);
+    const data = await buscar(texto);
+    if (!data.length) {
+      hideBox();
+      return;
+    }
 
-      if (data.length === 0) {
-        hideSuggestions();
-        return;
-      }
+    box.innerHTML = "";
+    data.forEach(item => {
+      const row = document.createElement("div");
+      row.className = "inv-suggestion-item";
 
-      suggestionsBox.innerHTML = "";
+      const txt = document.createElement("span");
+      txt.className = "inv-txt";
+      const nombre = item.nombre || "";
+      const marca = item.marca || "";
+      txt.textContent = (marca ? marca + " " : "") + nombre;
 
-      data.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "suggestion-item";
+      const icon = document.createElement("span");
+      icon.className = "inv-icon";
+      icon.textContent = "↗";
 
-        const spanTxt = document.createElement("span");
-        spanTxt.className = "txt";
-        const nombre = item.nombre || "";
-        const marca  = item.marca || "";
-        spanTxt.textContent = (marca ? marca + " " : "") + nombre;
+      row.appendChild(txt);
+      row.appendChild(icon);
 
-        const spanIcon = document.createElement("span");
-        spanIcon.className = "icon";
-        spanIcon.textContent = "↗";
-
-        div.appendChild(spanTxt);
-        div.appendChild(spanIcon);
-
-        div.addEventListener("click", () => {
-          const id = item.id;
-          const cat = selectCategoria?.value ? selectCategoria.value : "";
-          let url = "admin_inventario.php?producto_id=" + encodeURIComponent(id);
-          if (cat) url += "&categoria=" + encodeURIComponent(cat);
-          window.location.href = url;
-        });
-
-        suggestionsBox.appendChild(div);
+      row.addEventListener("click", () => {
+        const cat = categoria?.value ? categoria.value : "";
+        let url = "admin_inventario.php?producto_id=" + encodeURIComponent(item.id);
+        if (cat) url += "&categoria=" + encodeURIComponent(cat);
+        window.location.href = url;
       });
 
-      suggestionsBox.style.display = "block";
-    } catch {
-      hideSuggestions();
-    }
+      box.appendChild(row);
+    });
+
+    box.style.display = "block";
   });
 
-  // ENTER: aquí sí "no encontrado"
-  searchInput.addEventListener("keydown", async (e) => {
+  input.addEventListener("keydown", async (e) => {
     if (e.key !== "Enter") return;
-
     e.preventDefault();
-    const texto = searchInput.value.trim();
-    hideSuggestions();
+
+    const texto = input.value.trim();
+    hideBox();
 
     if (!texto) {
-      // ✅ si le da enter vacío, no hacer nada, y ocultar mensaje
-      notFoundBox.classList.remove("show");
+      notFound.classList.remove("show");
       return;
     }
 
-    try {
-      const data = await buscar(texto);
-
-      if (data.length === 0) {
-        showNotFound();
-        return;
-      }
-
-      const cat = selectCategoria?.value ? selectCategoria.value : "";
-      let url = "admin_inventario.php?q=" + encodeURIComponent(texto);
-      if (cat) url += "&categoria=" + encodeURIComponent(cat);
-      window.location.href = url;
-
-    } catch {
+    const data = await buscar(texto);
+    if (!data.length) {
       showNotFound();
+      return;
     }
+
+    const cat = categoria?.value ? categoria.value : "";
+    let url = "admin_inventario.php?q=" + encodeURIComponent(texto);
+    if (cat) url += "&categoria=" + encodeURIComponent(cat);
+    window.location.href = url;
   });
 
   document.addEventListener("click", (e) => {
-    if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
-      hideSuggestions();
-    }
+    if (!box.contains(e.target) && e.target !== input) hideBox();
   });
 });
+
