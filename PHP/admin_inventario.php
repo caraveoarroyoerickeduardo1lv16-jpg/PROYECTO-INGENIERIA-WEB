@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Solo admins
+// Solo admins pueden entrar
 if (empty($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'administrador') {
     header("Location: login.php");
     exit;
@@ -11,7 +11,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// Categorías
+// Leer categorías para el combo
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -21,7 +21,7 @@ while ($row = $resCat->fetch_assoc()) {
 // Filtros
 $categoriaActual = trim($_GET['categoria'] ?? '');
 $q              = trim($_GET['q'] ?? '');
-$productoId     = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
+$productoId      = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
 // Productos
 if ($productoId > 0) {
@@ -70,7 +70,7 @@ if ($productoId > 0) {
 }
 
 $stmt->execute();
-$resProd   = $stmt->get_result();
+$resProd = $stmt->get_result();
 $productos = $resProd->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 ?>
@@ -81,10 +81,11 @@ $stmt->close();
     <title>Inventario - Mi tiendita</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- admin base -->
     <link rel="stylesheet" href="../CSS/admin.css">
-    <!-- inventario + buscador aislado -->
     <link rel="stylesheet" href="../CSS/admin_inventario.css">
+
+    
+    <link rel="stylesheet" href="../CSS/admin_busqueda.css">
 </head>
 <body>
 
@@ -93,7 +94,9 @@ $stmt->close();
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
-                <div class="logo-icon"><span class="logo-star">*</span></div>
+                <div class="logo-icon">
+                    <span class="logo-star">*</span>
+                </div>
                 <span class="logo-text">Mi tiendita</span>
             </a>
         </div>
@@ -111,7 +114,6 @@ $stmt->close();
 
             <div class="inventory-top">
 
-                <!-- Categoría -->
                 <form method="get" class="inventory-filter" id="formCategoria">
                     <label for="categoria">Categoría:</label>
                     <select id="categoria" name="categoria" onchange="this.form.submit()">
@@ -129,20 +131,17 @@ $stmt->close();
                     <?php endif; ?>
                 </form>
 
-                <!-- BUSCADOR AISLADO (sin heredar estilos) -->
-                <div class="inv-search-scope">
-                    <div class="inv-search-bar">
-                        <input
-                            type="text"
-                            id="invSearchInput"
-                            placeholder="Buscar producto por nombre o marca..."
-                            autocomplete="off"
-                            value="<?= htmlspecialchars($q) ?>"
-                        >
-                    </div>
-
-                    <div id="invSearchSuggestions" class="inv-search-suggestions"></div>
-                    <div id="invSearchNotFound" class="inv-search-notfound">Producto no encontrado</div>
+                
+                <div class="search-bar admin-search-bar-scope">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Buscar producto por nombre o marca..."
+                        autocomplete="off"
+                        value="<?= htmlspecialchars($q) ?>"
+                    >
+                    <div id="searchSuggestions" class="search-suggestions"></div>
+                    <div id="searchNotFound" class="search-notfound">Producto no encontrado</div>
                 </div>
 
                 <a href="admin_nuevo_producto.php" class="btn-add-producto">Añadir producto</a>
@@ -163,12 +162,12 @@ $stmt->close();
         <section class="inventory-card">
             <table class="inventory-table">
                 <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Categoría</th>
-                    <th>Existencias</th>
-                    <th>Editar</th>
-                </tr>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Existencias</th>
+                        <th>Editar</th>
+                    </tr>
                 </thead>
                 <tbody>
                 <?php if (empty($productos)): ?>
@@ -181,21 +180,20 @@ $stmt->close();
                             <td>
                                 <div class="prod-info">
                                     <?php if (!empty($p['imagen_url'])): ?>
-                                        <img src="<?= htmlspecialchars($p['imagen_url']) ?>"
-                                             alt="<?= htmlspecialchars($p['nombre']) ?>"
+                                        <img src="<?= htmlspecialchars($p['imagen_url']); ?>"
+                                             alt="<?= htmlspecialchars($p['nombre']); ?>"
                                              class="prod-img">
                                     <?php endif; ?>
                                     <div class="prod-name">
-                                        <?= htmlspecialchars($p['nombre']) ?>
-                                        <div class="prod-brand"><?= htmlspecialchars($p['marca']) ?></div>
+                                        <?= htmlspecialchars($p['nombre']); ?>
+                                        <div class="prod-brand"><?= htmlspecialchars($p['marca']); ?></div>
                                     </div>
                                 </div>
                             </td>
-                            <td><?= htmlspecialchars($p['categoria']) ?></td>
-                            <td><?= (int)$p['stock'] ?></td>
+                            <td><?= htmlspecialchars($p['categoria']); ?></td>
+                            <td><?= (int)$p['stock']; ?></td>
                             <td>
-                                <a class="btn-editar"
-                                   href="admin_editar_producto.php?id=<?= (int)$p['id'] ?>">
+                                <a href="admin_editar_producto.php?id=<?= (int)$p['id']; ?>" class="btn-editar">
                                     Editar
                                 </a>
                             </td>
@@ -209,7 +207,7 @@ $stmt->close();
     </main>
 </div>
 
-<script src="../JAVASCRIPT/admin_inventario_busqueda.js"></script>
+<script src="../JAVASCRIPT/admin_busqueda.js"></script>
 </body>
 </html>
 
