@@ -9,39 +9,11 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-$referrer = $_SERVER['HTTP_REFERER'] ?? '';
-
-
-if (!$estaLogueado) {
-    if ($referrer === '' || strpos($referrer, 'carrito.php') === false) {
-        $stmt = $conn->prepare("
-            SELECT id
-            FROM carrito
-            WHERE session_id = ?
-              AND (usuario_id IS NULL OR usuario_id = 0)
-            LIMIT 1
-        ");
-        $stmt->bind_param("s", $sessionId);
-        $stmt->execute();
-        $resCarTmp = $stmt->get_result();
-        $carTmp = $resCarTmp->fetch_assoc();
-        $stmt->close();
-
-        if ($carTmp) {
-            $cid = (int)$carTmp['id'];
-
-            $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
-            $stmt->bind_param("i", $cid);
-            $stmt->execute();
-            $stmt->close();
-
-            $stmt = $conn->prepare("DELETE FROM carrito WHERE id = ?");
-            $stmt->bind_param("i", $cid);
-            $stmt->execute();
-            $stmt->close();
-        }
-    }
-}
+/*
+    ✅ IMPORTANTE:
+    Quité el bloque que borraba el carrito del invitado por referrer,
+    porque eso te rompe el header al volver desde producto_detalle.
+*/
 
 /* 1) CATEGORÍAS */
 $categorias = [];
@@ -69,7 +41,6 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    // Si te pasan un producto_id inexistente, regresamos a inicio normal
     if (count($productos) === 0) {
         header("Location: index.php");
         exit;
@@ -94,7 +65,7 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
 }
 
-/* 3) CARRITO */
+/* 3) CARRITO (✅ CONSISTENTE CON carrito_actualizar.php) */
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -103,7 +74,7 @@ if ($estaLogueado) {
         SELECT id, total
         FROM carrito
         WHERE session_id = ?
-          AND (usuario_id IS NULL OR usuario_id = 0)
+          AND usuario_id IS NULL
         LIMIT 1
     ");
     $stmt->bind_param("s", $sessionId);
@@ -293,7 +264,6 @@ if ($productoId > 0 && count($productos) === 1) {
     </div>
 </footer>
 
-
 <div id="loginModal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
         <h3>Iniciar sesión</h3>
@@ -324,6 +294,4 @@ document.addEventListener("DOMContentLoaded", () => {
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
 </html>
-
-
 
