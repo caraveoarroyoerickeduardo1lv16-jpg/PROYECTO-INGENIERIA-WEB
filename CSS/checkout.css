@@ -12,7 +12,7 @@ body {
     padding: 0 10px;
 }
 
-/* ===== HEADER BRAND (Mi Tiendita) ===== */
+/* ===== HEADER BRAND ===== */
 .header {
     display: flex;
     flex-direction: column;
@@ -85,7 +85,7 @@ body {
     color:#111827;
 }
 
-/* TABS DE DÍAS */
+/* TABS */
 .days-tabs {
     display: flex;
     gap: 10px;
@@ -105,10 +105,7 @@ body {
     transition: 0.2s;
 }
 
-.day-button:hover{
-    background:#eef6ff;
-}
-
+.day-button:hover{ background:#eef6ff; }
 .day-button .date { font-size: 12px; }
 
 .day-button.active {
@@ -160,13 +157,9 @@ body {
 }
 
 .slot input[type="radio"] { margin-right: 5px; }
-
 .slot-info { flex: 1; }
 
-.slot-title {
-    font-size: 14px;
-    font-weight: 700;
-}
+.slot-title { font-size: 14px; font-weight: 700; }
 
 .slot-sub {
     font-size: 11px;
@@ -182,9 +175,7 @@ body {
 
 .slot.selected { border: 2px solid #0071e3; }
 
-.slot-disabled{
-    opacity:0.85;
-}
+.slot-disabled{ opacity:0.85; }
 
 /* FORM */
 .form-grid {
@@ -231,65 +222,40 @@ body {
     transition:0.2s;
 }
 
-/* AZUL MI TIENDITA */
 .btn-primary{
     background:#0071e3;
     color:#fff;
     box-shadow:0 2px 10px rgba(0,113,227,0.18);
 }
 
-.btn-primary:hover{
-    background:#005bb5;
-}
+.btn-primary:hover{ background:#005bb5; }
 
 .btn-secondary {
     background: #e5e7eb;
     color: #111;
 }
-
-.btn-secondary:hover{
-    background:#d1d5db;
-}
+.btn-secondary:hover{ background:#d1d5db; }
 
 .btn-outline {
     background: #fff;
     color: #0071e3;
     border: 1px solid #0071e3;
 }
-
-.btn-outline:hover{
-    background:#eef6ff;
-}
+.btn-outline:hover{ background:#eef6ff; }
 
 .btn-full { width: 100%; }
+.btn-sm{ padding:8px 14px; font-size:13px; }
 
-.btn-sm{
-    padding:8px 14px;
-    font-size:13px;
+/* ✅ BOTÓN DESHABILITADO */
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-outline:disabled{
+    opacity:0.55;
+    cursor:not-allowed;
+    box-shadow:none;
 }
 
-/* LINKS COMO BOTÓN (por si lo usas) */
-a.btn-primary {
-    display: inline-block;
-    text-decoration: none;
-    border-radius: 999px;
-    padding: 10px 24px;
-    font-weight: 700;
-    text-align: center;
-    background-color: #0071e3;
-    color: #fff;
-}
-
-a.btn-primary:hover{
-    background:#005bb5;
-}
-
-a.btn-primary.btn-full {
-    display: block;
-    width: 100%;
-}
-
-/* BOTONES DE PASO */
+/* PASOS */
 .step-buttons {
     margin-top: 15px;
     display: flex;
@@ -315,27 +281,10 @@ a.btn-primary.btn-full {
     font-size: 16px;
     transition:0.2s;
 }
+.back-icon:hover{ background:#e5e7eb; }
 
-.back-icon:hover{
-    background:#e5e7eb;
-}
-
-.step-title {
-    font-size: 16px;
-    font-weight: 800;
-}
-
-.step-sub {
-    font-size: 12px;
-    color: #666;
-}
-
-/* ESTADOS */
-.status-hoy {
-    font-size: 12px;
-    color: #999;
-    margin-bottom: 4px;
-}
+.step-title { font-size: 16px; font-weight: 800; }
+.step-sub { font-size: 12px; color: #666; }
 
 /* RESUMEN */
 .summary {
@@ -355,50 +304,23 @@ a.btn-primary.btn-full {
     padding: 12px;
     background: #fafafa;
 }
-
-.saved-addresses h3 {
-    font-size: 14px;
-    margin-bottom: 8px;
-}
+.saved-addresses h3 { font-size: 14px; margin-bottom: 8px; }
 
 .saved-address-card {
     border-top: 1px solid #e5e7eb;
     padding-top: 10px;
     margin-top: 10px;
 }
-
 .saved-address-card:first-of-type {
     border-top: none;
     padding-top: 0;
     margin-top: 0;
 }
-
-.saved-label {
-    font-size: 13px;
-    font-weight: 800;
-}
-
-.saved-text {
-    font-size: 12px;
-    color: #555;
-    margin: 3px 0 8px;
-}
-
-.saved-form {
-    text-align: right;
-}
+.saved-label { font-size: 13px; font-weight: 800; }
+.saved-text { font-size: 12px; color: #555; margin: 3px 0 8px; }
+.saved-form { text-align: right; }
 
 /* ALERTAS */
-.alert-exito {
-    background: #e6ffed;
-    border: 1px solid #b5f5c9;
-    color: #1b7a3a;
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    font-size: 13px;
-}
-
 .alert-error {
     background: #ffecec;
     border: 1px solid #ffb3b3;
@@ -409,12 +331,6 @@ a.btn-primary.btn-full {
     font-size: 13px;
 }
 
-/* Quitar flechas number */
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
 
 
 

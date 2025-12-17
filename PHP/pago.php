@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -12,21 +11,16 @@ if (!$usuario_id) {
     exit;
 }
 
-
 $confirmado = isset($_GET['confirmado']) && $_GET['confirmado'] == '1';
 $pedido_id_confirm = $confirmado ? (int)($_GET['pedido_id'] ?? 0) : 0;
 
 $errores = [];
 $mensaje_exito = "";
-
-
 $faltantes = [];
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['horario'])) {
     $_SESSION['horario_envio'] = $_POST['horario'];
 }
-
 
 if (!$confirmado) {
     if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
@@ -35,24 +29,20 @@ if (!$confirmado) {
     }
 }
 
-
 if ($confirmado) {
     if ($pedido_id_confirm > 0) {
         $mensaje_exito = "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}";
     } else {
         $mensaje_exito = "Tu pago se realizó correctamente.";
     }
-
-   
 }
-
 
 if (!$confirmado) {
 
     $direccion_id  = (int)$_SESSION['direccion_id'];
     $horario_envio = $_SESSION['horario_envio'];
 
-    // Carrito 
+    // Carrito
     $stmt = $conn->prepare("
         SELECT id, total
         FROM carrito
@@ -64,6 +54,7 @@ if (!$confirmado) {
     $stmt->execute();
     $resCar = $stmt->get_result();
     $carrito = $resCar->fetch_assoc();
+    $stmt->close();
 
     if (!$carrito) {
         header("Location: carrito.php");
@@ -75,7 +66,7 @@ if (!$confirmado) {
     $costo_envio = 49.00;
     $total_pagar = $subtotal + $costo_envio;
 
-    // Dirección 
+    // Dirección
     $stmt = $conn->prepare("
         SELECT etiqueta, calle, colonia, ciudad, estado, cp
         FROM direcciones
@@ -85,6 +76,7 @@ if (!$confirmado) {
     $stmt->execute();
     $resDir = $stmt->get_result();
     $direccion = $resDir->fetch_assoc();
+    $stmt->close();
 
     if (!$direccion) {
         header("Location: checkout.php");
@@ -105,8 +97,9 @@ if (!$confirmado) {
     while ($row = $resMP->fetch_assoc()) {
         $metodos_guardados[] = $row;
     }
+    $stmt->close();
 
-    //  Procesar pago 
+    // Procesar pago
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
         $metodo_pago_id = $_POST['metodo_pago_id'] ?? null;
 
@@ -116,11 +109,12 @@ if (!$confirmado) {
 
         $metodo_id_real = null;
 
-        //  Nueva tarjeta 
+        // Nueva tarjeta
         if ($metodo_pago_id === 'nuevo') {
             $alias    = trim($_POST['alias'] ?? '');
             $titular  = trim($_POST['titular'] ?? '');
-            $numero   = preg_replace('/\D/', '', $_POST['numero'] ?? '');
+            $numeroRaw = $_POST['numero'] ?? '';
+            $numero   = preg_replace('/\D/', '', $numeroRaw); // solo dígitos
             $mes_exp  = (int)($_POST['mes_exp'] ?? 0);
             $anio_exp = (int)($_POST['anio_exp'] ?? 0);
 
@@ -128,8 +122,9 @@ if (!$confirmado) {
                 $errores[] = "Todos los campos de la nueva tarjeta son obligatorios.";
             }
 
-            if (strlen($numero) < 13 || strlen($numero) > 19) {
-                $errores[] = "El número de tarjeta tiene que tener 16 digitos numericos";
+            // ✅ CAMBIO: exactamente 16 dígitos numéricos
+            if (!preg_match('/^\d{16}$/', $numero)) {
+                $errores[] = "El número de tarjeta debe tener exactamente 16 dígitos numéricos.";
             }
 
             if ($mes_exp < 1 || $mes_exp > 12) {
@@ -160,28 +155,22 @@ if (!$confirmado) {
                     INSERT INTO metodos_pago (usuario_id, alias, titular, marca, ultimos4, mes_exp, anio_exp, creada_en)
                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
-                $stmt->bind_param(
-                    "issssii",
-                    $usuario_id,
-                    $alias,
-                    $titular,
-                    $marca,
-                    $ultimos4,
-                    $mes_exp,
-                    $anio_exp
-                );
+                $stmt->bind_param("issssii", $usuario_id, $alias, $titular, $marca, $ultimos4, $mes_exp, $anio_exp);
                 $stmt->execute();
                 $metodo_id_real = $conn->insert_id;
+                $stmt->close();
             }
 
         } else {
-            //  Método guardado 
+            // Método guardado
             $id_mp = (int)$metodo_pago_id;
 
             $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ?");
             $stmt->bind_param("ii", $id_mp, $usuario_id);
             $stmt->execute();
             $resChk = $stmt->get_result();
+            $stmt->close();
+
             if ($resChk->fetch_assoc()) {
                 $metodo_id_real = $id_mp;
             } else {
@@ -189,10 +178,8 @@ if (!$confirmado) {
             }
         }
 
-        //  VERIFICAR STOCK ANTES DEL PEDIDo
+        // VERIFICAR STOCK ANTES DEL PEDIDO
         if (empty($errores) && $metodo_id_real) {
-
-            // 1) Leer productos del carrito con su stock actual
             $stmt = $conn->prepare("
                 SELECT cd.producto_id,
                        cd.cantidad,
@@ -218,21 +205,19 @@ if (!$confirmado) {
                         $faltantes[] = $it;
                     }
                 }
-
                 if (!empty($faltantes)) {
                     $errores[] = "No hay stock suficiente para algunos productos. Ajusta las cantidades en tu carrito.";
                 }
             }
         }
 
-       
         if (empty($errores) && $metodo_id_real) {
             $estado = 'pagado';
 
             try {
                 $conn->begin_transaction();
 
-                // 2) Descontar stock de cada producto
+                // 2) Descontar stock
                 $stmtUpd = $conn->prepare("
                     UPDATE producto
                     SET stock = stock - ?
@@ -265,11 +250,11 @@ if (!$confirmado) {
                 $pedido_id = $conn->insert_id;
                 $stmt->close();
 
-                // 4) Copiar detalle del carrito a pedido_detalle
+                // 4) Copiar detalle
                 $stmt = $conn->prepare("
                     INSERT INTO pedido_detalle (pedido_id, producto_id, cantidad, precio_unit)
                     SELECT ?, cd.producto_id, cd.cantidad,
-                           CASE 
+                           CASE
                                WHEN cd.cantidad > 0 THEN cd.subtotal / cd.cantidad
                                ELSE 0
                            END AS precio_unit
@@ -280,7 +265,7 @@ if (!$confirmado) {
                 $stmt->execute();
                 $stmt->close();
 
-                // 5) Vaciar carrito 
+                // 5) Vaciar carrito
                 $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
                 $stmt->bind_param("i", $carrito_id);
                 $stmt->execute();
@@ -291,12 +276,11 @@ if (!$confirmado) {
                 $stmt->execute();
                 $stmt->close();
 
-                // 6) Limpiar sesión relacionada al envío
+                // 6) Limpiar sesión envío
                 unset($_SESSION['horario_envio'], $_SESSION['direccion_id']);
 
                 $conn->commit();
 
-                // 7) Redirigir a pantalla de pago confirmado
                 header("Location: pago.php?confirmado=1&pedido_id=" . $pedido_id);
                 exit;
 
@@ -315,7 +299,6 @@ if (!$confirmado) {
     <title>Pago - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
     <style>
-        
         a.btn-primary {
             display: inline-block;
             text-decoration: none;
@@ -342,7 +325,6 @@ if (!$confirmado) {
 
     <?php if ($confirmado): ?>
 
-        <!--PANTALLA DE PAGO EXITOSO -->
         <div class="checkout-container">
             <h2>Pago exitoso</h2>
             <p><?= htmlspecialchars($mensaje_exito) ?></p>
@@ -354,7 +336,6 @@ if (!$confirmado) {
 
     <?php else: ?>
 
-      
         <?php if (!empty($errores)): ?>
             <div class="alert-error">
                 <ul>
@@ -408,7 +389,7 @@ if (!$confirmado) {
             </div>
         </div>
 
-        <form method="post" class="checkout-container">
+        <form method="post" class="checkout-container" id="formPago">
             <h2>Métodos de pago favoritos</h2>
 
             <?php if (!empty($metodos_guardados)): ?>
@@ -447,11 +428,22 @@ if (!$confirmado) {
                     <label>Nombre del titular*</label>
                     <input type="text" name="titular" value="<?= htmlspecialchars($_POST['titular'] ?? '') ?>">
                 </div>
+
                 <div class="form-group">
-                    <label>Número de tarjeta*</label>
-                    <input type="text" name="numero" maxlength="19"
-                           value="<?= htmlspecialchars($_POST['numero'] ?? '') ?>">
+                    <label>Número de tarjeta* (16 dígitos)</label>
+                    <input
+                        type="text"
+                        id="numeroTarjeta"
+                        name="numero"
+                        maxlength="16"
+                        inputmode="numeric"
+                        autocomplete="cc-number"
+                        pattern="\d{16}"
+                        title="Debe tener exactamente 16 dígitos numéricos"
+                        value="<?= htmlspecialchars($_POST['numero'] ?? '') ?>"
+                    >
                 </div>
+
                 <div class="form-group">
                     <label>Mes de expiración (MM)*</label>
                     <input type="number" name="mes_exp" min="1" max="12"
@@ -476,9 +468,28 @@ if (!$confirmado) {
 
 </div>
 
+<script>
+// ✅ Solo dígitos + máximo 16 en el input de tarjeta
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("numeroTarjeta");
+    if (!input) return;
+
+    const normalizar = () => {
+        input.value = input.value.replace(/\D/g, "").slice(0, 16);
+    };
+
+    input.addEventListener("input", normalizar);
+
+    input.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const txt = (e.clipboardData || window.clipboardData).getData("text");
+        input.value = (txt || "").replace(/\D/g, "").slice(0, 16);
+    });
+});
+</script>
+
 </body>
 </html>
-
 
 
 

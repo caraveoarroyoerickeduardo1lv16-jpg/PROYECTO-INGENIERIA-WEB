@@ -21,6 +21,11 @@ $paso   = isset($_GET['paso']) ? (int)$_GET['paso'] : 1;
 $error  = '';
 $direccionesUsuario = [];
 
+// ✅ validación servidor: solo letras (incluye acentos), espacios, punto y guion
+function soloLetras($txt) {
+    return (bool)preg_match('/^[\p{L}\s\.\-]{2,}$/u', $txt);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* usar dirección existente  */
@@ -41,10 +46,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($usuario_id && $calle !== '' && $colonia !== '' && $ciudad !== '' && $estado !== '' && $cp !== '') {
 
-            // Validación de CP
+            // ✅ Validación de CP
             if (!preg_match('/^\d{5}$/', $cp)) {
                 $error = "El código postal debe tener exactamente 5 dígitos numéricos.";
                 $paso  = 2;
+
+            // ✅ Validación de NO números en colonia/ciudad/estado
+            } elseif (!soloLetras($colonia)) {
+                $error = "La colonia no debe contener números (solo letras y espacios).";
+                $paso  = 2;
+            } elseif (!soloLetras($ciudad)) {
+                $error = "La ciudad no debe contener números (solo letras y espacios).";
+                $paso  = 2;
+            } elseif (!soloLetras($estado)) {
+                $error = "El estado no debe contener números (solo letras y espacios).";
+                $paso  = 2;
+
             } else {
                 $stmt = $conn->prepare("
                     INSERT INTO direcciones (usuario_id, etiqueta, calle, colonia, ciudad, estado, cp, creada_en)
@@ -96,7 +113,6 @@ $datos = [
     <meta charset="UTF-8">
     <title>Checkout - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
-
     <style>
         ::placeholder { color: #999; opacity: 1; }
     </style>
@@ -104,7 +120,6 @@ $datos = [
 <body>
 
 <div class="page">
-
     <header class="header header-brand">
         <div class="brand-row">
             <div class="brand-left">
@@ -200,36 +215,53 @@ $datos = [
                            value="<?= htmlspecialchars($datos['etiqueta']) ?>"
                            required placeholder="Ej: Casa, Trabajo">
                 </div>
+
                 <div class="form-group">
                     <label>Calle*</label>
                     <input type="text" name="calle"
                            value="<?= htmlspecialchars($datos['calle']) ?>"
                            required placeholder="Ej: Av. Reforma 123">
                 </div>
+
                 <div class="form-group">
                     <label>Colonia*</label>
-                    <input type="text" name="colonia"
+                    <input type="text" name="colonia" id="coloniaInput"
                            value="<?= htmlspecialchars($datos['colonia']) ?>"
-                           required placeholder="Ej: Centro">
+                           required
+                           placeholder="Ej: Centro"
+                           pattern="[\p{L}\s\.\-]{2,}"
+                           title="Solo letras y espacios (sin números).">
                 </div>
+
                 <div class="form-group">
                     <label>Ciudad*</label>
-                    <input type="text" name="ciudad"
+                    <input type="text" name="ciudad" id="ciudadInput"
                            value="<?= htmlspecialchars($datos['ciudad']) ?>"
-                           required placeholder="Ej: Ciudad de México">
+                           required
+                           placeholder="Ej: Ciudad de México"
+                           pattern="[\p{L}\s\.\-]{2,}"
+                           title="Solo letras y espacios (sin números).">
                 </div>
+
                 <div class="form-group">
                     <label>Estado*</label>
-                    <input type="text" name="estado"
+                    <input type="text" name="estado" id="estadoInput"
                            value="<?= htmlspecialchars($datos['estado']) ?>"
-                           required placeholder="Ej: CDMX">
+                           required
+                           placeholder="Ej: CDMX"
+                           pattern="[\p{L}\s\.\-]{2,}"
+                           title="Solo letras y espacios (sin números).">
                 </div>
+
                 <div class="form-group">
                     <label>Código postal*</label>
                     <input type="text" name="cp"
                            value="<?= htmlspecialchars($datos['cp']) ?>"
-                           required placeholder="Ej: 01234"
-                           maxlength="5" pattern="\d{5}" inputmode="numeric"
+                           required
+                           placeholder="Ej: 01234"
+                           maxlength="5"
+                           pattern="\d{5}"
+                           inputmode="numeric"
                            title="Ingresa 5 dígitos numéricos">
                 </div>
             </div>
@@ -292,6 +324,7 @@ $datos = [
 
             <div class="step-buttons">
                 <button type="submit"
+                        id="btnContinuarPago"
                         class="btn-primary btn-full"
                         formaction="pago.php"
                         formnovalidate>

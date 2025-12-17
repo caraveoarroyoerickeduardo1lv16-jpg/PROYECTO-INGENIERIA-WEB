@@ -1,159 +1,220 @@
-
-async function actualizarCarrito(productoId, accion) {
-    const formData = new FormData();
-    formData.append("producto_id", productoId);
-    formData.append("accion", accion); // add | remove | delete
-
-    const response = await fetch("../PHP/carrito_actualizar.php", {
-        method: "POST",
-        body: formData
+function mostrarPaso(num) {
+    ['paso1', 'paso2', 'paso3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'paso' + num) el.classList.remove('hidden');
+        else el.classList.add('hidden');
     });
-
-    return await response.json();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+// ✅ Solo letras (con acentos), espacios, punto y guion
+function limpiarSoloLetras(str) {
+    return (str || '').replace(/[0-9]/g, '').replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.\-]/g, '');
+}
 
-    const headerItems = document.querySelector(".header-items");
-    const headerPrice = document.querySelector(".header-price");
+function forzarSoloLetrasInput(input) {
+    if (!input) return;
 
-    function actualizarHeaderYResumen(totalItems, totalCarrito) {
-        if (headerItems) {
-            headerItems.textContent =
-                totalItems + " artículo" + (totalItems !== 1 ? "s" : "");
+    // Bloquear teclas numéricas
+    input.addEventListener('keydown', (e) => {
+        const k = e.key;
+        if (/^\d$/.test(k)) e.preventDefault();
+    });
+
+    // Limpiar cuando pegan o escriben
+    input.addEventListener('input', () => {
+        const limpio = limpiarSoloLetras(input.value);
+        if (input.value !== limpio) input.value = limpio;
+    });
+
+    // Bloquear pegado con números
+    input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const txt = (e.clipboardData || window.clipboardData).getData('text');
+        input.value = limpiarSoloLetras(txt);
+        input.dispatchEvent(new Event('input'));
+    });
+}
+
+// Filtra los horarios según el día seleccionado (0=hoy,1=mañana,2=pasado)
+function aplicarFiltroSlots(stepId, selectedDay) {
+    const cont = document.getElementById('paso' + stepId);
+    if (!cont) return;
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const limitHour = currentHour + 2; // 2 horas
+
+    const slots = cont.querySelectorAll('.slot');
+    const statusHoy = cont.querySelector('.status-hoy');
+
+    let visibles = 0;
+    let firstRadio = null;
+
+    slots.forEach(slot => {
+        const startHour = parseInt(slot.dataset.hora, 10);
+        let show = true;
+
+        if (selectedDay === 0) {
+            // HOY: solo slots con al menos 2h de diferencia
+            if (startHour < limitHour || startHour >= 21) show = false;
+        } else {
+            show = true;
         }
-        if (headerPrice) {
-            headerPrice.textContent = "$" + totalCarrito.toFixed(2);
-        }
 
-        const subtotalP = document.querySelector(".subtotal");
-        if (subtotalP) {
-            // Texto "Subtotal X artículos"
-            const textNode = Array.from(subtotalP.childNodes)
-                .find(n => n.nodeType === Node.TEXT_NODE);
-            if (textNode) {
-                textNode.textContent = `Subtotal (${totalItems} artículos)`;
+        const r = slot.querySelector('input[type="radio"]');
+
+        if (show) {
+            slot.style.display = 'flex';
+            visibles++;
+
+            // ✅ si es paso 3: habilitar radios visibles
+            if (stepId === 3 && r) {
+                r.disabled = false;
+                if (!firstRadio) firstRadio = r;
             }
-            const montoSpan = subtotalP.querySelector("span");
-            if (montoSpan) {
-                montoSpan.textContent = "$" + totalCarrito.toFixed(2);
+        } else {
+            slot.style.display = 'none';
+
+            // ✅ si es paso 3: deshabilitar radios ocultos y des-seleccionar
+            if (stepId === 3 && r) {
+                r.checked = false;
+                r.disabled = true;
             }
         }
+    });
 
-        const totalSpan = document.querySelector(".total strong:last-child");
-        if (totalSpan) {
-            totalSpan.textContent = "$" + totalCarrito.toFixed(2);
+    // Mensaje Hoy agotado
+    if (statusHoy) {
+        if (selectedDay === 0 && visibles === 0) {
+            statusHoy.textContent = 'Hoy: Agotado';
+            statusHoy.style.display = 'block';
+        } else {
+            statusHoy.style.display = 'none';
         }
     }
 
+    // ✅ Manejo de botón continuar
+    if (stepId === 3) {
+        const btnContinuar = document.getElementById('btnContinuarPago');
+        if (btnContinuar) {
+            btnContinuar.disabled = (visibles === 0);
+        }
+    }
 
-    // MANEJO DE ITEMS DEL CARRITO
-    
-    const items = document.querySelectorAll(".item");
-    const contProductos = document.querySelector(".productos");
+    // Selección automática si hay radios
+    if (stepId === 3) {
+        const cont3 = document.getElementById('paso3');
+        const yaSeleccionado = cont3.querySelector('input[name="horario"]:checked');
 
-    items.forEach(item => {
-        const btnMas = item.querySelector(".btn-mas");
-        const btnMenos = item.querySelector(".btn-menos");
-        const btnEliminar = item.querySelector(".btn-eliminar");
-        const spanCantidad = item.querySelector(".cantidad");
-        const divPrecio = item.querySelector(".precio");
-
-        if (!btnMas || !btnMenos || !btnEliminar || !spanCantidad || !divPrecio) {
-            return;
+        if (!yaSeleccionado && firstRadio) {
+            firstRadio.checked = true;
         }
 
-        const productoId = parseInt(btnMas.dataset.id, 10);
+        actualizarSeleccionHorario();
+    }
+}
 
-        
-        function obtenerPrecioUnitario() {
-            const cantActual = parseInt(spanCantidad.textContent, 10);
-            const textoPrecio = divPrecio.textContent.replace("$", "").replace(/,/g, "");
-            const subtotalActual = parseFloat(textoPrecio) || 0;
-            if (cantActual <= 0) return 0;
-            return subtotalActual / cantActual;
-        }
+function actualizarSeleccionHorario() {
+    const resumen = document.getElementById('resumenHorario');
+    if (!resumen) return;
 
-        //  BOTÓN + 
-        btnMas.addEventListener("click", async () => {
-            try {
-                const data = await actualizarCarrito(productoId, "add");
-                if (!data.success) {
-                    alert(data.message || "Error al agregar.");
-                    return;
-                }
+    const cont = document.getElementById('paso3');
+    if (!cont) return;
 
-                const precioUnit = obtenerPrecioUnitario();
-                spanCantidad.textContent = data.cantidad;
+    const slots = cont.querySelectorAll('.slot');
+    slots.forEach(s => s.classList.remove('selected'));
 
-                if (precioUnit > 0) {
-                    const nuevoSubtotal = precioUnit * data.cantidad;
-                    divPrecio.textContent = "$" + nuevoSubtotal.toFixed(2);
-                }
+    const checked = cont.querySelector('input[name="horario"]:checked');
+    if (!checked) {
+        resumen.textContent = 'Selecciona un horario · $49.00';
+        return;
+    }
 
-                actualizarHeaderYResumen(data.total_items, data.total_carrito);
-            } catch (err) {
-                console.error(err);
-                alert("Error de conexión con el servidor.");
-            }
+    const slot = checked.closest('.slot');
+    if (!slot) return;
+
+    slot.classList.add('selected');
+    const titulo = slot.querySelector('.slot-title').textContent.trim();
+    const precio = slot.querySelector('.slot-price').textContent.trim();
+    resumen.textContent = `${titulo} · ${precio}`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('formCheckout');
+
+    // ✅ bloquear números en colonia/ciudad/estado
+    forzarSoloLetrasInput(document.getElementById('coloniaInput'));
+    forzarSoloLetrasInput(document.getElementById('ciudadInput'));
+    forzarSoloLetrasInput(document.getElementById('estadoInput'));
+
+    const btnAgregarDireccion = document.getElementById('btnAgregarDireccion');
+    if (btnAgregarDireccion) {
+        btnAgregarDireccion.addEventListener('click', (e) => {
+            e.preventDefault();
+            mostrarPaso(2);
         });
+    }
 
-        // BOTÓN -
-        btnMenos.addEventListener("click", async () => {
-            try {
-                const data = await actualizarCarrito(productoId, "remove");
-                if (!data.success) {
-                    alert(data.message || "Error al quitar.");
-                    return;
-                }
-
-                const precioUnit = obtenerPrecioUnitario();
-
-                if (data.cantidad <= 0) {
-                    item.remove();
-                } else {
-                    spanCantidad.textContent = data.cantidad;
-                    if (precioUnit > 0) {
-                        const nuevoSubtotal = precioUnit * data.cantidad;
-                        divPrecio.textContent = "$" + nuevoSubtotal.toFixed(2);
-                    }
-                }
-
-                actualizarHeaderYResumen(data.total_items, data.total_carrito);
-
-                if (data.total_items <= 0 && contProductos) {
-                    contProductos.innerHTML = "<p>No tienes productos en el carrito.</p>";
-                }
-
-            } catch (err) {
-                console.error(err);
-                alert("Error de conexión con el servidor.");
-            }
+    const btnVolverPaso1 = document.getElementById('btnVolverPaso1');
+    if (btnVolverPaso1) {
+        btnVolverPaso1.addEventListener('click', () => {
+            mostrarPaso(1);
         });
+    }
 
-        // BOTÓN ELIMINAR
-        btnEliminar.addEventListener("click", async () => {
-            if (!confirm("¿Eliminar este producto del carrito?")) return;
+    const btnVolverPaso2 = document.getElementById('btnVolverPaso2');
+    if (btnVolverPaso2) {
+        btnVolverPaso2.addEventListener('click', () => {
+            mostrarPaso(2);
+        });
+    }
 
-            try {
-                const data = await actualizarCarrito(productoId, "delete");
-                if (!data.success) {
-                    alert(data.message || "Error al eliminar.");
-                    return;
-                }
+    // Tabs de día
+    const dayButtons = document.querySelectorAll('.day-button');
+    const selectedDayByStep = { 1: 0, 3: 0 };
 
-                item.remove();
-                actualizarHeaderYResumen(data.total_items, data.total_carrito);
+    dayButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const step = parseInt(btn.dataset.step, 10);
+            const dia  = parseInt(btn.dataset.dia, 10);
 
-                if (data.total_items <= 0 && contProductos) {
-                    contProductos.innerHTML = "<p>No tienes productos en el carrito.</p>";
-                }
+            selectedDayByStep[step] = dia;
 
-            } catch (err) {
-                console.error(err);
-                alert("Error de conexión con el servidor.");
-            }
+            const cont = document.getElementById('paso' + step);
+            cont.querySelectorAll('.day-button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            aplicarFiltroSlots(step, dia);
         });
     });
+
+    // Radios de horario
+    const radiosHorario = document.querySelectorAll('#paso3 input[name="horario"]');
+    radiosHorario.forEach(r => r.addEventListener('change', actualizarSeleccionHorario));
+
+    // ✅ bloquear submit a pago si no hay slot
+    const btnContinuar = document.getElementById('btnContinuarPago');
+    if (btnContinuar) {
+        btnContinuar.addEventListener('click', (e) => {
+            // si está disabled por agotado, bloquear
+            if (btnContinuar.disabled) {
+                e.preventDefault();
+                alert("Hoy está agotado. Selecciona Mañana o Pasado mañana.");
+                return;
+            }
+
+            // si no hay radio seleccionado (por cualquier razón)
+            const checked = document.querySelector('#paso3 input[name="horario"]:checked');
+            if (!checked) {
+                e.preventDefault();
+                alert("Selecciona un horario válido para continuar.");
+            }
+        });
+    }
+
+    aplicarFiltroSlots(1, selectedDayByStep[1]);
+    aplicarFiltroSlots(3, selectedDayByStep[3]);
+    actualizarSeleccionHorario();
 });
 
