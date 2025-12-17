@@ -8,7 +8,6 @@ $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset('utf8mb4');
 
 $errores = [];
-$exito   = "";
 
 $nombre  = "";
 $correo  = "";
@@ -25,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = "El nombre es muy corto.";
     }
 
-    // ✅ SOLO LETRAS Y ESPACIOS (acentos incluidos)
+    // SOLO LETRAS Y ESPACIOS
     if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/', $nombre)) {
         $errores[] = "El nombre solo puede contener letras y espacios.";
     }
@@ -34,7 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = "Correo no válido.";
     }
 
-    // VALIDACIÓN CONTRASEÑA SEGURA
     if (!preg_match('/[A-Z]/', $contrasena)) {
         $errores[] = "La contraseña debe incluir al menos una letra mayúscula.";
     }
@@ -57,38 +55,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errores)) {
 
-        try {
-            // Verificar si el correo ya existe
-            $stmt = $conn->prepare("SELECT id FROM usuarios WHERE correo = ? LIMIT 1");
-            $stmt->bind_param("s", $correo);
-            $stmt->execute();
-            $res = $stmt->get_result();
+        // Verificar correo existente
+        $stmt = $conn->prepare("SELECT id FROM usuarios WHERE correo = ? LIMIT 1");
+        $stmt->bind_param("s", $correo);
+        $stmt->execute();
+        $res = $stmt->get_result();
 
-            if ($res->fetch_assoc()) {
-                $errores[] = "Ese correo ya está registrado.";
-            }
+        if ($res->fetch_assoc()) {
+            $errores[] = "Ese correo ya está registrado.";
+        }
+        $stmt->close();
+
+        if (empty($errores)) {
+
+            $usuario = $correo;
+            $tipo    = "cliente";
+
+            $stmt = $conn->prepare("
+                INSERT INTO usuarios (usuario, contrasena, correo, nombre, tipo, creado_en)
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            $stmt->bind_param("sssss", $usuario, $contrasena, $correo, $nombre, $tipo);
+            $stmt->execute();
             $stmt->close();
 
-            if (empty($errores)) {
-
-                $usuario = $correo;
-                $tipo    = "cliente";
-
-                $stmt = $conn->prepare("
-                    INSERT INTO usuarios (usuario, contrasena, correo, nombre, tipo, creado_en)
-                    VALUES (?, ?, ?, ?, ?, NOW())
-                ");
-                $stmt->bind_param("sssss", $usuario, $contrasena, $correo, $nombre, $tipo);
-                $stmt->execute();
-                $stmt->close();
-
-                $exito   = "Cuenta creada correctamente. Ya puedes iniciar sesión.";
-                $nombre  = "";
-                $correo  = "";
-            }
-
-        } catch (Exception $e) {
-            $errores[] = "Error en el servidor: " . $e->getMessage();
+            // ✅ REDIRIGIR A LOGIN
+            header("Location: login.php?registro=1");
+            exit;
         }
     }
 }
@@ -99,15 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>Crear cuenta - Mi tiendita</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <link rel="stylesheet" href="../CSS/registro.css">
-
-    <style>
-        ::placeholder {
-            color: #999;
-            opacity: 1;
-        }
-    </style>
 </head>
 <body>
 
@@ -117,7 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <span class="logo-icon">*</span>
             <span class="logo-text">Mi tiendita</span>
         </div>
-
         <div class="search-bar">
             <input type="text" placeholder="¿Cómo quieres tus artículos?">
         </div>
@@ -133,12 +117,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php foreach ($errores as $e): ?>
                     <p><?= htmlspecialchars($e) ?></p>
                 <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($exito): ?>
-            <div class="message message-success">
-                <p><?= htmlspecialchars($exito) ?></p>
             </div>
         <?php endif; ?>
 
