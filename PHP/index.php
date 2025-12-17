@@ -9,43 +9,9 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-$referrer = $_SERVER['HTTP_REFERER'] ?? '';
-
-// ==========================================================
-// 0) SI ES INVITADO: BORRAR CARRITO SOLO EN ENTRADAS "NUEVAS"
-// ==========================================================
-if (!$estaLogueado) {
-    if ($referrer === '' || strpos($referrer, 'carrito.php') === false) {
-        $stmt = $conn->prepare("
-            SELECT id
-            FROM carrito
-            WHERE session_id = ?
-              AND (usuario_id IS NULL OR usuario_id = 0)
-            LIMIT 1
-        ");
-        $stmt->bind_param("s", $sessionId);
-        $stmt->execute();
-        $resCarTmp = $stmt->get_result();
-        $carTmp = $resCarTmp->fetch_assoc();
-        $stmt->close();
-
-        if ($carTmp) {
-            $cid = (int)$carTmp['id'];
-
-            $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
-            $stmt->bind_param("i", $cid);
-            $stmt->execute();
-            $stmt->close();
-
-            $stmt = $conn->prepare("DELETE FROM carrito WHERE id = ?");
-            $stmt->bind_param("i", $cid);
-            $stmt->execute();
-            $stmt->close();
-        }
-    }
-}
-
-/* 1) CATEGORÍAS */
+/* =========================
+   CATEGORÍAS
+========================= */
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -54,7 +20,9 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-/* 2) PRODUCTOS */
+/* =========================
+   PRODUCTOS
+========================= */
 $categoriaActual = trim($_GET['categoria'] ?? '');
 $productoId      = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
@@ -70,13 +38,6 @@ if ($productoId > 0) {
     $resProd   = $stmt->get_result();
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
-
-    // ✅ Si te pasan un producto_id inexistente, regresamos a inicio normal
-    if (count($productos) === 0) {
-        header("Location: index.php");
-        exit;
-    }
-
 } elseif ($categoriaActual !== '') {
     $stmt = $conn->prepare("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
@@ -96,7 +57,9 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
 }
 
-/* 3) CARRITO */
+/* =========================
+   CARRITO
+========================= */
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -119,7 +82,9 @@ $carrito_id    = $carrito['id']   ?? null;
 $total_carrito = (float)($carrito['total'] ?? 0.0);
 $total_items   = 0;
 
-/* 4) CANTIDADES POR PRODUCTO */
+/* =========================
+   CANTIDADES EN CARRITO
+========================= */
 $cantidadesPorProducto = [];
 if ($carrito_id) {
     $stmt = $conn->prepare("
@@ -156,7 +121,8 @@ if ($productoId > 0 && count($productos) === 1) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../CSS/index.css">
 </head>
-<body data-logged="<?php echo $estaLogueado ? '1' : '0'; ?>">
+
+<body data-logged="<?= $estaLogueado ? '1' : '0'; ?>">
 
 <header class="header">
     <div class="header-left">
@@ -168,12 +134,9 @@ if ($productoId > 0 && count($productos) === 1) {
         </div>
 
         <div class="search-bar">
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="¿Cómo quieres tus artículos?"
-                autocomplete="off"
-            >
+            <input type="text" id="searchInput"
+                   placeholder="¿Cómo quieres tus artículos?"
+                   autocomplete="off">
             <div id="searchSuggestions" class="search-suggestions"></div>
             <div id="searchNotFound" class="search-notfound">Producto no encontrado</div>
         </div>
@@ -181,135 +144,98 @@ if ($productoId > 0 && count($productos) === 1) {
 
     <div class="header-right">
         <?php if ($estaLogueado): ?>
-            <span class="header-user"><?php echo htmlspecialchars($_SESSION['usuario']); ?></span>
+            <span class="header-user"><?= htmlspecialchars($_SESSION['usuario']); ?></span>
             <a href="../PHP/logout.php" class="header-link">Cerrar sesión</a>
         <?php else: ?>
             <a href="../PHP/login.php" class="header-link">Iniciar sesión</a>
         <?php endif; ?>
 
-        <span id="cartTotalItems" class="header-items" data-items="<?php echo $total_items; ?>">
-            <?php echo $total_items; ?> artículo<?php echo $total_items === 1 ? '' : 's'; ?>
-        </span>
+        <span id="cartTotalItems"><?= $total_items; ?> artículos</span>
+        <span id="cartTotalPrice">$<?= number_format($total_carrito, 2); ?></span>
 
-        <span id="cartTotalPrice" class="header-price" data-total="<?php echo $total_carrito; ?>">
-            $<?php echo number_format($total_carrito, 2); ?>
-        </span>
-
-        <a href="../PHP/carrito.php" class="header-cart-link">
-            <span class="header-cart">🛒</span>
-        </a>
+        <a href="../PHP/carrito.php" class="header-cart-link">🛒</a>
     </div>
 </header>
 
 <nav class="nav-categorias">
-    <a href="index.php" class="nav-item <?php echo ($categoriaActual === '' && $productoId === 0) ? 'activo' : ''; ?>">
+    <a href="index.php" class="nav-item <?= ($categoriaActual === '' && $productoId === 0) ? 'activo' : ''; ?>">
         Inicio
     </a>
 
     <?php foreach ($categorias as $cat): ?>
-        <a
-            href="index.php?categoria=<?php echo urlencode($cat); ?>"
-            class="nav-item <?php echo ($categoriaActual === $cat) ? 'activo' : ''; ?>"
-        >
-            <?php echo htmlspecialchars($cat); ?>
+        <a href="index.php?categoria=<?= urlencode($cat); ?>"
+           class="nav-item <?= ($categoriaActual === $cat) ? 'activo' : ''; ?>">
+            <?= htmlspecialchars($cat); ?>
         </a>
     <?php endforeach; ?>
-
-    <?php if ($estaLogueado): ?>
-        <a href="mis_pedidos.php" class="nav-item">Mis pedidos📝</a>
-    <?php endif; ?>
 </nav>
 
 <main class="main-container">
-    <h2 class="titulo-seccion"><?php echo htmlspecialchars($tituloSeccion); ?></h2>
 
+    <h2 class="titulo-seccion"><?= htmlspecialchars($tituloSeccion); ?></h2>
+
+    <!-- ✅ MENSAJE GRANDE (controlado por JS) -->
+    <div id="productsMessage" class="products-message" style="display:none;">
+        Producto no existente
+    </div>
+
+    <!-- PRODUCTOS -->
     <div class="carrusel-wrapper">
-        <button class="btn-carrusel btn-carrusel-izq">&#10094;</button>
-
         <div class="carrusel-viewport">
             <section class="grid-productos carrusel-pista">
+
                 <?php foreach ($productos as $p): ?>
                     <?php
-                        $pid            = (int)$p['id'];
-                        $stock          = (int)$p['stock'];
-                        $cantEnCarrito  = $cantidadesPorProducto[$pid] ?? 0;
-                        $estaEnCarrito  = $cantEnCarrito > 0;
-
-                        $sinStock = ($stock <= 0);
-                        $disabledAgregar = (!$estaEnCarrito && $sinStock);
+                        $pid           = (int)$p['id'];
+                        $stock         = (int)$p['stock'];
+                        $cantCarrito   = $cantidadesPorProducto[$pid] ?? 0;
+                        $estaEnCarrito = $cantCarrito > 0;
+                        $sinStock      = ($stock <= 0);
                     ?>
-                    <article
-                        class="producto-card"
-                        data-id="<?php echo $pid; ?>"
-                        data-precio="<?php echo (float)$p['precio']; ?>"
-                        data-stock="<?php echo $stock; ?>"
-                    >
-                        <a href="producto_detalle.php?id=<?php echo $pid; ?>" class="producto-link">
-                            <div class="producto-img-wrapper">
-                                <img
-                                    src="<?php echo htmlspecialchars($p['imagen_url']); ?>"
-                                    alt="<?php echo htmlspecialchars($p['nombre']); ?>"
-                                >
-                            </div>
+                    <article class="producto-card"
+                             data-id="<?= $pid; ?>"
+                             data-stock="<?= $stock; ?>"
+                             data-precio="<?= (float)$p['precio']; ?>">
 
+                        <a href="producto_detalle.php?id=<?= $pid; ?>" class="producto-link">
+                            <img src="<?= htmlspecialchars($p['imagen_url']); ?>"
+                                 alt="<?= htmlspecialchars($p['nombre']); ?>">
                             <div class="producto-info">
-                                <div class="precio-actual">$<?php echo number_format((float)$p['precio'], 2); ?></div>
-                                <div class="marca"><?php echo htmlspecialchars($p['marca']); ?></div>
-                                <div class="titulo"><?php echo htmlspecialchars($p['nombre']); ?></div>
-
-                                <?php if ($sinStock): ?>
-                                    <div class="stock-label">Sin stock</div>
-                                <?php endif; ?>
+                                <div class="precio">$<?= number_format($p['precio'], 2); ?></div>
+                                <div class="marca"><?= htmlspecialchars($p['marca']); ?></div>
+                                <div class="titulo"><?= htmlspecialchars($p['nombre']); ?></div>
                             </div>
                         </a>
 
                         <div class="producto-actions">
-                            <button
-                                class="btn-agregar"
-                                <?php echo $disabledAgregar ? 'disabled' : ''; ?>
-                                style="<?php echo $estaEnCarrito ? 'display:none;' : ''; ?>"
-                            >
-                                <?php echo $disabledAgregar ? 'Sin stock' : '+ Agregar'; ?>
+                            <button class="btn-agregar"
+                                <?= (!$estaEnCarrito && $sinStock) ? 'disabled' : ''; ?>
+                                style="<?= $estaEnCarrito ? 'display:none;' : ''; ?>">
+                                <?= $sinStock ? 'Sin stock' : '+ Agregar'; ?>
                             </button>
 
-                            <div class="cantidad-control <?php echo $estaEnCarrito ? '' : 'oculto'; ?>">
+                            <div class="cantidad-control <?= $estaEnCarrito ? '' : 'oculto'; ?>">
                                 <button class="btn-menos">−</button>
-                                <span class="cantidad"><?php echo $estaEnCarrito ? (int)$cantEnCarrito : 0; ?></span>
-                                <button class="btn-mas" <?php echo ($sinStock ? 'disabled' : ''); ?>>+</button>
+                                <span class="cantidad"><?= $cantCarrito; ?></span>
+                                <button class="btn-mas" <?= $sinStock ? 'disabled' : ''; ?>>+</button>
                             </div>
                         </div>
                     </article>
                 <?php endforeach; ?>
+
             </section>
         </div>
-
-        <button class="btn-carrusel btn-carrusel-der">&#10095;</button>
     </div>
 </main>
 
 <footer class="footer">
-    <div class="footer-content">
-        <h3>Mi Tiendita</h3>
-        <p>Teléfono de contacto: <strong>55-8923-4417</strong></p>
-        <p>Correo de contacto: <strong>soporte@mitiendita.com</strong></p>
-    </div>
+    <p>Mi Tiendita · soporte@mitiendita.com</p>
 </footer>
-
-<!-- MODAL LOGIN -->
-<div id="loginModal" class="modal-overlay" aria-hidden="true">
-    <div class="modal">
-        <h3>Iniciar sesión</h3>
-        <p>Para agregar o modificar productos en el carrito necesitas iniciar sesión.</p>
-        <div class="modal-actions">
-            <button id="modalGoLogin" class="modal-btn modal-btn-primary">Iniciar sesión</button>
-            <button id="modalClose" class="modal-btn">Cancelar</button>
-        </div>
-    </div>
-</div>
 
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
 </html>
+
 
 
 
