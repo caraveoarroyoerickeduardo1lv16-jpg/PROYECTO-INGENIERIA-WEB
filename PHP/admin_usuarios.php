@@ -1,6 +1,7 @@
 <?php
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
@@ -14,9 +15,22 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_tipo'] ?? '') !== 'administ
 $filtro = $_GET['filtro'] ?? 'todos';
 
 if ($filtro === 'todos') {
-    $stmt = $conn->prepare("SELECT id, usuario, correo, nombre, tipo, creado_en FROM usuarios");
+    // ✅ Solo activos
+    $stmt = $conn->prepare("
+        SELECT id, usuario, correo, nombre, tipo, creado_en
+        FROM usuarios
+        WHERE estatus = 1
+        ORDER BY id DESC
+    ");
 } else {
-    $stmt = $conn->prepare("SELECT id, usuario, correo, nombre, tipo, creado_en FROM usuarios WHERE tipo = ?");
+    // ✅ Solo activos + filtro por rol
+    $stmt = $conn->prepare("
+        SELECT id, usuario, correo, nombre, tipo, creado_en
+        FROM usuarios
+        WHERE estatus = 1
+          AND tipo = ?
+        ORDER BY id DESC
+    ");
     $stmt->bind_param("s", $filtro);
 }
 
@@ -51,19 +65,16 @@ $stmt->close();
     <main class="main">
         <h1>Usuarios</h1>
 
-      
         <div class="tabs">
             <a href="?filtro=todos" class="tab <?= $filtro==='todos'?'active':'' ?>">Todos</a>
             <a href="?filtro=administrador" class="tab <?= $filtro==='administrador'?'active':'' ?>">Administradores</a>
             <a href="?filtro=operador" class="tab <?= $filtro==='operador'?'active':'' ?>">Operadores</a>
             <a href="?filtro=cliente" class="tab <?= $filtro==='cliente'?'active':'' ?>">Clientes</a>
 
-           
             <a href="admin_agregar_usuario.php" class="btn-add-user">
                 Agregar usuario
             </a>
         </div>
-
 
         <table class="tabla">
             <thead>
@@ -94,6 +105,14 @@ $stmt->close();
                         </td>
                     </tr>
                 <?php endforeach; ?>
+
+                <?php if (empty($usuarios)): ?>
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:14px;">
+                            No hay usuarios activos para mostrar.
+                        </td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </main>
@@ -102,4 +121,3 @@ $stmt->close();
 
 </body>
 </html>
-
