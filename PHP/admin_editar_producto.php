@@ -19,8 +19,31 @@ if ($id <= 0) {
 }
 
 /* =========================
+   ✅ FUNCIÓN: Validar URL de imagen
+========================= */
+function esUrlImagen($url) {
+    $url = trim((string)$url);
+    if ($url === '') return true; // vacío permitido
+
+    // Permitir data URL de imagen (opcional)
+    if (preg_match('~^data:image/(png|jpe?g|gif|webp|bmp|svg\+xml);base64,~i', $url)) {
+        return true;
+    }
+
+    // Validar por extensión en la ruta (ignorar querystring)
+    $path = parse_url($url, PHP_URL_PATH) ?? '';
+    return (bool)preg_match('~\.(png|jpe?g|gif|webp|bmp|svg)$~i', $path);
+}
+
+/* =========================
+   ✅ FLASH MENSAJE (toast)
+========================= */
+$flashImgError = $_SESSION['flash_error_img'] ?? '';
+unset($_SESSION['flash_error_img']);
+
+/* =========================
    PROCESAR POST
-   ========================= */
+========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ---- ELIMINAR PRODUCTO ---- */
@@ -66,6 +89,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $marca      = $_POST['marca']      ?? '';
     $categoria  = $_POST['categoria']  ?? '';
 
+    // ✅ Validar imagen principal
+    if (!esUrlImagen($imagen_url)) {
+        $_SESSION['flash_error_img'] = "Esta imagen no es compatible. Solo se permiten: png, jpg, jpeg, gif, webp, bmp, svg.";
+        header("Location: admin_editar_producto.php?id=" . (int)$id);
+        exit;
+    }
+
+    // ✅ Validar imágenes extra
+    $imagenesExtra = $_POST['imagenes_extra'] ?? [];
+    $urlsLimpias = [];
+
+    foreach ($imagenesExtra as $url) {
+        $u = trim((string)$url);
+        if ($u === '') continue;
+
+        if (!esUrlImagen($u)) {
+            $_SESSION['flash_error_img'] = "Una o más URLs no son imágenes compatibles. Solo: png, jpg, jpeg, gif, webp, bmp, svg.";
+            header("Location: admin_editar_producto.php?id=" . (int)$id);
+            exit;
+        }
+
+        $urlsLimpias[] = $u;
+    }
+
+    // Guardar producto
     $stmt = $conn->prepare("
         UPDATE producto
         SET nombre = ?, precio = ?, stock = ?, imagen_url = ?, marca = ?, categoria = ?
@@ -76,14 +124,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
 
     /* ---- IMÁGENES EXTRA ---- */
-    $imagenesExtra = $_POST['imagenes_extra'] ?? [];
-
-    $urlsLimpias = [];
-    foreach ($imagenesExtra as $url) {
-        $u = trim($url);
-        if ($u !== '') $urlsLimpias[] = $u;
-    }
-
     $stmt = $conn->prepare("DELETE FROM producto_imagen WHERE producto_id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -109,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 /* =========================
    CARGAR PRODUCTO
-   ========================= */
+========================= */
 $stmt = $conn->prepare("
     SELECT id, nombre, precio, stock, imagen_url, marca, categoria
     FROM producto
@@ -148,6 +188,12 @@ $stmt->close();
 </head>
 <body>
 
+<?php if ($flashImgError !== ''): ?>
+  <div id="toast" class="toast toast-error">
+    <?= htmlspecialchars($flashImgError) ?>
+  </div>
+<?php endif; ?>
+
 <div class="page">
 
     <header class="topbar">
@@ -171,7 +217,7 @@ $stmt->close();
         </section>
 
         <section class="edit-card">
-            <form method="post" class="edit-form">
+            <form method="post" class="edit-form" id="editForm">
 
                 <div class="edit-row">
                     <div class="edit-col full-width">
@@ -210,11 +256,14 @@ $stmt->close();
                 <div class="edit-row">
                     <div class="edit-col full-width">
                         <label>URL de la imagen principal</label>
-                        <input type="text" name="imagen_url"
+                        <input type="text" name="imagen_url" id="imgPrincipal"
                                value="<?php echo htmlspecialchars($producto['imagen_url']); ?>">
                         <?php if ($producto['imagen_url']): ?>
                             <div class="edit-preview">
-                                <img src="<?php echo htmlspecialchars($producto['imagen_url']); ?>">
+                                <img
+                                  src="<?php echo htmlspecialchars($producto['imagen_url']); ?>"
+                                  onerror="this.style.display='none'"
+                                >
                             </div>
                         <?php endif; ?>
                     </div>
@@ -227,7 +276,7 @@ $stmt->close();
                         <div id="extraImagesContainer">
                             <?php foreach ($imagenesExtra as $img): ?>
                                 <div class="extra-image-row">
-                                    <input type="text" name="imagenes_extra[]"
+                                    <input type="text" name="imagenes_extra[]" class="imgExtra"
                                            value="<?php echo htmlspecialchars($img['url']); ?>">
                                     <button type="button" class="btn-eliminar-imagen">Eliminar</button>
                                 </div>
@@ -235,7 +284,7 @@ $stmt->close();
 
                             <?php if (count($imagenesExtra) === 0): ?>
                                 <div class="extra-image-row">
-                                    <input type="text" name="imagenes_extra[]" placeholder="URL imagen extra">
+                                    <input type="text" name="imagenes_extra[]" class="imgExtra" placeholder="URL imagen extra">
                                     <button type="button" class="btn-eliminar-imagen">Eliminar</button>
                                 </div>
                             <?php endif; ?>
@@ -286,11 +335,80 @@ document.getElementById("btnAgregarImagen")?.addEventListener("click", () => {
     const div = document.createElement("div");
     div.className = "extra-image-row";
     div.innerHTML = `
-        <input type="text" name="imagenes_extra[]" placeholder="URL imagen extra">
+        <input type="text" name="imagenes_extra[]" class="imgExtra" placeholder="URL imagen extra">
         <button type="button" class="btn-eliminar-imagen">Eliminar</button>
     `;
     document.getElementById("extraImagesContainer").appendChild(div);
 });
+
+/* ========= TOAST AUTO-OCULTAR ========= */
+const toast = document.getElementById("toast");
+if (toast) setTimeout(() => toast.remove(), 3500);
+
+/* ========= VALIDACIÓN FRONT: solo imágenes ========= */
+function esUrlImagen(url){
+  url = (url || "").trim();
+  if (url === "") return true;
+
+  if (/^data:image\/(png|jpe?g|gif|webp|bmp|svg\+xml);base64,/i.test(url)) return true;
+
+  try{
+    const u = new URL(url, window.location.href);
+    const p = (u.pathname || "").toLowerCase();
+    return /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(p);
+  }catch(e){
+    return false;
+  }
+}
+
+function showToast(msg){
+  let t = document.getElementById("toastLocal");
+  if (!t){
+    t = document.createElement("div");
+    t.id = "toastLocal";
+    t.className = "toast toast-error";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => t.remove(), 3500);
+}
+
+function marcarInvalido(input, invalido){
+  if (!input) return;
+  input.classList.toggle("input-invalid", !!invalido);
+}
+
+document.getElementById("editForm")?.addEventListener("submit", (e) => {
+  const principal = document.getElementById("imgPrincipal");
+  const valP = principal ? principal.value : "";
+  const okP = esUrlImagen(valP);
+  marcarInvalido(principal, !okP);
+
+  if (!okP){
+    e.preventDefault();
+    showToast("Esta imagen no es compatible. Usa: png, jpg, jpeg, gif, webp, bmp, svg.");
+    return;
+  }
+
+  const extras = document.querySelectorAll('input[name="imagenes_extra[]"]');
+  for (const inp of extras){
+    const ok = esUrlImagen(inp.value);
+    marcarInvalido(inp, !ok);
+    if (!ok){
+      e.preventDefault();
+      showToast("Una URL no es imagen compatible. Corrígela antes de guardar.");
+      return;
+    }
+  }
+});
+
+// Validar al salir del input (blur)
+document.addEventListener("blur", (e) => {
+  if (e.target && (e.target.id === "imgPrincipal" || e.target.classList.contains("imgExtra"))) {
+    marcarInvalido(e.target, !esUrlImagen(e.target.value));
+  }
+}, true);
 </script>
 
 </body>

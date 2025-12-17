@@ -73,6 +73,12 @@
     border-color: #0071e3;
 }
 
+/* ✅ input inválido */
+.input-invalid{
+    border-color:#dc2626 !important;
+    box-shadow:0 0 0 3px rgba(220,38,38,0.12);
+}
+
 /* Vista previa de imagen */
 .edit-preview {
     margin-top: 8px;
@@ -207,6 +213,26 @@
     color: #ffffff;
 }
 
+/* ✅ TOAST flotante */
+.toast{
+    position:fixed;
+    top:18px;
+    right:18px;
+    padding:12px 14px;
+    border-radius:14px;
+    font-size:14px;
+    font-weight:600;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+    z-index:99999;
+    max-width:360px;
+}
+
+.toast-error{
+    background:#fee2e2;
+    border:1px solid #fecaca;
+    color:#991b1b;
+}
+
 @media (max-width: 800px) {
     .edit-card {
         padding: 16px 14px;
@@ -226,3 +252,4 @@
         margin-left: 0;
     }
 }
+
