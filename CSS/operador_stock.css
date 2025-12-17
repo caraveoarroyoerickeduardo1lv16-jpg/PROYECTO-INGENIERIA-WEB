@@ -410,14 +410,33 @@ body {
 }
 
 .op-sug-item{
-    padding:10px 12px;
-    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 14px;
     font-size:14px;
+    cursor:pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.op-sug-item::after{
+    content:"→";
+    font-size:14px;
+    opacity:0;
+    transform:translateX(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .op-sug-item:hover{
-    background:#f9fafb;
+    background:#eef6ff;      /* azul claro */
+    color:#005bb5;
 }
+
+.op-sug-item:hover::after{
+    opacity:1;
+    transform:translateX(0);
+}
+
 
 .op-notfound{
     display:none;
