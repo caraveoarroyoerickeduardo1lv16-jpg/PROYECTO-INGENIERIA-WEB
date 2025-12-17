@@ -92,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Si viene eliminar_usuario ya salimos arriba. Aquí solo llega cuando guardas.
     if (isset($_POST['eliminar_usuario'])) {
-        // seguridad extra
         header("Location: admin_usuarios.php");
         exit;
     }
@@ -109,6 +108,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!in_array($tipo, ['administrador', 'operador', 'cliente'], true)) {
         $errores[] = "El rol seleccionado no es válido.";
+    }
+
+    // ✅ Validar correo (servidor)
+    if ($correo !== '' && !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+        $errores[] = "El correo no tiene un formato válido.";
+    }
+
+    // ✅ Validar contraseña:
+    // - mínimo 8 caracteres
+    // - al menos 1 mayúscula
+    // - al menos 1 número
+    // - al menos 1 carácter especial
+    $regexPass = '/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
+    if ($contrasena !== '' && !preg_match($regexPass, $contrasena)) {
+        $errores[] = "La contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial.";
     }
 
     if (empty($errores)) {
@@ -195,7 +209,18 @@ if (!$usuarioData) {
 
         <div class="form-group">
             <label>Contraseña</label>
-            <input type="text" name="contrasena" value="<?= htmlspecialchars($usuarioData['contrasena']) ?>" required>
+            <input
+                type="text"
+                name="contrasena"
+                value="<?= htmlspecialchars($usuarioData['contrasena']) ?>"
+                required
+                minlength="8"
+                pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}"
+                title="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial."
+            >
+            <small class="help-text">
+                Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial.
+            </small>
         </div>
 
         <div class="form-group">
@@ -251,3 +276,4 @@ function confirmarEliminar(id) {
 
 </body>
 </html>
+

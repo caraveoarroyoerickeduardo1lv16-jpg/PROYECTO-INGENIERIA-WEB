@@ -223,6 +223,13 @@ h1 {
     border-color: #0071e3;
 }
 
+/* ✅ Texto de ayuda */
+.help-text{
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
 /* ACCIONES */
 .edit-actions {
     display: flex;
