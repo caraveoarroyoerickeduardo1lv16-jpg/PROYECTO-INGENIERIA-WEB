@@ -5,8 +5,6 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-date_default_timezone_set('America/Mexico_City');
-
 $usuario_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
 if (!$usuario_id) {
     header("Location: login.php");
@@ -20,77 +18,29 @@ $errores = [];
 $mensaje_exito = "";
 $faltantes = [];
 
-/* ✅ Guardar horario + día seleccionado */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['horario'])) {
     $_SESSION['horario_envio'] = $_POST['horario'];
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dia_envio'])) {
-    $_SESSION['dia_envio'] = (int)$_POST['dia_envio']; // 0/1/2
-}
 
-/* ✅ Validación fuerte: si no confirmado, necesita dirección + horario + día */
 if (!$confirmado) {
-    if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio']) || !isset($_SESSION['dia_envio'])) {
+    if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
         header("Location: checkout.php");
         exit;
     }
 }
 
-/* ✅ Validar horario “hoy” en backend (anti-bugs) */
-function parseStartHour($label) {
-    $label = trim((string)$label);
-    if (!preg_match('/^(\d{1,2})(am|pm)\s*-/i', $label, $m)) return null;
-    $h = (int)$m[1];
-    $ap = strtolower($m[2]);
-    if ($ap === 'pm' && $h !== 12) $h += 12;
-    if ($ap === 'am' && $h === 12) $h = 0;
-    return $h;
-}
-
-if (!$confirmado) {
-    $dia_envio = (int)$_SESSION['dia_envio'];
-    $horario_envio = (string)$_SESSION['horario_envio'];
-
-    // si es HOY, validar:
-    if ($dia_envio === 0) {
-        $now = new DateTime('now');
-        $hourNow = (int)$now->format('G');      // 0-23
-        $minNow  = (int)$now->format('i');
-        $startHour = parseStartHour($horario_envio);
-
-        // cierre 21:00
-        if ($hourNow >= 21) {
-            $_SESSION['horario_error'] = "Hoy ya está agotado: cerramos a las 9pm. Selecciona mañana o pasado.";
-            header("Location: checkout.php?paso=3");
-            exit;
-        }
-
-        if ($startHour === null) {
-            $_SESSION['horario_error'] = "Horario inválido. Selecciona otro horario.";
-            header("Location: checkout.php?paso=3");
-            exit;
-        }
-
-        // regla: mínimo 2 horas de anticipación
-        $limitHour = $hourNow + 2;
-        if ($startHour < $limitHour || $startHour >= 21) {
-            $_SESSION['horario_error'] = "Ese horario ya no está disponible para hoy. Selecciona otro o elige mañana.";
-            header("Location: checkout.php?paso=3");
-            exit;
-        }
-    }
-}
-
 if ($confirmado) {
-    $mensaje_exito = ($pedido_id_confirm > 0)
-        ? "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}"
-        : "Tu pago se realizó correctamente.";
+    if ($pedido_id_confirm > 0) {
+        $mensaje_exito = "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}";
+    } else {
+        $mensaje_exito = "Tu pago se realizó correctamente.";
+    }
 }
 
 if (!$confirmado) {
 
     $direccion_id  = (int)$_SESSION['direccion_id'];
-    $horario_envio = (string)$_SESSION['horario_envio'];
+    $horario_envio = $_SESSION['horario_envio'];
 
     // Carrito
     $stmt = $conn->prepare("
@@ -102,7 +52,8 @@ if (!$confirmado) {
     ");
     $stmt->bind_param("i", $usuario_id);
     $stmt->execute();
-    $carrito = $stmt->get_result()->fetch_assoc();
+    $resCar = $stmt->get_result();
+    $carrito = $resCar->fetch_assoc();
     $stmt->close();
 
     if (!$carrito) {
@@ -123,7 +74,8 @@ if (!$confirmado) {
     ");
     $stmt->bind_param("ii", $direccion_id, $usuario_id);
     $stmt->execute();
-    $direccion = $stmt->get_result()->fetch_assoc();
+    $resDir = $stmt->get_result();
+    $direccion = $resDir->fetch_assoc();
     $stmt->close();
 
     if (!$direccion) {
@@ -131,20 +83,7 @@ if (!$confirmado) {
         exit;
     }
 
-    /* ✅ ELIMINAR TARJETA */
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_metodo'])) {
-        $idDel = (int)$_POST['eliminar_metodo'];
-        if ($idDel > 0) {
-            $stmt = $conn->prepare("DELETE FROM metodos_pago WHERE id = ? AND usuario_id = ?");
-            $stmt->bind_param("ii", $idDel, $usuario_id);
-            $stmt->execute();
-            $stmt->close();
-        }
-        header("Location: pago.php");
-        exit;
-    }
-
-    // Métodos guardados
+    // Métodos de pago guardados
     $stmt = $conn->prepare("
         SELECT id, alias, marca, ultimos4, mes_exp, anio_exp
         FROM metodos_pago
@@ -164,14 +103,18 @@ if (!$confirmado) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
         $metodo_pago_id = $_POST['metodo_pago_id'] ?? null;
 
-        if (!$metodo_pago_id) $errores[] = "Selecciona o registra un método de pago.";
+        if (!$metodo_pago_id) {
+            $errores[] = "Selecciona o registra un método de pago.";
+        }
 
         $metodo_id_real = null;
 
+        // Nueva tarjeta
         if ($metodo_pago_id === 'nuevo') {
             $alias    = trim($_POST['alias'] ?? '');
             $titular  = trim($_POST['titular'] ?? '');
-            $numero   = preg_replace('/\D/', '', $_POST['numero'] ?? '');
+            $numeroRaw = $_POST['numero'] ?? '';
+            $numero   = preg_replace('/\D/', '', $numeroRaw); // solo dígitos
             $mes_exp  = (int)($_POST['mes_exp'] ?? 0);
             $anio_exp = (int)($_POST['anio_exp'] ?? 0);
 
@@ -179,18 +122,25 @@ if (!$confirmado) {
                 $errores[] = "Todos los campos de la nueva tarjeta son obligatorios.";
             }
 
+            // ✅ CAMBIO: exactamente 16 dígitos numéricos
             if (!preg_match('/^\d{16}$/', $numero)) {
                 $errores[] = "El número de tarjeta debe tener exactamente 16 dígitos numéricos.";
             }
 
-            if ($mes_exp < 1 || $mes_exp > 12) $errores[] = "El mes de expiración no es válido.";
+            if ($mes_exp < 1 || $mes_exp > 12) {
+                $errores[] = "El mes de expiración no es válido.";
+            }
 
             $yearNow = (int)date('Y');
-            if ($anio_exp < $yearNow || $anio_exp > $yearNow + 15) $errores[] = "El año de expiración no es válido.";
+            if ($anio_exp < $yearNow || $anio_exp > $yearNow + 15) {
+                $errores[] = "El año de expiración no es válido.";
+            }
 
             if (empty($errores)) {
                 $monthNow = (int)date('n');
-                if ($anio_exp == $yearNow && $mes_exp < $monthNow) $errores[] = "La tarjeta está vencida.";
+                if ($anio_exp == $yearNow && $mes_exp < $monthNow) {
+                    $errores[] = "La tarjeta está vencida.";
+                }
             }
 
             if (empty($errores)) {
@@ -212,6 +162,7 @@ if (!$confirmado) {
             }
 
         } else {
+            // Método guardado
             $id_mp = (int)$metodo_pago_id;
 
             $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ?");
@@ -220,28 +171,39 @@ if (!$confirmado) {
             $resChk = $stmt->get_result();
             $stmt->close();
 
-            if ($resChk->fetch_assoc()) $metodo_id_real = $id_mp;
-            else $errores[] = "El método de pago seleccionado no es válido.";
+            if ($resChk->fetch_assoc()) {
+                $metodo_id_real = $id_mp;
+            } else {
+                $errores[] = "El método de pago seleccionado no es válido.";
+            }
         }
 
-        // Verificar stock
+        // VERIFICAR STOCK ANTES DEL PEDIDO
         if (empty($errores) && $metodo_id_real) {
             $stmt = $conn->prepare("
-                SELECT cd.producto_id, cd.cantidad, p.stock, p.nombre
+                SELECT cd.producto_id,
+                       cd.cantidad,
+                       p.stock,
+                       p.nombre
                 FROM carrito_detalle cd
                 JOIN producto p ON p.id = cd.producto_id
                 WHERE cd.carrito_id = ?
             ");
             $stmt->bind_param("i", $carrito_id);
             $stmt->execute();
-            $items  = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $resDet = $stmt->get_result();
+            $items  = $resDet->fetch_all(MYSQLI_ASSOC);
             $stmt->close();
 
             if (empty($items)) {
                 $errores[] = "Tu carrito está vacío.";
             } else {
                 foreach ($items as $it) {
-                    if ((int)$it['cantidad'] > (int)$it['stock']) $faltantes[] = $it;
+                    $pedido     = (int)$it['cantidad'];
+                    $disponible = (int)$it['stock'];
+                    if ($pedido > $disponible) {
+                        $faltantes[] = $it;
+                    }
                 }
                 if (!empty($faltantes)) {
                     $errores[] = "No hay stock suficiente para algunos productos. Ajusta las cantidades en tu carrito.";
@@ -255,8 +217,12 @@ if (!$confirmado) {
             try {
                 $conn->begin_transaction();
 
-                // descontar stock
-                $stmtUpd = $conn->prepare("UPDATE producto SET stock = stock - ? WHERE id = ?");
+                // 2) Descontar stock
+                $stmtUpd = $conn->prepare("
+                    UPDATE producto
+                    SET stock = stock - ?
+                    WHERE id = ?
+                ");
                 foreach ($items as $it) {
                     $cant = (int)$it['cantidad'];
                     $pid  = (int)$it['producto_id'];
@@ -265,21 +231,33 @@ if (!$confirmado) {
                 }
                 $stmtUpd->close();
 
-                // insertar pedido
+                // 3) Insertar pedido
                 $stmt = $conn->prepare("
                     INSERT INTO pedidos (usuario_id, carrito_id, direccion_id, metodo_pago_id, horario_envio, total, estado, creada_en)
                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
-                $stmt->bind_param("iiiisds", $usuario_id, $carrito_id, $direccion_id, $metodo_id_real, $horario_envio, $total_pagar, $estado);
+                $stmt->bind_param(
+                    "iiiisds",
+                    $usuario_id,
+                    $carrito_id,
+                    $direccion_id,
+                    $metodo_id_real,
+                    $horario_envio,
+                    $total_pagar,
+                    $estado
+                );
                 $stmt->execute();
                 $pedido_id = $conn->insert_id;
                 $stmt->close();
 
-                // copiar detalle
+                // 4) Copiar detalle
                 $stmt = $conn->prepare("
                     INSERT INTO pedido_detalle (pedido_id, producto_id, cantidad, precio_unit)
                     SELECT ?, cd.producto_id, cd.cantidad,
-                           CASE WHEN cd.cantidad > 0 THEN cd.subtotal / cd.cantidad ELSE 0 END
+                           CASE
+                               WHEN cd.cantidad > 0 THEN cd.subtotal / cd.cantidad
+                               ELSE 0
+                           END AS precio_unit
                     FROM carrito_detalle cd
                     WHERE cd.carrito_id = ?
                 ");
@@ -287,7 +265,7 @@ if (!$confirmado) {
                 $stmt->execute();
                 $stmt->close();
 
-                // vaciar carrito
+                // 5) Vaciar carrito
                 $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
                 $stmt->bind_param("i", $carrito_id);
                 $stmt->execute();
@@ -298,8 +276,8 @@ if (!$confirmado) {
                 $stmt->execute();
                 $stmt->close();
 
-                // limpiar sesión
-                unset($_SESSION['horario_envio'], $_SESSION['direccion_id'], $_SESSION['dia_envio']);
+                // 6) Limpiar sesión envío
+                unset($_SESSION['horario_envio'], $_SESSION['direccion_id']);
 
                 $conn->commit();
 
@@ -321,31 +299,20 @@ if (!$confirmado) {
     <title>Pago - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
     <style>
-        a.btn-primary{ display:inline-block;text-decoration:none;border-radius:999px;padding:10px 24px;font-weight:600;text-align:center;background-color:#0062e6;color:#fff; }
-        a.btn-primary.btn-full{ display:block;width:100%; }
-
-        /* ✅ botón rojo eliminar tarjeta */
-        .btn-mp-delete{
-            border:none;
-            border-radius:999px;
-            padding:8px 14px;
-            font-size:13px;
-            font-weight:600;
-            cursor:pointer;
-            background:#dc2626;
-            color:#fff;
-            white-space:nowrap;
+        a.btn-primary {
+            display: inline-block;
+            text-decoration: none;
+            border-radius: 999px;
+            padding: 10px 24px;
+            font-weight: 600;
+            text-align: center;
+            background-color: #0062e6;
+            color: #fff;
         }
-        .btn-mp-delete:hover{ background:#b91c1c; }
-
-        .mp-row{
-            display:flex;
-            align-items:stretch;
-            gap:10px;
-            margin-bottom:8px;
+        a.btn-primary.btn-full {
+            display: block;
+            width: 100%;
         }
-        .mp-row form{ margin:0; display:flex; align-items:center; }
-        .mp-row .mp-card{ flex:1; }
     </style>
 </head>
 <body>
@@ -361,7 +328,10 @@ if (!$confirmado) {
         <div class="checkout-container">
             <h2>Pago exitoso</h2>
             <p><?= htmlspecialchars($mensaje_exito) ?></p>
-            <a href="index.php" class="btn-primary btn-full">Seguir comprando</a>
+
+            <a href="index.php" class="btn-primary btn-full">
+                Seguir comprando
+            </a>
         </div>
 
     <?php else: ?>
@@ -425,25 +395,16 @@ if (!$confirmado) {
             <?php if (!empty($metodos_guardados)): ?>
                 <div class="metodos-guardados">
                     <?php foreach ($metodos_guardados as $mp): ?>
-                        <div class="mp-row">
-                            <label class="mp-card">
-                                <input type="radio" name="metodo_pago_id" value="<?= (int)$mp['id'] ?>">
-                                <div class="mp-info">
-                                    <div class="mp-alias"><?= htmlspecialchars($mp['alias']) ?></div>
-                                    <div class="mp-detalle">
-                                        <?= htmlspecialchars($mp['marca']) ?> •••• <?= htmlspecialchars($mp['ultimos4']) ?>
-                                        &nbsp; Vence <?= sprintf('%02d/%d', $mp['mes_exp'], $mp['anio_exp']) ?>
-                                    </div>
+                        <label class="mp-card">
+                            <input type="radio" name="metodo_pago_id" value="<?= $mp['id'] ?>">
+                            <div class="mp-info">
+                                <div class="mp-alias"><?= htmlspecialchars($mp['alias']) ?></div>
+                                <div class="mp-detalle">
+                                    <?= htmlspecialchars($mp['marca']) ?> •••• <?= htmlspecialchars($mp['ultimos4']) ?>
+                                    &nbsp; Vence <?= sprintf('%02d/%d', $mp['mes_exp'], $mp['anio_exp']) ?>
                                 </div>
-                            </label>
-
-                            <!-- ✅ botón eliminar (form aparte, sin romper radio) -->
-                            <form method="post" onsubmit="return confirm('¿Seguro que quieres eliminar esta tarjeta?');">
-                                <button type="submit" name="eliminar_metodo" value="<?= (int)$mp['id'] ?>" class="btn-mp-delete">
-                                    Eliminar
-                                </button>
-                            </form>
-                        </div>
+                            </div>
+                        </label>
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
@@ -497,7 +458,9 @@ if (!$confirmado) {
 
             <div class="step-buttons">
                 <a href="checkout.php?paso=3" class="btn-secondary btn-link">← Volver</a>
-                <button type="submit" name="pagar" class="btn-primary">Pagar ahora</button>
+                <button type="submit" name="pagar" class="btn-primary">
+                    Pagar ahora
+                </button>
             </div>
         </form>
 
@@ -506,6 +469,7 @@ if (!$confirmado) {
 </div>
 
 <script>
+// ✅ Solo dígitos + máximo 16 en el input de tarjeta
 document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("numeroTarjeta");
     if (!input) return;
@@ -526,7 +490,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
-
 
 
 

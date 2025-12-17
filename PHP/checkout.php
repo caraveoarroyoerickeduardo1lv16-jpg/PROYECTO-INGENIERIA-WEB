@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -6,491 +7,338 @@ $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
 $usuario_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-if (!$usuario_id) {
-    header("Location: login.php");
-    exit;
+
+date_default_timezone_set('America/Mexico_City');
+
+function formatHourLabel($h) {
+    $ampm = $h >= 12 ? 'pm' : 'am';
+    $h12  = $h % 12;
+    if ($h12 == 0) $h12 = 12;
+    return $h12 . $ampm;
 }
 
-$confirmado = isset($_GET['confirmado']) && $_GET['confirmado'] == '1';
-$pedido_id_confirm = $confirmado ? (int)($_GET['pedido_id'] ?? 0) : 0;
+$paso   = isset($_GET['paso']) ? (int)$_GET['paso'] : 1;
+$error  = '';
+$direccionesUsuario = [];
 
-$errores = [];
-$mensaje_exito = "";
-$faltantes = [];
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['horario'])) {
-    $_SESSION['horario_envio'] = $_POST['horario'];
+// ✅ validación servidor: solo letras (incluye acentos), espacios, punto y guion
+function soloLetras($txt) {
+    return (bool)preg_match('/^[\p{L}\s\.\-]{2,}$/u', $txt);
 }
 
-if (!$confirmado) {
-    if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
-        header("Location: checkout.php");
-        exit;
-    }
-}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-if ($confirmado) {
-    if ($pedido_id_confirm > 0) {
-        $mensaje_exito = "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}";
-    } else {
-        $mensaje_exito = "Tu pago se realizó correctamente.";
-    }
-}
-
-if (!$confirmado) {
-
-    $direccion_id  = (int)$_SESSION['direccion_id'];
-    $horario_envio = $_SESSION['horario_envio'];
-
-    // Carrito
-    $stmt = $conn->prepare("
-        SELECT id, total
-        FROM carrito
-        WHERE usuario_id = ?
-        ORDER BY id DESC
-        LIMIT 1
-    ");
-    $stmt->bind_param("i", $usuario_id);
-    $stmt->execute();
-    $resCar = $stmt->get_result();
-    $carrito = $resCar->fetch_assoc();
-    $stmt->close();
-
-    if (!$carrito) {
-        header("Location: carrito.php");
+    /* usar dirección existente  */
+    if (isset($_POST['usar_direccion'])) {
+        $_SESSION['direccion_id'] = (int)$_POST['usar_direccion'];
+        header("Location: checkout.php?paso=3");
         exit;
     }
 
-    $carrito_id  = (int)$carrito['id'];
-    $subtotal    = (float)$carrito['total'];
-    $costo_envio = 49.00;
-    $total_pagar = $subtotal + $costo_envio;
+    /*  guardar nueva dirección  */
+    if (isset($_POST['guardar_direccion'])) {
+        $etiqueta = $_POST['etiqueta'] ?? 'Casa';
+        $calle    = trim($_POST['calle'] ?? '');
+        $colonia  = trim($_POST['colonia'] ?? '');
+        $ciudad   = trim($_POST['ciudad'] ?? '');
+        $estado   = trim($_POST['estado'] ?? '');
+        $cp       = trim($_POST['cp'] ?? '');
 
-    // Dirección
+        if ($usuario_id && $calle !== '' && $colonia !== '' && $ciudad !== '' && $estado !== '' && $cp !== '') {
+
+            // ✅ Validación de CP
+            if (!preg_match('/^\d{5}$/', $cp)) {
+                $error = "El código postal debe tener exactamente 5 dígitos numéricos.";
+                $paso  = 2;
+
+            // ✅ Validación de NO números en colonia/ciudad/estado
+            } elseif (!soloLetras($colonia)) {
+                $error = "La colonia no debe contener números (solo letras y espacios).";
+                $paso  = 2;
+            } elseif (!soloLetras($ciudad)) {
+                $error = "La ciudad no debe contener números (solo letras y espacios).";
+                $paso  = 2;
+            } elseif (!soloLetras($estado)) {
+                $error = "El estado no debe contener números (solo letras y espacios).";
+                $paso  = 2;
+
+            } else {
+                $stmt = $conn->prepare("
+                    INSERT INTO direcciones (usuario_id, etiqueta, calle, colonia, ciudad, estado, cp, creada_en)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+                $stmt->bind_param("issssss", $usuario_id, $etiqueta, $calle, $colonia, $ciudad, $estado, $cp);
+                $stmt->execute();
+
+                $_SESSION['direccion_id'] = $conn->insert_id;
+                header("Location: checkout.php?paso=3");
+                exit;
+            }
+        } else {
+            $error = "Faltan datos obligatorios de la dirección.";
+            $paso  = 2;
+        }
+    }
+}
+
+/*  DIRECCIONES GUARDADAS */
+if ($usuario_id) {
     $stmt = $conn->prepare("
-        SELECT etiqueta, calle, colonia, ciudad, estado, cp
+        SELECT id, etiqueta, calle, colonia, ciudad, estado, cp
         FROM direcciones
-        WHERE id = ? AND usuario_id = ?
-    ");
-    $stmt->bind_param("ii", $direccion_id, $usuario_id);
-    $stmt->execute();
-    $resDir = $stmt->get_result();
-    $direccion = $resDir->fetch_assoc();
-    $stmt->close();
-
-    if (!$direccion) {
-        header("Location: checkout.php");
-        exit;
-    }
-
-    // Métodos de pago guardados
-    $stmt = $conn->prepare("
-        SELECT id, alias, marca, ultimos4, mes_exp, anio_exp
-        FROM metodos_pago
         WHERE usuario_id = ?
         ORDER BY creada_en DESC
     ");
     $stmt->bind_param("i", $usuario_id);
     $stmt->execute();
-    $resMP = $stmt->get_result();
-    $metodos_guardados = [];
-    while ($row = $resMP->fetch_assoc()) {
-        $metodos_guardados[] = $row;
-    }
-    $stmt->close();
-
-    // Procesar pago
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
-        $metodo_pago_id = $_POST['metodo_pago_id'] ?? null;
-
-        if (!$metodo_pago_id) {
-            $errores[] = "Selecciona o registra un método de pago.";
-        }
-
-        $metodo_id_real = null;
-
-        // Nueva tarjeta
-        if ($metodo_pago_id === 'nuevo') {
-            $alias    = trim($_POST['alias'] ?? '');
-            $titular  = trim($_POST['titular'] ?? '');
-            $numeroRaw = $_POST['numero'] ?? '';
-            $numero   = preg_replace('/\D/', '', $numeroRaw); // solo dígitos
-            $mes_exp  = (int)($_POST['mes_exp'] ?? 0);
-            $anio_exp = (int)($_POST['anio_exp'] ?? 0);
-
-            if ($alias === '' || $titular === '' || $numero === '' || !$mes_exp || !$anio_exp) {
-                $errores[] = "Todos los campos de la nueva tarjeta son obligatorios.";
-            }
-
-            // ✅ CAMBIO: exactamente 16 dígitos numéricos
-            if (!preg_match('/^\d{16}$/', $numero)) {
-                $errores[] = "El número de tarjeta debe tener exactamente 16 dígitos numéricos.";
-            }
-
-            if ($mes_exp < 1 || $mes_exp > 12) {
-                $errores[] = "El mes de expiración no es válido.";
-            }
-
-            $yearNow = (int)date('Y');
-            if ($anio_exp < $yearNow || $anio_exp > $yearNow + 15) {
-                $errores[] = "El año de expiración no es válido.";
-            }
-
-            if (empty($errores)) {
-                $monthNow = (int)date('n');
-                if ($anio_exp == $yearNow && $mes_exp < $monthNow) {
-                    $errores[] = "La tarjeta está vencida.";
-                }
-            }
-
-            if (empty($errores)) {
-                $marca = 'Tarjeta';
-                if (preg_match('/^4/', $numero))           $marca = 'Visa';
-                elseif (preg_match('/^5[1-5]/', $numero)) $marca = 'MasterCard';
-                elseif (preg_match('/^3[47]/', $numero))  $marca = 'American Express';
-
-                $ultimos4 = substr($numero, -4);
-
-                $stmt = $conn->prepare("
-                    INSERT INTO metodos_pago (usuario_id, alias, titular, marca, ultimos4, mes_exp, anio_exp, creada_en)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
-                ");
-                $stmt->bind_param("issssii", $usuario_id, $alias, $titular, $marca, $ultimos4, $mes_exp, $anio_exp);
-                $stmt->execute();
-                $metodo_id_real = $conn->insert_id;
-                $stmt->close();
-            }
-
-        } else {
-            // Método guardado
-            $id_mp = (int)$metodo_pago_id;
-
-            $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ?");
-            $stmt->bind_param("ii", $id_mp, $usuario_id);
-            $stmt->execute();
-            $resChk = $stmt->get_result();
-            $stmt->close();
-
-            if ($resChk->fetch_assoc()) {
-                $metodo_id_real = $id_mp;
-            } else {
-                $errores[] = "El método de pago seleccionado no es válido.";
-            }
-        }
-
-        // VERIFICAR STOCK ANTES DEL PEDIDO
-        if (empty($errores) && $metodo_id_real) {
-            $stmt = $conn->prepare("
-                SELECT cd.producto_id,
-                       cd.cantidad,
-                       p.stock,
-                       p.nombre
-                FROM carrito_detalle cd
-                JOIN producto p ON p.id = cd.producto_id
-                WHERE cd.carrito_id = ?
-            ");
-            $stmt->bind_param("i", $carrito_id);
-            $stmt->execute();
-            $resDet = $stmt->get_result();
-            $items  = $resDet->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
-
-            if (empty($items)) {
-                $errores[] = "Tu carrito está vacío.";
-            } else {
-                foreach ($items as $it) {
-                    $pedido     = (int)$it['cantidad'];
-                    $disponible = (int)$it['stock'];
-                    if ($pedido > $disponible) {
-                        $faltantes[] = $it;
-                    }
-                }
-                if (!empty($faltantes)) {
-                    $errores[] = "No hay stock suficiente para algunos productos. Ajusta las cantidades en tu carrito.";
-                }
-            }
-        }
-
-        if (empty($errores) && $metodo_id_real) {
-            $estado = 'pagado';
-
-            try {
-                $conn->begin_transaction();
-
-                // 2) Descontar stock
-                $stmtUpd = $conn->prepare("
-                    UPDATE producto
-                    SET stock = stock - ?
-                    WHERE id = ?
-                ");
-                foreach ($items as $it) {
-                    $cant = (int)$it['cantidad'];
-                    $pid  = (int)$it['producto_id'];
-                    $stmtUpd->bind_param("ii", $cant, $pid);
-                    $stmtUpd->execute();
-                }
-                $stmtUpd->close();
-
-                // 3) Insertar pedido
-                $stmt = $conn->prepare("
-                    INSERT INTO pedidos (usuario_id, carrito_id, direccion_id, metodo_pago_id, horario_envio, total, estado, creada_en)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
-                ");
-                $stmt->bind_param(
-                    "iiiisds",
-                    $usuario_id,
-                    $carrito_id,
-                    $direccion_id,
-                    $metodo_id_real,
-                    $horario_envio,
-                    $total_pagar,
-                    $estado
-                );
-                $stmt->execute();
-                $pedido_id = $conn->insert_id;
-                $stmt->close();
-
-                // 4) Copiar detalle
-                $stmt = $conn->prepare("
-                    INSERT INTO pedido_detalle (pedido_id, producto_id, cantidad, precio_unit)
-                    SELECT ?, cd.producto_id, cd.cantidad,
-                           CASE
-                               WHEN cd.cantidad > 0 THEN cd.subtotal / cd.cantidad
-                               ELSE 0
-                           END AS precio_unit
-                    FROM carrito_detalle cd
-                    WHERE cd.carrito_id = ?
-                ");
-                $stmt->bind_param("ii", $pedido_id, $carrito_id);
-                $stmt->execute();
-                $stmt->close();
-
-                // 5) Vaciar carrito
-                $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
-                $stmt->bind_param("i", $carrito_id);
-                $stmt->execute();
-                $stmt->close();
-
-                $stmt = $conn->prepare("DELETE FROM carrito WHERE id = ?");
-                $stmt->bind_param("i", $carrito_id);
-                $stmt->execute();
-                $stmt->close();
-
-                // 6) Limpiar sesión envío
-                unset($_SESSION['horario_envio'], $_SESSION['direccion_id']);
-
-                $conn->commit();
-
-                header("Location: pago.php?confirmado=1&pedido_id=" . $pedido_id);
-                exit;
-
-            } catch (Exception $e) {
-                $conn->rollback();
-                $errores[] = "Ocurrió un error al procesar el pago. Inténtalo de nuevo.";
-            }
-        }
+    $resDir = $stmt->get_result();
+    while ($row = $resDir->fetch_assoc()) {
+        $direccionesUsuario[] = $row;
     }
 }
+
+/* datos vacíos para formulario de nueva dirección */
+$datos = [
+    'etiqueta' => '',
+    'calle'    => '',
+    'colonia'  => '',
+    'ciudad'   => '',
+    'estado'   => '',
+    'cp'       => ''
+];
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Pago - Mi Tiendita</title>
+    <title>Checkout - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
     <style>
-        a.btn-primary {
-            display: inline-block;
-            text-decoration: none;
-            border-radius: 999px;
-            padding: 10px 24px;
-            font-weight: 600;
-            text-align: center;
-            background-color: #0062e6;
-            color: #fff;
-        }
-        a.btn-primary.btn-full {
-            display: block;
-            width: 100%;
-        }
+        ::placeholder { color: #999; opacity: 1; }
     </style>
 </head>
 <body>
 
 <div class="page">
-    <header class="header">
-        <h1>Mi Tiendita</h1>
-        <span class="header-sub">Pago</span>
+    <header class="header header-brand">
+        <div class="brand-row">
+            <div class="brand-left">
+                <div class="brand-badge">*</div>
+                <div>
+                    <h1>Mi Tiendita</h1>
+                    <span class="header-sub">Checkout - Envío</span>
+                </div>
+            </div>
+        </div>
     </header>
 
-    <?php if ($confirmado): ?>
+    <?php if ($error !== ''): ?>
+        <div class="alert-error"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
 
-        <div class="checkout-container">
-            <h2>Pago exitoso</h2>
-            <p><?= htmlspecialchars($mensaje_exito) ?></p>
+    <form method="post" id="formCheckout">
 
-            <a href="index.php" class="btn-primary btn-full">
-                Seguir comprando
-            </a>
-        </div>
-
-    <?php else: ?>
-
-        <?php if (!empty($errores)): ?>
-            <div class="alert-error">
-                <ul>
-                    <?php foreach ($errores as $e): ?>
-                        <li><?= htmlspecialchars($e) ?></li>
-                    <?php endforeach; ?>
-                </ul>
-
-                <?php if (!empty($faltantes)): ?>
-                    <ul>
-                        <?php foreach ($faltantes as $f): ?>
-                            <li>
-                                <?= htmlspecialchars($f['nombre']) ?> —
-                                Pediste: <?= (int)$f['cantidad'] ?>,
-                                disponibles: <?= (int)$f['stock'] ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
+        <!-- PASO 1 -->
+        <section id="paso1" class="checkout-container <?= $paso === 1 ? '' : 'hidden' ?>">
+            <div class="days-tabs">
+                <button type="button" class="day-button active" data-dia="0" data-step="1">
+                    <span>Hoy</span><br><span class="date"><?= date('j/n') ?></span>
+                </button>
+                <button type="button" class="day-button" data-dia="1" data-step="1">
+                    <span>Mañana</span><br><span class="date"><?= date('j/n', strtotime('+1 day')) ?></span>
+                </button>
+                <button type="button" class="day-button" data-dia="2" data-step="1">
+                    <span>Pasado</span><br><span class="date"><?= date('j/n', strtotime('+2 day')) ?></span>
+                </button>
             </div>
-        <?php endif; ?>
 
-        <div class="checkout-container">
-            <h2>Resumen de tu pedido</h2>
-            <div class="resumen-row">
-                <span>Dirección de envío</span>
-                <span>
-                    <?= htmlspecialchars($direccion['etiqueta']) ?>:
-                    <?= htmlspecialchars($direccion['calle']) ?>,
-                    <?= htmlspecialchars($direccion['colonia']) ?>,
-                    <?= htmlspecialchars($direccion['ciudad']) ?>,
-                    <?= htmlspecialchars($direccion['estado']) ?>,
-                    CP <?= htmlspecialchars($direccion['cp']) ?>
-                </span>
-            </div>
-            <div class="resumen-row">
-                <span>Horario de entrega</span>
-                <span><?= htmlspecialchars($horario_envio) ?></span>
-            </div>
-            <div class="resumen-row">
-                <span>Subtotal</span>
-                <span>$<?= number_format($subtotal, 2) ?></span>
-            </div>
-            <div class="resumen-row">
-                <span>Envío</span>
-                <span>$<?= number_format($costo_envio, 2) ?></span>
-            </div>
-            <div class="resumen-row resumen-total">
-                <span>Total a pagar</span>
-                <span>$<?= number_format($total_pagar, 2) ?></span>
-            </div>
-        </div>
+            <p class="status-hoy" style="display:none;"></p>
 
-        <form method="post" class="checkout-container" id="formPago">
-            <h2>Métodos de pago favoritos</h2>
+            <div class="alert">
+                <strong>⚠</strong>
+                Para ver y reservar los horarios de envío más precisos,
+                <a href="#" id="btnAgregarDireccion">agrega una dirección</a>.
+            </div>
 
-            <?php if (!empty($metodos_guardados)): ?>
-                <div class="metodos-guardados">
-                    <?php foreach ($metodos_guardados as $mp): ?>
-                        <label class="mp-card">
-                            <input type="radio" name="metodo_pago_id" value="<?= $mp['id'] ?>">
-                            <div class="mp-info">
-                                <div class="mp-alias"><?= htmlspecialchars($mp['alias']) ?></div>
-                                <div class="mp-detalle">
-                                    <?= htmlspecialchars($mp['marca']) ?> •••• <?= htmlspecialchars($mp['ultimos4']) ?>
-                                    &nbsp; Vence <?= sprintf('%02d/%d', $mp['mes_exp'], $mp['anio_exp']) ?>
-                                </div>
+            <div class="slots-group">
+                <?php for ($h = 9; $h < 21; $h++):
+                    $label = formatHourLabel($h) . '-' . formatHourLabel($h + 1);
+                ?>
+                    <label class="slot slot-disabled" data-hora="<?= $h ?>">
+                        <input type="radio" disabled>
+                        <div class="slot-info">
+                            <div class="slot-title"><?= $label ?></div>
+                            <div class="slot-sub">Horario disponible pagando en línea</div>
+                        </div>
+                        <div class="slot-price">$49.00</div>
+                    </label>
+                <?php endfor; ?>
+            </div>
+        </section>
+
+        <!-- PASO 2 -->
+        <section id="paso2" class="checkout-container <?= $paso === 2 ? '' : 'hidden' ?>">
+            <h2 class="section-title">Agregar dirección</h2>
+
+            <?php if (!empty($direccionesUsuario)): ?>
+                <div class="saved-addresses">
+                    <h3>Mis direcciones guardadas</h3>
+                    <?php foreach ($direccionesUsuario as $dir): ?>
+                        <div class="saved-address-card">
+                            <div class="saved-label"><?= htmlspecialchars($dir['etiqueta']) ?></div>
+                            <div class="saved-text">
+                                <?= htmlspecialchars($dir['calle']) ?>,
+                                <?= htmlspecialchars($dir['colonia']) ?>,
+                                <?= htmlspecialchars($dir['ciudad']) ?>,
+                                <?= htmlspecialchars($dir['estado']) ?>,
+                                CP <?= htmlspecialchars($dir['cp']) ?>
                             </div>
-                        </label>
+
+                            <div class="saved-form">
+                                <button type="submit"
+                                        name="usar_direccion"
+                                        value="<?= $dir['id'] ?>"
+                                        class="btn-primary btn-sm"
+                                        formnovalidate>
+                                    Usar esta dirección
+                                </button>
+                            </div>
+                        </div>
                     <?php endforeach; ?>
                 </div>
-            <?php else: ?>
-                <p class="mp-empty">Aún no tienes métodos de pago guardados.</p>
             <?php endif; ?>
-
-            <h3>Usar nueva tarjeta</h3>
-            <label class="mp-card nuevo-mp">
-                <input type="radio" name="metodo_pago_id" value="nuevo" checked>
-                <div class="mp-info">
-                    <div class="mp-alias">Pagar con nueva tarjeta</div>
-                </div>
-            </label>
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Alias (ej. Mi VISA)*</label>
-                    <input type="text" name="alias" value="<?= htmlspecialchars($_POST['alias'] ?? '') ?>">
-                </div>
-                <div class="form-group">
-                    <label>Nombre del titular*</label>
-                    <input type="text" name="titular" value="<?= htmlspecialchars($_POST['titular'] ?? '') ?>">
+                    <label>Etiqueta*</label>
+                    <input type="text" name="etiqueta"
+                           value="<?= htmlspecialchars($datos['etiqueta']) ?>"
+                           required placeholder="Ej: Casa, Trabajo">
                 </div>
 
                 <div class="form-group">
-                    <label>Número de tarjeta* (16 dígitos)</label>
-                    <input
-                        type="text"
-                        id="numeroTarjeta"
-                        name="numero"
-                        maxlength="16"
-                        inputmode="numeric"
-                        autocomplete="cc-number"
-                        pattern="\d{16}"
-                        title="Debe tener exactamente 16 dígitos numéricos"
-                        value="<?= htmlspecialchars($_POST['numero'] ?? '') ?>"
-                    >
+                    <label>Calle*</label>
+                    <input type="text" name="calle"
+                           value="<?= htmlspecialchars($datos['calle']) ?>"
+                           required placeholder="Ej: Av. Reforma 123">
                 </div>
 
                 <div class="form-group">
-                    <label>Mes de expiración (MM)*</label>
-                    <input type="number" name="mes_exp" min="1" max="12"
-                           value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>">
+                    <label>Colonia*</label>
+                    <input type="text" name="colonia" id="coloniaInput"
+                           value="<?= htmlspecialchars($datos['colonia']) ?>"
+                           required
+                           placeholder="Ej: Centro"
+                           pattern="[\p{L}\s\.\-]{2,}"
+                           title="Solo letras y espacios (sin números).">
                 </div>
+
                 <div class="form-group">
-                    <label>Año de expiración (AAAA)*</label>
-                    <input type="number" name="anio_exp"
-                           value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>">
+                    <label>Ciudad*</label>
+                    <input type="text" name="ciudad" id="ciudadInput"
+                           value="<?= htmlspecialchars($datos['ciudad']) ?>"
+                           required
+                           placeholder="Ej: Ciudad de México"
+                           pattern="[\p{L}\s\.\-]{2,}"
+                           title="Solo letras y espacios (sin números).">
+                </div>
+
+                <div class="form-group">
+                    <label>Estado*</label>
+                    <input type="text" name="estado" id="estadoInput"
+                           value="<?= htmlspecialchars($datos['estado']) ?>"
+                           required
+                           placeholder="Ej: CDMX"
+                           pattern="[\p{L}\s\.\-]{2,}"
+                           title="Solo letras y espacios (sin números).">
+                </div>
+
+                <div class="form-group">
+                    <label>Código postal*</label>
+                    <input type="text" name="cp"
+                           value="<?= htmlspecialchars($datos['cp']) ?>"
+                           required
+                           placeholder="Ej: 01234"
+                           maxlength="5"
+                           pattern="\d{5}"
+                           inputmode="numeric"
+                           title="Ingresa 5 dígitos numéricos">
                 </div>
             </div>
 
             <div class="step-buttons">
-                <a href="checkout.php?paso=3" class="btn-secondary btn-link">← Volver</a>
-                <button type="submit" name="pagar" class="btn-primary">
-                    Pagar ahora
+                <button type="button" class="btn-secondary" id="btnVolverPaso1">← Volver</button>
+                <button type="submit" name="guardar_direccion" class="btn-primary" id="btnGuardarDireccion">
+                    Guardar dirección
                 </button>
             </div>
-        </form>
+        </section>
 
-    <?php endif; ?>
+        <!-- PASO 3 -->
+        <section id="paso3" class="checkout-container <?= $paso === 3 ? '' : 'hidden' ?>">
+            <header class="step-header">
+                <button type="button" class="back-icon" id="btnVolverPaso2">←</button>
+                <div>
+                    <div class="step-title">Reservar un horario</div>
+                    <div class="step-sub">Selecciona la hora de entrega</div>
+                </div>
+            </header>
 
+            <div class="days-tabs">
+                <button type="button" class="day-button active" data-dia="0" data-step="3">
+                    <span>Hoy</span><br><span class="date"><?= date('j/n') ?></span>
+                </button>
+                <button type="button" class="day-button" data-dia="1" data-step="3">
+                    <span>Mañana</span><br><span class="date"><?= date('j/n', strtotime('+1 day')) ?></span>
+                </button>
+                <button type="button" class="day-button" data-dia="2" data-step="3">
+                    <span>Pasado mañana</span><br><span class="date"><?= date('j/n', strtotime('+2 day')) ?></span>
+                </button>
+            </div>
+
+            <p class="status-hoy" style="display:none;"></p>
+
+            <div class="slots-group">
+                <?php
+                for ($h = 9; $h < 21; $h++):
+                    $label = formatHourLabel($h) . '-' . formatHourLabel($h + 1);
+                    $isDefault = ($label === '1pm-2pm');
+                ?>
+                    <label class="slot <?= $isDefault ? 'selected' : '' ?>" data-hora="<?= $h ?>">
+                        <input type="radio" name="horario"
+                               value="<?= $label ?>"
+                               <?= $isDefault ? 'checked' : '' ?>
+                               required>
+                        <div class="slot-info">
+                            <div class="slot-title"><?= $label ?></div>
+                        </div>
+                        <div class="slot-price">$49.00</div>
+                    </label>
+                <?php endfor; ?>
+            </div>
+
+            <div class="summary">
+                <div>Envío estándar</div>
+                <div id="resumenHorario">1pm-2pm · $49.00</div>
+            </div>
+
+            <div class="step-buttons">
+                <button type="submit"
+                        id="btnContinuarPago"
+                        class="btn-primary btn-full"
+                        formaction="pago.php"
+                        formnovalidate>
+                    Continuar al pago
+                </button>
+            </div>
+        </section>
+
+    </form>
 </div>
 
-<script>
-// ✅ Solo dígitos + máximo 16 en el input de tarjeta
-document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("numeroTarjeta");
-    if (!input) return;
-
-    const normalizar = () => {
-        input.value = input.value.replace(/\D/g, "").slice(0, 16);
-    };
-
-    input.addEventListener("input", normalizar);
-
-    input.addEventListener("paste", (e) => {
-        e.preventDefault();
-        const txt = (e.clipboardData || window.clipboardData).getData("text");
-        input.value = (txt || "").replace(/\D/g, "").slice(0, 16);
-    });
-});
-</script>
-
+<script src="../JAVASCRIPT/checkout.js"></script>
 </body>
 </html>
-
 
 
 
