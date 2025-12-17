@@ -11,10 +11,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-/* ==========================================
-   ✅ MES A REPORTAR (por defecto mes actual)
-   admin_ventas.php?mes=YYYY-MM
-========================================== */
+
 $mes = trim($_GET['mes'] ?? date('Y-m'));
 if (!preg_match('/^\d{4}-\d{2}$/', $mes)) {
     $mes = date('Y-m');
@@ -22,10 +19,9 @@ if (!preg_match('/^\d{4}-\d{2}$/', $mes)) {
 $inicioMes    = $mes . '-01';
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
 
-/* ==========================================
-   ✅ EXPORT EXCEL (CSV) POR PEDIDO + ARTÍCULOS
-   MISMA PÁGINA: POST export_csv=1
-========================================== */
+/* 
+ EXPORT EXCEL (CSV) POR PEDIDO + ARTÍCULOS
+    */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_csv'])) {
 
     // 1) Traer cada línea de pedido (pedido + artículo)
@@ -57,12 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_csv'])) {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
 
-    // BOM para Excel (UTF-8)
+   
     echo "\xEF\xBB\xBF";
 
     $out = fopen('php://output', 'w');
 
-    // Encabezados “entendibles”
+    
     fputcsv($out, [
         'Fecha',
         'Pedido #',
@@ -75,21 +71,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_csv'])) {
         'Estatus envío'
     ]);
 
-    // 3) Escribir filas (opcional: una fila en blanco por pedido para que se vea “separado”)
+  
     $pedidoAnterior = null;
 
     foreach ($rows as $r) {
 
         $pedidoActual = (int)$r['pedido_id'];
 
-        // Separador visual por pedido (fila en blanco)
+     
         if ($pedidoAnterior !== null && $pedidoActual !== $pedidoAnterior) {
             fputcsv($out, ['','','','','','','','','']);
         }
         $pedidoAnterior = $pedidoActual;
 
         fputcsv($out, [
-            $r['fecha'], // timestamp o fecha completa
+            $r['fecha'], 
             $pedidoActual,
             $r['producto'],
             (int)$r['cantidad'],
@@ -105,9 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_csv'])) {
     exit;
 }
 
-/* =========================
-   1) PRODUCTO MÁS VENDIDO DEL MES
-========================= */
+
 $sqlMasVendido = "
     SELECT 
         p.id,
@@ -128,9 +122,7 @@ $stmt->execute();
 $productoMes = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-/* =========================
-   2) VENTAS DIARIAS DEL MES (para la tabla chica)
-========================= */
+
 $stmt = $conn->prepare("
     SELECT
         DATE(pe.creada_en) AS dia,
@@ -146,9 +138,7 @@ $stmt->execute();
 $ventasDiarias = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-/* =========================
-   3) VENTAS MENSUALES (últimos 12 meses)
-========================= */
+
 $sqlVentasMensuales = "
     SELECT DATE_FORMAT(creada_en, '%Y-%m') AS mes,
            COUNT(*)                        AS num_pedidos,
@@ -187,7 +177,7 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
     <div class="ventas-top">
         <h1 class="reports-title">Reporte de ventas</h1>
 
-        <!-- ✅ BOTÓN AZUL (NO link) -->
+       
         <form method="post" class="export-form">
             <input type="hidden" name="export_csv" value="1">
             <button type="submit" class="btn-export">

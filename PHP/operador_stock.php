@@ -11,10 +11,7 @@ if (!isset($_SESSION["user_id"]) || ($_SESSION["user_tipo"] ?? '') !== "operador
     exit;
 }
 
-/* ==========================================================
-   ✅ AJAX SUGGEST (SIN NUEVO PHP)
-   URL: operador_stock.php?ajax=suggest&q=xxx&categoria=yyy
-========================================================== */
+
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'suggest') {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -68,9 +65,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'suggest') {
 $stockError = $_SESSION['stock_error'] ?? '';
 unset($_SESSION['stock_error']);
 
-/* =========================
-   1) ACTUALIZAR STOCK (POST)
-========================= */
+
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['producto_id'], $_POST['accion'], $_POST['cantidad'])
@@ -127,7 +122,7 @@ if (
         }
     }
 
-    // volver manteniendo filtros (categoria + q o producto_id)
+   
     $params = ['categoria' => $categoriaPost];
 
     if ($productoIdPost > 0) {
@@ -140,25 +135,19 @@ if (
     exit;
 }
 
-/* =========================
-   2) LEER CATEGORÍAS
-========================= */
+
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto WHERE TRIM(categoria) <> '' ORDER BY categoria");
 while ($rowCat = $resCat->fetch_assoc()) {
     $categorias[] = $rowCat['categoria'];
 }
 
-/* =========================
-   3) FILTROS (GET)
-========================= */
+
 $categoriaFiltro = $_GET['categoria'] ?? 'todas';
 $q = trim($_GET['q'] ?? '');
 $productoId = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
-/* =========================
-   4) LEER PRODUCTOS (categoria + q + producto_id)
-========================= */
+
 if ($productoId > 0) {
 
     $stmt = $conn->prepare("
@@ -272,7 +261,7 @@ $stmt->close();
                 <?php endif; ?>
             </form>
 
-            <!-- ✅ BUSCADOR CON SUGERENCIAS -->
+            <!-- BUSCADOR CON SUGERENCIAS -->
             <div class="op-search">
                 <div class="op-search-input">
                     <span class="op-search-icon">🔎</span>
@@ -406,7 +395,7 @@ $stmt->close();
             div.className = "op-sug-item";
             div.innerHTML = `<span class="op-sug-name">${esc(it.nombre)}</span>`;
             div.addEventListener("click", () => {
-                // Ir directo al producto seleccionado (como en admin)
+               
                 const url = `operador_stock.php?categoria=${encodeURIComponent(categoria())}&producto_id=${encodeURIComponent(it.id)}`;
                 window.location.href = url;
             });
@@ -420,7 +409,7 @@ $stmt->close();
     hideSuggestions();
 
     clearBtn.addEventListener("click", () => {
-        // limpiar y volver al listado (conserva categoria)
+        // limpiar y volver al listado conserva categoria
         window.location.href = `operador_stock.php?categoria=${encodeURIComponent(categoria())}`;
     });
 
@@ -441,7 +430,7 @@ $stmt->close();
                 const items = await fetchSuggestions(q);
                 renderSuggestions(items, q);
             } catch (e) {
-                // si falla no rompemos nada
+                
                 hideSuggestions();
             }
         }, 180);
@@ -453,7 +442,7 @@ $stmt->close();
         if (!wrap.contains(e.target)) hideSuggestions();
     });
 
-    // Enter -> buscar normal (q)
+    
     input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();

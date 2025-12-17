@@ -65,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
         $stmt->execute();
         $stmt->close();
 
-        // Redirigir con GET para evitar reenvío del formulario
         header("Location: producto_detalle.php?id=" . $productoPostId . "&resena_ok=1");
         exit;
     }

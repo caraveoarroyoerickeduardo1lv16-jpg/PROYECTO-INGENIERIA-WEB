@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
             $stmt->close();
 
-            // ✅ REDIRIGIR A LOGIN
+            // REDIRIGIR A LOGIN
             header("Location: login.php?registro=1");
             exit;
         }

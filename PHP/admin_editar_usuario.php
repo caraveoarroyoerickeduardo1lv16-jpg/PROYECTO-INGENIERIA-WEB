@@ -19,9 +19,7 @@ if ($id <= 0) {
 
 $errores = [];
 
-/* =========================
-   ELIMINAR USUARIO
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) {
 
     $uid = (int)$_POST['eliminar_usuario'];
@@ -78,9 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) 
     exit;
 }
 
-/* =========================
-   GUARDAR CAMBIOS
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario'])) {
 
     $usuario    = trim($_POST['usuario'] ?? '');
@@ -97,17 +93,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario']))
         $errores[] = "El rol seleccionado no es válido.";
     }
 
-    // ✅ VALIDAR CORREO
+    // VALIDAR CORREO
     if ($correo !== '' && !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
         $errores[] = "El correo no tiene un formato válido.";
     }
 
-    // ✅ VALIDAR NOMBRE: SOLO LETRAS Y ESPACIOS
+    // VALIDAR NOMBRE: SOLO LETRAS Y ESPACIOS
     if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/', $nombre)) {
         $errores[] = "El nombre solo puede contener letras y espacios.";
     }
 
-    // ✅ VALIDAR CONTRASEÑA
+    // VALIDAR CONTRASEÑA
     $regexPass = '/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
     if (!preg_match($regexPass, $contrasena)) {
         $errores[] = "La contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial.";
@@ -128,9 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario']))
     }
 }
 
-/* =========================
-   CARGAR USUARIO
-========================= */
+
 $stmt = $conn->prepare("
     SELECT id, usuario, contrasena, correo, nombre, tipo, creado_en
     FROM usuarios

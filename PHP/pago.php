@@ -20,11 +20,9 @@ $errores = [];
 $mensaje_exito = "";
 $faltantes = [];
 
-/* =========================
-   HELPERS HORARIO
-========================= */
+
 function parseStartHour($label) {
-    // Ej: 1pm-2pm, 10am-11am
+    
     $label = trim((string)$label);
     if (!preg_match('/^(\d{1,2})(am|pm)\-/i', $label, $m)) return null;
 
@@ -41,30 +39,26 @@ function horarioEsValido($dia_envio, $horario_envio) {
     $start = parseStartHour($horario_envio);
     if ($start === null) return false;
 
-    // Horarios válidos: 9 a 20 como hora de inicio (20-21 el último)
+    
     if ($start < 9 || $start >= 21) return false;
 
-    // HOY: 2 horas de anticipación y antes de cierre (9pm)
+    // HOY: 2 horas de anticipación y antes de cierre 9pm
     if ($dia_envio === 0) {
-        $nowHour = (int)date('G'); // 0-23
-        if ($nowHour >= 21) return false;          // ya cerramos
-        if ($start < ($nowHour + 2)) return false; // no cumple ventana mínima
+        $nowHour = (int)date('G'); 
+        if ($nowHour >= 21) return false;          
+        if ($start < ($nowHour + 2)) return false; 
     }
 
     return true;
 }
 
-/* =========================
-   VALIDACIÓN TITULAR
-========================= */
+
 function soloNombre($txt) {
     // Solo letras (incluye acentos/ñ) y espacios. Mínimo 2 chars.
     return (bool)preg_match('/^[\p{L} ]{2,}$/u', trim((string)$txt));
 }
 
-/* =========================
-   GUARDAR HORARIO + DÍA (desde checkout)
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['horario'])) {
         $_SESSION['horario_envio'] = $_POST['horario'];
@@ -74,9 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/* =========================
-   VALIDAR SESIÓN
-========================= */
+
 if (!$confirmado) {
     if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
         header("Location: checkout.php");
@@ -93,16 +85,14 @@ if ($confirmado) {
         : "Tu pago se realizó correctamente.";
 }
 
-/* =========================
-   FLUJO PRINCIPAL (NO CONFIRMADO)
-========================= */
+
 if (!$confirmado) {
 
     $direccion_id  = (int)$_SESSION['direccion_id'];
     $horario_envio = (string)$_SESSION['horario_envio'];
     $dia_envio     = (int)($_SESSION['dia_envio'] ?? 0);
 
-    // ✅ BLOQUEO SERVIDOR: no dejar pagar si el horario ya no es válido
+    
     if (!horarioEsValido($dia_envio, $horario_envio)) {
         $_SESSION['checkout_error'] = "El horario seleccionado ya no está disponible (hoy cerramos a las 9pm o falta anticipación). Elige otro horario.";
         header("Location: checkout.php?paso=3");
@@ -164,12 +154,10 @@ if (!$confirmado) {
     }
     $stmt->close();
 
-    /* =========================
-       PROCESAR PAGO
-    ========================= */
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
 
-        // ✅ Revalidar horario por seguridad
+      
         if (!horarioEsValido($dia_envio, $horario_envio)) {
             $errores[] = "El horario seleccionado ya no está disponible. Regresa y elige otro.";
         }
@@ -193,12 +181,12 @@ if (!$confirmado) {
                 $errores[] = "Todos los campos de la nueva tarjeta son obligatorios.";
             }
 
-            // ✅ TITULAR solo letras y espacios
+            
             if ($titular !== '' && !soloNombre($titular)) {
                 $errores[] = "El nombre del titular solo debe contener letras y espacios (sin números ni caracteres especiales).";
             }
 
-            // ✅ Tarjeta exactamente 16 dígitos
+            // Tarjeta exactamente 16 dígitos
             if (!preg_match('/^\d{16}$/', $numero)) {
                 $errores[] = "El número de tarjeta debe tener exactamente 16 dígitos numéricos.";
             }
@@ -529,7 +517,7 @@ if (!$confirmado) {
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-    // ✅ Tarjeta: solo dígitos y max 16
+    // Tarjeta: solo dígitos y max 16
     const num = document.getElementById("numeroTarjeta");
     if (num) {
         const normalizar = () => { num.value = num.value.replace(/\D/g, "").slice(0, 16); };
@@ -541,7 +529,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ✅ Titular: solo letras y espacios
+    // Titular: solo letras y espacios
     const titular = document.getElementById("titularInput");
     if (titular) {
         const limpiar = () => { titular.value = titular.value.replace(/[^\p{L} ]/gu, ""); };
@@ -553,7 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ✅ CAMBIO: si eliges tarjeta guardada, NO pedir campos de nueva tarjeta
+    // si eliges tarjeta guardada, NO pedir campos de nueva tarjeta
     const radios = document.querySelectorAll('input[name="metodo_pago_id"]');
 
     const aliasInput   = document.getElementById("aliasInput");
@@ -588,7 +576,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     radios.forEach(r => r.addEventListener("change", revisarSeleccion));
 
-    // aplicar al cargar
+    
     revisarSeleccion();
 });
 </script>

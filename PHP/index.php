@@ -11,9 +11,7 @@ $conn->set_charset("utf8mb4");
 
 $referrer = $_SERVER['HTTP_REFERER'] ?? '';
 
-// ==========================================================
-// 0) SI ES INVITADO: BORRAR CARRITO SOLO EN ENTRADAS "NUEVAS"
-// ==========================================================
+
 if (!$estaLogueado) {
     if ($referrer === '' || strpos($referrer, 'carrito.php') === false) {
         $stmt = $conn->prepare("
@@ -71,7 +69,7 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    // ✅ Si te pasan un producto_id inexistente, regresamos a inicio normal
+    // Si te pasan un producto_id inexistente, regresamos a inicio normal
     if (count($productos) === 0) {
         header("Location: index.php");
         exit;
@@ -295,7 +293,7 @@ if ($productoId > 0 && count($productos) === 1) {
     </div>
 </footer>
 
-<!-- MODAL LOGIN -->
+
 <div id="loginModal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
         <h3>Iniciar sesión</h3>

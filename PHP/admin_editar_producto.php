@@ -18,9 +18,7 @@ if ($id <= 0) {
     exit;
 }
 
-/* =========================
-   ✅ FUNCIÓN: Validar URL de imagen
-========================= */
+
 function esUrlImagen($url) {
     $url = trim((string)$url);
     if ($url === '') return true; // vacío permitido
@@ -35,15 +33,11 @@ function esUrlImagen($url) {
     return (bool)preg_match('~\.(png|jpe?g|gif|webp|bmp|svg)$~i', $path);
 }
 
-/* =========================
-   ✅ FLASH MENSAJE (toast)
-========================= */
+
 $flashImgError = $_SESSION['flash_error_img'] ?? '';
 unset($_SESSION['flash_error_img']);
 
-/* =========================
-   PROCESAR POST
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ---- ELIMINAR PRODUCTO ---- */
@@ -89,14 +83,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $marca      = $_POST['marca']      ?? '';
     $categoria  = $_POST['categoria']  ?? '';
 
-    // ✅ Validar imagen principal
+    //  Validar imagen principal
     if (!esUrlImagen($imagen_url)) {
         $_SESSION['flash_error_img'] = "Esta imagen no es compatible. Solo se permiten: png, jpg, jpeg, gif, webp, bmp, svg.";
         header("Location: admin_editar_producto.php?id=" . (int)$id);
         exit;
     }
 
-    // ✅ Validar imágenes extra
+    // Validar imágenes extra
     $imagenesExtra = $_POST['imagenes_extra'] ?? [];
     $urlsLimpias = [];
 
@@ -147,9 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-/* =========================
-   CARGAR PRODUCTO
-========================= */
+
 $stmt = $conn->prepare("
     SELECT id, nombre, precio, stock, imagen_url, marca, categoria
     FROM producto
