@@ -319,13 +319,6 @@ body {
 .saved-label { font-size: 13px; font-weight: 800; }
 .saved-text { font-size: 12px; color: #555; margin: 3px 0 8px; }
 
-/* ✅ NUEVO: acciones en fila */
-.saved-actions{
-    display:flex;
-    justify-content:flex-end;
-    gap:10px;
-    flex-wrap:wrap;
-}
 
 /* ALERTAS */
 .alert-error {
@@ -339,6 +332,9 @@ body {
 }
 
 /* ✅ Botón rojo */
+/* ... TU CSS COMPLETO ... */
+
+/* ✅ Botón rojo */
 .btn-danger{
     border-radius: 999px;
     border: none;
@@ -350,6 +346,15 @@ body {
     font-weight: 700;
 }
 .btn-danger:hover{ background:#b91c1c; }
+
+/* ✅ acciones en fila */
+.saved-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
 
 /* ✅ si hoy está agotado */
 button:disabled{

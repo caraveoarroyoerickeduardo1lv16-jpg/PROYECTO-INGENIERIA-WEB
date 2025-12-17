@@ -7,19 +7,6 @@ function mostrarPaso(num) {
     });
 }
 
-// Convierte "1pm-2pm" -> 13
-function parseStartHour(label) {
-    if (!label) return null;
-    const m = label.trim().match(/^(\d{1,2})(am|pm)\s*-\s*(\d{1,2})(am|pm)$/i);
-    if (!m) return null;
-    let h = parseInt(m[1], 10);
-    const ap = m[2].toLowerCase();
-    if (h === 12) h = 0;
-    if (ap === 'pm') h += 12;
-    return h;
-}
-
-// Filtra los horarios según el día seleccionado (0=hoy,1=mañana,2=pasado)
 function aplicarFiltroSlots(stepId, selectedDay) {
     const cont = document.getElementById('paso' + stepId);
     if (!cont) return;
@@ -40,11 +27,9 @@ function aplicarFiltroSlots(stepId, selectedDay) {
         let show = true;
 
         if (selectedDay === 0) {
-            // HOY: si ya cerramos (>=21) o no cumple ventana de 2h, se oculta
+            // ✅ HOY: si ya cerramos (>=21) o no cumple ventana 2h, se oculta
             if (currentHour >= 21) show = false;
             if (startHour < limitHour || startHour >= 21) show = false;
-        } else {
-            show = true;
         }
 
         if (show) {
@@ -54,8 +39,7 @@ function aplicarFiltroSlots(stepId, selectedDay) {
             if (!firstRadio && r) firstRadio = r;
         } else {
             slot.style.display = 'none';
-
-            // ✅ CLAVE: deshabilitar y desmarcar radios ocultos
+            // ✅ IMPORTANTÍSIMO: si se ocultó, que no se quede seleccionado
             if (r) {
                 r.checked = false;
                 r.disabled = true;
@@ -63,7 +47,6 @@ function aplicarFiltroSlots(stepId, selectedDay) {
         }
     });
 
-    // Mensaje Hoy agotado
     if (statusHoy) {
         if (selectedDay === 0 && visibles === 0) {
             statusHoy.textContent = 'Hoy: Agotado';
@@ -73,7 +56,6 @@ function aplicarFiltroSlots(stepId, selectedDay) {
         }
     }
 
-    // Si estamos en el paso3 y no hay radios visibles, limpiar resumen y bloquear botón
     if (stepId === 3) {
         const btnContinuar = document.getElementById('btnContinuarPago');
         if (btnContinuar) btnContinuar.disabled = (visibles === 0);
@@ -85,7 +67,6 @@ function aplicarFiltroSlots(stepId, selectedDay) {
         }
     }
 
-    // Si hay uno visible, marcar el primero y actualizar
     if (stepId === 3 && firstRadio) {
         firstRadio.checked = true;
         actualizarSeleccionHorario();
@@ -113,6 +94,7 @@ function actualizarSeleccionHorario() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
     const diaEnvioInput = document.getElementById('diaEnvio');
 
     const btnAgregarDireccion = document.getElementById('btnAgregarDireccion');
@@ -129,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnVolverPaso2 = document.getElementById('btnVolverPaso2');
     if (btnVolverPaso2) btnVolverPaso2.addEventListener('click', () => mostrarPaso(2));
 
-    // Tabs de día
     const dayButtons = document.querySelectorAll('.day-button');
     const selectedDayByStep = { 1: 0, 3: 0 };
 
@@ -144,19 +125,18 @@ document.addEventListener('DOMContentLoaded', () => {
             cont.querySelectorAll('.day-button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // ✅ Guardar día seleccionado para validación servidor
+            // ✅ Guardar día solo para el paso 3 (se manda a pago.php)
             if (step === 3 && diaEnvioInput) diaEnvioInput.value = String(dia);
 
             aplicarFiltroSlots(step, dia);
         });
     });
 
-    // Radios de horario
     const radiosHorario = document.querySelectorAll('#paso3 input[name="horario"]');
     radiosHorario.forEach(r => r.addEventListener('change', actualizarSeleccionHorario));
 
-    // Inicial
     if (diaEnvioInput) diaEnvioInput.value = String(selectedDayByStep[3]);
+
     aplicarFiltroSlots(1, selectedDayByStep[1]);
     aplicarFiltroSlots(3, selectedDayByStep[3]);
     actualizarSeleccionHorario();

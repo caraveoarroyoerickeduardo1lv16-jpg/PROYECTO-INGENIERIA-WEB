@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -28,34 +27,22 @@ function soloLetras($txt) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* ✅ ELIMINAR DIRECCIÓN (NUEVO) */
+    /* ✅ ELIMINAR DIRECCIÓN (NUEVO) — no la borra, solo la oculta */
     if (isset($_POST['eliminar_direccion'])) {
         $dirId = (int)$_POST['eliminar_direccion'];
 
         if ($usuario_id && $dirId > 0) {
-            // No permitir borrar si ya está usada en un pedido
-            $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM pedidos WHERE usuario_id = ? AND direccion_id = ?");
-            $stmt->bind_param("ii", $usuario_id, $dirId);
+            $stmt = $conn->prepare("UPDATE direcciones SET usuario_id = 0 WHERE id = ? AND usuario_id = ?");
+            $stmt->bind_param("ii", $dirId, $usuario_id);
             $stmt->execute();
-            $c = (int)($stmt->get_result()->fetch_assoc()['c'] ?? 0);
             $stmt->close();
 
-            if ($c > 0) {
-                $error = "No puedes eliminar esta dirección porque ya fue usada en un pedido.";
-                $paso = 2;
-            } else {
-                $stmt = $conn->prepare("DELETE FROM direcciones WHERE id = ? AND usuario_id = ?");
-                $stmt->bind_param("ii", $dirId, $usuario_id);
-                $stmt->execute();
-                $stmt->close();
-
-                if (!empty($_SESSION['direccion_id']) && (int)$_SESSION['direccion_id'] === $dirId) {
-                    unset($_SESSION['direccion_id']);
-                }
-
-                header("Location: checkout.php?paso=2");
-                exit;
+            if (!empty($_SESSION['direccion_id']) && (int)$_SESSION['direccion_id'] === $dirId) {
+                unset($_SESSION['direccion_id']);
             }
+
+            header("Location: checkout.php?paso=2");
+            exit;
         } else {
             $error = "Dirección inválida.";
             $paso = 2;
@@ -69,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    /*  guardar nueva dirección  */
+    /* guardar nueva dirección */
     if (isset($_POST['guardar_direccion'])) {
         $etiqueta = $_POST['etiqueta'] ?? 'Casa';
         $calle    = trim($_POST['calle'] ?? '');
@@ -80,12 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($usuario_id && $calle !== '' && $colonia !== '' && $ciudad !== '' && $estado !== '' && $cp !== '') {
 
-            // ✅ Validación de CP
             if (!preg_match('/^\d{5}$/', $cp)) {
                 $error = "El código postal debe tener exactamente 5 dígitos numéricos.";
                 $paso  = 2;
 
-            // ✅ Validación de NO números en colonia/ciudad/estado
             } elseif (!soloLetras($colonia)) {
                 $error = "La colonia no debe contener números (solo letras y espacios).";
                 $paso  = 2;
@@ -115,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/*  DIRECCIONES GUARDADAS */
+/* DIRECCIONES GUARDADAS (solo las del usuario actual) */
 if ($usuario_id) {
     $stmt = $conn->prepare("
         SELECT id, etiqueta, calle, colonia, ciudad, estado, cp
@@ -126,13 +111,10 @@ if ($usuario_id) {
     $stmt->bind_param("i", $usuario_id);
     $stmt->execute();
     $resDir = $stmt->get_result();
-    while ($row = $resDir->fetch_assoc()) {
-        $direccionesUsuario[] = $row;
-    }
+    while ($row = $resDir->fetch_assoc()) $direccionesUsuario[] = $row;
     $stmt->close();
 }
 
-/* datos vacíos para formulario de nueva dirección */
 $datos = [
     'etiqueta' => '',
     'calle'    => '',
@@ -148,9 +130,7 @@ $datos = [
     <meta charset="UTF-8">
     <title>Checkout - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
-    <style>
-        ::placeholder { color: #999; opacity: 1; }
-    </style>
+    <style> ::placeholder { color:#999; opacity:1; } </style>
 </head>
 <body>
 
@@ -172,7 +152,7 @@ $datos = [
     <?php endif; ?>
 
     <form method="post" id="formCheckout">
-        <!-- ✅ NUEVO: guardamos qué día eligieron (0=hoy,1=mañana,2=pasado) -->
+        <!-- ✅ IMPORTANTE: esto viaja a pago.php -->
         <input type="hidden" name="dia_envio" id="diaEnvio" value="0">
 
         <!-- PASO 1 -->
@@ -220,6 +200,7 @@ $datos = [
             <?php if (!empty($direccionesUsuario)): ?>
                 <div class="saved-addresses">
                     <h3>Mis direcciones guardadas</h3>
+
                     <?php foreach ($direccionesUsuario as $dir): ?>
                         <div class="saved-address-card">
                             <div class="saved-label"><?= htmlspecialchars($dir['etiqueta']) ?></div>
@@ -231,7 +212,6 @@ $datos = [
                                 CP <?= htmlspecialchars($dir['cp']) ?>
                             </div>
 
-                            <!-- ✅ NUEVO: dos botones (usar + eliminar) -->
                             <div class="saved-actions">
                                 <button type="submit"
                                         name="usar_direccion"
@@ -347,8 +327,7 @@ $datos = [
             <p class="status-hoy" style="display:none;"></p>
 
             <div class="slots-group">
-                <?php
-                for ($h = 9; $h < 21; $h++):
+                <?php for ($h = 9; $h < 21; $h++):
                     $label = formatHourLabel($h) . '-' . formatHourLabel($h + 1);
                     $isDefault = ($label === '1pm-2pm');
                 ?>
@@ -387,6 +366,7 @@ $datos = [
 <script src="../JAVASCRIPT/checkout.js"></script>
 </body>
 </html>
+
 
 
 
