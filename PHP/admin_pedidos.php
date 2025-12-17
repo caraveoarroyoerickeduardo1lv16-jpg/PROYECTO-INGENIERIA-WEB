@@ -54,6 +54,11 @@ $pedidos = $res->fetch_all(MYSQLI_ASSOC);
 
 <section class="orders-header">
     <h1>Pedidos</h1>
+
+    <!-- ✅ BOTÓN AZUL VOLVER A REPORTES -->
+    <a href="admin_reportes.php" class="btn-volver-reportes">
+        ← Volver a reportes
+    </a>
 </section>
 
 <section class="orders-card">
@@ -102,4 +107,3 @@ $pedidos = $res->fetch_all(MYSQLI_ASSOC);
 </div>
 </body>
 </html>
-
