@@ -1,4 +1,3 @@
-
 <?php
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 session_start();
@@ -12,6 +11,9 @@ $conn->set_charset("utf8mb4");
 
 $referrer = $_SERVER['HTTP_REFERER'] ?? '';
 
+// ==========================================================
+// 0) SI ES INVITADO: BORRAR CARRITO SOLO EN ENTRADAS "NUEVAS"
+// ==========================================================
 if (!$estaLogueado) {
     if ($referrer === '' || strpos($referrer, 'carrito.php') === false) {
         $stmt = $conn->prepare("
@@ -68,6 +70,13 @@ if ($productoId > 0) {
     $resProd   = $stmt->get_result();
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
+
+    // ✅ Si te pasan un producto_id inexistente, regresamos a inicio normal
+    if (count($productos) === 0) {
+        header("Location: index.php");
+        exit;
+    }
+
 } elseif ($categoriaActual !== '') {
     $stmt = $conn->prepare("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
@@ -166,17 +175,13 @@ if ($productoId > 0 && count($productos) === 1) {
                 autocomplete="off"
             >
             <div id="searchSuggestions" class="search-suggestions"></div>
-
-            <!-- Mensaje cuando dan ENTER y no existe -->
             <div id="searchNotFound" class="search-notfound">Producto no encontrado</div>
         </div>
     </div>
 
     <div class="header-right">
         <?php if ($estaLogueado): ?>
-            <span class="header-user">
-                <?php echo htmlspecialchars($_SESSION['usuario']); ?> 
-            </span>
+            <span class="header-user"><?php echo htmlspecialchars($_SESSION['usuario']); ?></span>
             <a href="../PHP/logout.php" class="header-link">Cerrar sesión</a>
         <?php else: ?>
             <a href="../PHP/login.php" class="header-link">Iniciar sesión</a>
@@ -211,16 +216,12 @@ if ($productoId > 0 && count($productos) === 1) {
     <?php endforeach; ?>
 
     <?php if ($estaLogueado): ?>
-        <a href="mis_pedidos.php" class="nav-item">
-            Mis pedidos📝
-        </a>
+        <a href="mis_pedidos.php" class="nav-item">Mis pedidos📝</a>
     <?php endif; ?>
 </nav>
 
 <main class="main-container">
-    <h2 class="titulo-seccion">
-        <?php echo htmlspecialchars($tituloSeccion); ?>
-    </h2>
+    <h2 class="titulo-seccion"><?php echo htmlspecialchars($tituloSeccion); ?></h2>
 
     <div class="carrusel-wrapper">
         <button class="btn-carrusel btn-carrusel-izq">&#10094;</button>
@@ -235,7 +236,6 @@ if ($productoId > 0 && count($productos) === 1) {
                         $estaEnCarrito  = $cantEnCarrito > 0;
 
                         $sinStock = ($stock <= 0);
-                        // Si no está en carrito y sin stock: deshabilita Agregar
                         $disabledAgregar = (!$estaEnCarrito && $sinStock);
                     ?>
                     <article
@@ -245,7 +245,6 @@ if ($productoId > 0 && count($productos) === 1) {
                         data-stock="<?php echo $stock; ?>"
                     >
                         <a href="producto_detalle.php?id=<?php echo $pid; ?>" class="producto-link">
-
                             <div class="producto-img-wrapper">
                                 <img
                                     src="<?php echo htmlspecialchars($p['imagen_url']); ?>"
@@ -254,17 +253,9 @@ if ($productoId > 0 && count($productos) === 1) {
                             </div>
 
                             <div class="producto-info">
-                                <div class="precio-actual">
-                                    $<?php echo number_format((float)$p['precio'], 2); ?>
-                                </div>
-
-                                <div class="marca">
-                                    <?php echo htmlspecialchars($p['marca']); ?>
-                                </div>
-
-                                <div class="titulo">
-                                    <?php echo htmlspecialchars($p['nombre']); ?>
-                                </div>
+                                <div class="precio-actual">$<?php echo number_format((float)$p['precio'], 2); ?></div>
+                                <div class="marca"><?php echo htmlspecialchars($p['marca']); ?></div>
+                                <div class="titulo"><?php echo htmlspecialchars($p['nombre']); ?></div>
 
                                 <?php if ($sinStock): ?>
                                     <div class="stock-label">Sin stock</div>
@@ -283,9 +274,7 @@ if ($productoId > 0 && count($productos) === 1) {
 
                             <div class="cantidad-control <?php echo $estaEnCarrito ? '' : 'oculto'; ?>">
                                 <button class="btn-menos">−</button>
-                                <span class="cantidad">
-                                    <?php echo $estaEnCarrito ? (int)$cantEnCarrito : 0; ?>
-                                </span>
+                                <span class="cantidad"><?php echo $estaEnCarrito ? (int)$cantEnCarrito : 0; ?></span>
                                 <button class="btn-mas" <?php echo ($sinStock ? 'disabled' : ''); ?>>+</button>
                             </div>
                         </div>

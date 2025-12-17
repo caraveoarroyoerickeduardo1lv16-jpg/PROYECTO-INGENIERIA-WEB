@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cartTotalPrice = document.getElementById("cartTotalPrice");
 
     // ===== MODAL LOGIN =====
-    const loginModal  = document.getElementById("loginModal");
+    const loginModal   = document.getElementById("loginModal");
     const modalGoLogin = document.getElementById("modalGoLogin");
     const modalClose   = document.getElementById("modalClose");
 
@@ -46,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (modalClose) modalClose.addEventListener("click", cerrarModalLogin);
 
-    // cerrar modal si das click fuera
     if (loginModal) {
         loginModal.addEventListener("click", (e) => {
             if (e.target === loginModal) cerrarModalLogin();
@@ -59,9 +58,10 @@ document.addEventListener("DOMContentLoaded", () => {
         cartTotalPrice.textContent = "$" + total.toFixed(2);
     }
 
+    // ====== BOTONES CARRITO ======
     cards.forEach(card => {
         const productoId = parseInt(card.dataset.id, 10);
-        const stock = parseInt(card.dataset.stock || "0", 10);
+        const stock      = parseInt(card.dataset.stock || "0", 10);
 
         const btnAgregar   = card.querySelector(".btn-agregar");
         const controlCant  = card.querySelector(".cantidad-control");
@@ -75,19 +75,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
             cantidadLocal = parseInt(spanCantidad.textContent, 10) || 0;
 
-            // Si ya hay cantidad > 0, mostrar control
             if (cantidadLocal > 0) {
                 btnAgregar.style.display = "none";
                 controlCant.classList.remove("oculto");
             }
 
-            // si no hay stock y NO está en carrito: bloquea agregar
             if (stock <= 0 && cantidadLocal <= 0) {
                 btnAgregar.disabled = true;
                 btnAgregar.textContent = "Sin stock";
             }
 
-            // si no hay stock pero YA está en carrito: bloquea el "+"
             if (stock <= 0 && cantidadLocal > 0) {
                 btnMas.disabled = true;
             }
@@ -116,7 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnAgregar.style.display = "none";
                 controlCant.classList.remove("oculto");
 
-                // si el backend ya dejó stock 0, bloquea el "+"
                 const stockAhora = parseInt(card.dataset.stock || stock, 10);
                 if (stockAhora <= 0) btnMas.disabled = true;
 
@@ -132,7 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Si no hay stock, no permitas sumar
                 if (stock <= 0 || btnMas.disabled) return;
 
                 const data = await actualizarCarrito(productoId, "add");
@@ -171,7 +166,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     btnAgregar.style.display = "inline-block";
                     spanCantidad.textContent = "0";
 
-                    // si stock sigue en 0, deja el agregar bloqueado
                     if (stock <= 0) {
                         btnAgregar.disabled = true;
                         btnAgregar.textContent = "Sin stock";
@@ -229,6 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => searchNotFound.classList.remove("show"), 2000);
     }
 
+    // Sugerencias
     searchInput.addEventListener("input", async () => {
         const texto = searchInput.value.trim();
 
@@ -241,7 +236,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const resp = await fetch("../PHP/buscar_productos.php?q=" + encodeURIComponent(texto));
 
             if (!resp.ok) {
-                console.error("Error HTTP buscador:", resp.status);
                 ocultarSugerencias();
                 return;
             }
@@ -290,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ENTER: si no existe, mostrar "Producto no encontrado"
+    // ✅ ENTER: si no existe, mostrar "Producto no encontrado" y QUITAR FILTRO
     searchInput.addEventListener("keydown", async (e) => {
         if (e.key !== "Enter") return;
 
@@ -302,7 +296,9 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch("../PHP/buscar_productos.php?q=" + encodeURIComponent(texto));
             if (!resp.ok) {
+                ocultarSugerencias();
                 mostrarNoEncontrado();
+                window.location.href = "index.php"; // ✅ quita filtro
                 return;
             }
 
@@ -311,20 +307,24 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!Array.isArray(data) || data.length === 0) {
                 ocultarSugerencias();
                 mostrarNoEncontrado();
+                window.location.href = "index.php"; // ✅ quita filtro
                 return;
             }
 
-            // si hay resultados, manda al primero
             const primero = data[0];
             if (primero && primero.id) {
                 window.location.href = "index.php?producto_id=" + encodeURIComponent(primero.id);
             } else {
+                ocultarSugerencias();
                 mostrarNoEncontrado();
+                window.location.href = "index.php"; // ✅ quita filtro
             }
 
         } catch (err) {
             console.error(err);
+            ocultarSugerencias();
             mostrarNoEncontrado();
+            window.location.href = "index.php"; // ✅ quita filtro
         }
     });
 
@@ -335,6 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
 
 
 
