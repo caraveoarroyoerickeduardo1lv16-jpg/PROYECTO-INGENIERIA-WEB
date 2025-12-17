@@ -334,3 +334,128 @@ body {
     margin:0 0 14px;
     font-size:14px;
 }
+
+/* ====== BUSCADOR + SUGERENCIAS (OPERADOR) ====== */
+
+.stock-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+}
+
+.op-search{
+    flex:1;
+    min-width:260px;
+    max-width:520px;
+    position:relative;
+}
+
+.op-search-input{
+    position:relative;
+    display:flex;
+    align-items:center;
+    background:#fff;
+    border:1px solid #d1d5db;
+    border-radius:999px;
+    padding:8px 12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
+.op-search-icon{
+    margin-right:8px;
+    font-size:14px;
+    opacity:.85;
+}
+
+.op-search-input input{
+    border:none;
+    outline:none;
+    width:100%;
+    font-size:14px;
+    background:transparent;
+}
+
+.op-clear{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    border:none;
+    cursor:pointer;
+    background:#f3f4f6;
+    color:#111827;
+    font-weight:700;
+}
+
+.op-clear:hover{ background:#e5e7eb; }
+
+/* dropdown */
+.op-suggestions{
+    display:none;
+    position:absolute;
+    top:46px;
+    left:0;
+    right:0;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.10);
+    overflow:hidden;
+    z-index:50;
+}
+
+.op-sug-item{
+    padding:10px 12px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.op-sug-item:hover{
+    background:#f9fafb;
+}
+
+.op-notfound{
+    display:none;
+    margin-top:8px;
+    font-size:13px;
+    color:#6b7280;
+    padding-left:8px;
+}
+
+/* chip */
+.filter-chip{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#ffffff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:10px 12px;
+    margin:0 0 14px;
+    font-size:14px;
+}
+
+.chip-link{
+    margin-left:auto;
+    text-decoration:none;
+    font-weight:600;
+    color:#0071e3;
+}
+
+.chip-link:hover{ text-decoration:underline; }
+
+/* error */
+.stock-error{
+    background:#fee2e2;
+    color:#991b1b;
+    border:1px solid #fecaca;
+    padding:10px 12px;
+    border-radius:12px;
+    margin:0 0 14px;
+    font-size:14px;
+}

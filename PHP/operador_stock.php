@@ -11,6 +11,59 @@ if (!isset($_SESSION["user_id"]) || ($_SESSION["user_tipo"] ?? '') !== "operador
     exit;
 }
 
+/* ==========================================================
+   ✅ AJAX SUGGEST (SIN NUEVO PHP)
+   URL: operador_stock.php?ajax=suggest&q=xxx&categoria=yyy
+========================================================== */
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'suggest') {
+    header('Content-Type: application/json; charset=utf-8');
+
+    $q = trim($_GET['q'] ?? '');
+    $categoria = $_GET['categoria'] ?? 'todas';
+
+    if ($q === '' || mb_strlen($q) < 2) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $like = "%{$q}%";
+
+    if ($categoria === 'todas' || $categoria === '') {
+        $stmt = $conn->prepare("
+            SELECT id, nombre
+            FROM producto
+            WHERE nombre LIKE ?
+            ORDER BY nombre
+            LIMIT 8
+        ");
+        $stmt->bind_param("s", $like);
+    } else {
+        $stmt = $conn->prepare("
+            SELECT id, nombre
+            FROM producto
+            WHERE categoria = ?
+              AND nombre LIKE ?
+            ORDER BY nombre
+            LIMIT 8
+        ");
+        $stmt->bind_param("ss", $categoria, $like);
+    }
+
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $out = [];
+    while ($row = $res->fetch_assoc()) {
+        $out[] = [
+            'id' => (int)$row['id'],
+            'nombre' => $row['nombre']
+        ];
+    }
+    $stmt->close();
+
+    echo json_encode($out);
+    exit;
+}
+
 /*  MENSAJE DE ERROR DE STOCK  */
 $stockError = $_SESSION['stock_error'] ?? '';
 unset($_SESSION['stock_error']);
@@ -25,14 +78,13 @@ if (
     $producto_id   = (int)$_POST['producto_id'];
     $accion        = $_POST['accion'];
 
-    // mantener filtros al volver
+    // mantener filtros
     $categoriaPost = $_POST['categoria'] ?? 'todas';
     $qPost         = trim($_POST['q'] ?? '');
+    $productoIdPost = isset($_POST['producto_id_filtro']) ? (int)$_POST['producto_id_filtro'] : 0;
 
     $cantidad = (int)$_POST['cantidad'];
-    if ($cantidad < 1) {
-        $cantidad = 0;
-    }
+    if ($cantidad < 1) $cantidad = 0;
 
     if ($producto_id > 0 && $cantidad > 0) {
 
@@ -50,7 +102,6 @@ if (
 
         } elseif ($accion === 'quitar') {
 
-            // 1) Leer stock actual
             $stmt = $conn->prepare("SELECT stock FROM producto WHERE id = ?");
             $stmt->bind_param("i", $producto_id);
             $stmt->execute();
@@ -59,7 +110,6 @@ if (
 
             $stockActual = $res ? (int)$res['stock'] : 0;
 
-            // 2) Si intenta quitar más de lo que hay  NO permitir
             if ($cantidad > $stockActual) {
                 $_SESSION['stock_error'] = "No puedes quitar más unidades de las que hay en stock (stock actual: {$stockActual}).";
             } else {
@@ -77,18 +127,21 @@ if (
         }
     }
 
-    // Redirigir para evitar reenvío y mantener categoría + búsqueda
-    $params = [
-        'categoria' => $categoriaPost
-    ];
-    if ($qPost !== '') $params['q'] = $qPost;
+    // volver manteniendo filtros (categoria + q o producto_id)
+    $params = ['categoria' => $categoriaPost];
+
+    if ($productoIdPost > 0) {
+        $params['producto_id'] = $productoIdPost;
+    } elseif ($qPost !== '') {
+        $params['q'] = $qPost;
+    }
 
     header("Location: operador_stock.php?" . http_build_query($params));
     exit;
 }
 
 /* =========================
-   2) LEER CATEGORÍAS (GET)
+   2) LEER CATEGORÍAS
 ========================= */
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto WHERE TRIM(categoria) <> '' ORDER BY categoria");
@@ -101,50 +154,64 @@ while ($rowCat = $resCat->fetch_assoc()) {
 ========================= */
 $categoriaFiltro = $_GET['categoria'] ?? 'todas';
 $q = trim($_GET['q'] ?? '');
+$productoId = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
 /* =========================
-   4) LEER PRODUCTOS (con filtro + búsqueda)
+   4) LEER PRODUCTOS (categoria + q + producto_id)
 ========================= */
-if (($categoriaFiltro === 'todas' || $categoriaFiltro === '') && $q === '') {
+if ($productoId > 0) {
 
     $stmt = $conn->prepare("
         SELECT id, nombre, stock, imagen_url, categoria
         FROM producto
-        ORDER BY categoria, nombre
+        WHERE id = ?
+        LIMIT 1
     ");
-
-} elseif (($categoriaFiltro === 'todas' || $categoriaFiltro === '') && $q !== '') {
-
-    $like = "%{$q}%";
-    $stmt = $conn->prepare("
-        SELECT id, nombre, stock, imagen_url, categoria
-        FROM producto
-        WHERE nombre LIKE ?
-        ORDER BY categoria, nombre
-    ");
-    $stmt->bind_param("s", $like);
-
-} elseif ($categoriaFiltro !== 'todas' && $categoriaFiltro !== '' && $q === '') {
-
-    $stmt = $conn->prepare("
-        SELECT id, nombre, stock, imagen_url, categoria
-        FROM producto
-        WHERE categoria = ?
-        ORDER BY nombre
-    ");
-    $stmt->bind_param("s", $categoriaFiltro);
+    $stmt->bind_param("i", $productoId);
 
 } else {
-    // categoria + q
-    $like = "%{$q}%";
-    $stmt = $conn->prepare("
-        SELECT id, nombre, stock, imagen_url, categoria
-        FROM producto
-        WHERE categoria = ?
-          AND nombre LIKE ?
-        ORDER BY nombre
-    ");
-    $stmt->bind_param("ss", $categoriaFiltro, $like);
+
+    if (($categoriaFiltro === 'todas' || $categoriaFiltro === '') && $q === '') {
+
+        $stmt = $conn->prepare("
+            SELECT id, nombre, stock, imagen_url, categoria
+            FROM producto
+            ORDER BY categoria, nombre
+        ");
+
+    } elseif (($categoriaFiltro === 'todas' || $categoriaFiltro === '') && $q !== '') {
+
+        $like = "%{$q}%";
+        $stmt = $conn->prepare("
+            SELECT id, nombre, stock, imagen_url, categoria
+            FROM producto
+            WHERE nombre LIKE ?
+            ORDER BY categoria, nombre
+        ");
+        $stmt->bind_param("s", $like);
+
+    } elseif ($categoriaFiltro !== 'todas' && $categoriaFiltro !== '' && $q === '') {
+
+        $stmt = $conn->prepare("
+            SELECT id, nombre, stock, imagen_url, categoria
+            FROM producto
+            WHERE categoria = ?
+            ORDER BY nombre
+        ");
+        $stmt->bind_param("s", $categoriaFiltro);
+
+    } else {
+
+        $like = "%{$q}%";
+        $stmt = $conn->prepare("
+            SELECT id, nombre, stock, imagen_url, categoria
+            FROM producto
+            WHERE categoria = ?
+              AND nombre LIKE ?
+            ORDER BY nombre
+        ");
+        $stmt->bind_param("ss", $categoriaFiltro, $like);
+    }
 }
 
 $stmt->execute();
@@ -186,49 +253,56 @@ $stmt->close();
 
         <div class="stock-top">
 
-            <!-- FILTRO POR CATEGORÍA -->
+            <!-- FILTRO CATEGORÍA -->
             <form method="get" class="category-filter" id="formCategoria">
                 <label for="categoria">Categoría:</label>
                 <select name="categoria" id="categoria" onchange="this.form.submit()">
-                    <option value="todas" <?= ($categoriaFiltro === 'todas' ? 'selected' : '') ?>>
-                        Todas
-                    </option>
+                    <option value="todas" <?= ($categoriaFiltro === 'todas' ? 'selected' : '') ?>>Todas</option>
                     <?php foreach ($categorias as $cat): ?>
-                        <option value="<?= htmlspecialchars($cat) ?>"
-                            <?= ($categoriaFiltro === $cat ? 'selected' : '') ?>>
+                        <option value="<?= htmlspecialchars($cat) ?>" <?= ($categoriaFiltro === $cat ? 'selected' : '') ?>>
                             <?= htmlspecialchars($cat) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
 
-                <?php if ($q !== ''): ?>
+                <?php if ($productoId > 0): ?>
+                    <input type="hidden" name="producto_id" value="<?= (int)$productoId ?>">
+                <?php elseif ($q !== ''): ?>
                     <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
                 <?php endif; ?>
             </form>
 
-            <!-- ✅ BUSCADOR BONITO (OPERADOR) -->
-            <form method="get" class="op-search" id="formSearch">
-                <input type="hidden" name="categoria" value="<?= htmlspecialchars($categoriaFiltro) ?>">
-
+            <!-- ✅ BUSCADOR CON SUGERENCIAS -->
+            <div class="op-search">
                 <div class="op-search-input">
                     <span class="op-search-icon">🔎</span>
                     <input
                         type="text"
                         id="opSearchInput"
-                        name="q"
                         placeholder="Buscar producto por nombre…"
                         autocomplete="off"
                         value="<?= htmlspecialchars($q) ?>"
                     >
                     <button type="button" id="opClearBtn" class="op-clear" aria-label="Limpiar">✕</button>
                 </div>
-            </form>
+
+                <div id="opSearchSuggestions" class="op-suggestions"></div>
+
+                <div id="opNotFound" class="op-notfound">
+                    Producto no encontrado
+                </div>
+            </div>
 
         </div>
 
-        <?php if ($q !== ''): ?>
+        <?php if ($productoId > 0 || $q !== ''): ?>
             <div class="filter-chip">
-                Mostrando resultados para: <strong><?= htmlspecialchars($q) ?></strong>
+                <?php if ($productoId > 0): ?>
+                    Mostrando un producto seleccionado.
+                <?php else: ?>
+                    Mostrando resultados para: <strong><?= htmlspecialchars($q) ?></strong>
+                <?php endif; ?>
+
                 <a class="chip-link"
                    href="operador_stock.php<?= ($categoriaFiltro !== 'todas' ? '?categoria=' . urlencode($categoriaFiltro) : '') ?>">
                     Quitar filtro
@@ -262,17 +336,15 @@ $stmt->close();
                     <form method="post" class="stock-controles">
                         <input type="hidden" name="producto_id" value="<?= (int)$p['id'] ?>">
                         <input type="hidden" name="categoria" value="<?= htmlspecialchars($categoriaFiltro) ?>">
+
+                        <!-- mantener filtro al volver -->
                         <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
+                        <input type="hidden" name="producto_id_filtro" value="<?= (int)$productoId ?>">
 
                         <input type="number" name="cantidad" class="qty-input" min="1" value="1">
 
-                        <button type="submit" name="accion" value="quitar" class="btn-remove">
-                            Quitar
-                        </button>
-
-                        <button type="submit" name="accion" value="agregar" class="btn-add">
-                            Agregar
-                        </button>
+                        <button type="submit" name="accion" value="quitar" class="btn-remove">Quitar</button>
+                        <button type="submit" name="accion" value="agregar" class="btn-add">Agregar</button>
                     </form>
                 </div>
             <?php endforeach; ?>
@@ -289,28 +361,116 @@ $stmt->close();
 (() => {
     const input = document.getElementById("opSearchInput");
     const clearBtn = document.getElementById("opClearBtn");
-    const form = document.getElementById("formSearch");
+    const sugBox = document.getElementById("opSearchSuggestions");
+    const notFound = document.getElementById("opNotFound");
 
-    function toggleClear() {
-        clearBtn.style.display = (input.value.trim() !== "") ? "inline-flex" : "none";
+    const categoria = () => document.getElementById("categoria").value;
+
+    let timer = null;
+    let lastQ = "";
+
+    function esc(str){
+        return (str ?? "").replace(/[&<>"']/g, m => ({
+            "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+        }[m]));
+    }
+
+    function hideSuggestions(){
+        sugBox.style.display = "none";
+        sugBox.innerHTML = "";
+        notFound.style.display = "none";
+    }
+
+    function toggleClear(){
+        clearBtn.style.display = input.value.trim() !== "" ? "inline-flex" : "none";
+    }
+
+    async function fetchSuggestions(q){
+        const url = `operador_stock.php?ajax=suggest&q=${encodeURIComponent(q)}&categoria=${encodeURIComponent(categoria())}`;
+        const res = await fetch(url);
+        return await res.json();
+    }
+
+    function renderSuggestions(items, q){
+        sugBox.innerHTML = "";
+        notFound.style.display = "none";
+
+        if (!items || items.length === 0) {
+            sugBox.style.display = "none";
+            notFound.style.display = "block";
+            return;
+        }
+
+        items.forEach(it => {
+            const div = document.createElement("div");
+            div.className = "op-sug-item";
+            div.innerHTML = `<span class="op-sug-name">${esc(it.nombre)}</span>`;
+            div.addEventListener("click", () => {
+                // Ir directo al producto seleccionado (como en admin)
+                const url = `operador_stock.php?categoria=${encodeURIComponent(categoria())}&producto_id=${encodeURIComponent(it.id)}`;
+                window.location.href = url;
+            });
+            sugBox.appendChild(div);
+        });
+
+        sugBox.style.display = "block";
     }
 
     toggleClear();
+    hideSuggestions();
 
     clearBtn.addEventListener("click", () => {
-        input.value = "";
-        toggleClear();
-        form.submit(); // manda q vacío, conserva categoria
+        // limpiar y volver al listado (conserva categoria)
+        window.location.href = `operador_stock.php?categoria=${encodeURIComponent(categoria())}`;
     });
 
-    input.addEventListener("input", toggleClear);
+    input.addEventListener("input", () => {
+        toggleClear();
+        const q = input.value.trim();
 
-    // Enter ya hace submit por default (por ser form GET)
+        hideSuggestions();
+
+        if (q.length < 2) return;
+        if (q === lastQ) return;
+
+        lastQ = q;
+        clearTimeout(timer);
+
+        timer = setTimeout(async () => {
+            try {
+                const items = await fetchSuggestions(q);
+                renderSuggestions(items, q);
+            } catch (e) {
+                // si falla no rompemos nada
+                hideSuggestions();
+            }
+        }, 180);
+    });
+
+    // cerrar sugerencias si clic fuera
+    document.addEventListener("click", (e) => {
+        const wrap = document.querySelector(".op-search");
+        if (!wrap.contains(e.target)) hideSuggestions();
+    });
+
+    // Enter -> buscar normal (q)
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const q = input.value.trim();
+            if (q === "") {
+                window.location.href = `operador_stock.php?categoria=${encodeURIComponent(categoria())}`;
+            } else {
+                window.location.href = `operador_stock.php?categoria=${encodeURIComponent(categoria())}&q=${encodeURIComponent(q)}`;
+            }
+        }
+    });
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
