@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nuevoId = $stmt->insert_id;
     $stmt->close();
 
-    // IMÁGENES EXTRA 
+    // IMÁGENES EXTRA
     $imagenesExtra = $_POST['imagenes_extra'] ?? [];
 
     $urlsLimpias = [];
@@ -59,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    
     header("Location: admin_inventario.php");
     exit;
 }
@@ -75,7 +74,7 @@ $producto = [
     'categoria'  => ''
 ];
 
-$imagenesExtra = []; 
+$imagenesExtra = [];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -89,7 +88,6 @@ $imagenesExtra = [];
 
 <div class="page">
 
-    
     <header class="topbar">
         <div class="topbar-inner">
             <a href="admin.php" class="logo-link">
@@ -106,7 +104,6 @@ $imagenesExtra = [];
         <a href="logout.php" class="logout-button">Cerrar sesión</a>
     </div>
 
-    
     <main class="admin-main">
 
         <section class="edit-header">
@@ -118,11 +115,7 @@ $imagenesExtra = [];
             <form method="post" class="edit-form">
 
                 <div class="edit-row">
-                    <div class="edit-col">
-                        <label>ID</label>
-                        <input type="text" value="(se asigna al guardar)" readonly>
-                    </div>
-                    <div class="edit-col">
+                    <div class="edit-col full-width">
                         <label>Nombre</label>
                         <input
                             type="text"
@@ -188,7 +181,7 @@ $imagenesExtra = [];
                     </div>
                 </div>
 
-                <!-- IMÁGENES EXTRA N vece -->
+                <!-- IMÁGENES EXTRA -->
                 <div class="edit-row">
                     <div class="edit-col full-width">
                         <label>Imágenes adicionales del producto</label>
@@ -258,13 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    
+    // Eliminar fila
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('btn-eliminar-imagen')) {
             const row = e.target.closest('.extra-image-row');
-            if (row) {
-                row.remove();
-            }
+            if (row) row.remove();
         }
     });
 });
@@ -272,3 +263,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
