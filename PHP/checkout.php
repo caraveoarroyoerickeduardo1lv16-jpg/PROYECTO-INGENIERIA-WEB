@@ -28,6 +28,40 @@ function soloLetras($txt) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    /* ✅ ELIMINAR DIRECCIÓN (NUEVO) */
+    if (isset($_POST['eliminar_direccion'])) {
+        $dirId = (int)$_POST['eliminar_direccion'];
+
+        if ($usuario_id && $dirId > 0) {
+            // No permitir borrar si ya está usada en un pedido
+            $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM pedidos WHERE usuario_id = ? AND direccion_id = ?");
+            $stmt->bind_param("ii", $usuario_id, $dirId);
+            $stmt->execute();
+            $c = (int)($stmt->get_result()->fetch_assoc()['c'] ?? 0);
+            $stmt->close();
+
+            if ($c > 0) {
+                $error = "No puedes eliminar esta dirección porque ya fue usada en un pedido.";
+                $paso = 2;
+            } else {
+                $stmt = $conn->prepare("DELETE FROM direcciones WHERE id = ? AND usuario_id = ?");
+                $stmt->bind_param("ii", $dirId, $usuario_id);
+                $stmt->execute();
+                $stmt->close();
+
+                if (!empty($_SESSION['direccion_id']) && (int)$_SESSION['direccion_id'] === $dirId) {
+                    unset($_SESSION['direccion_id']);
+                }
+
+                header("Location: checkout.php?paso=2");
+                exit;
+            }
+        } else {
+            $error = "Dirección inválida.";
+            $paso = 2;
+        }
+    }
+
     /* usar dirección existente  */
     if (isset($_POST['usar_direccion'])) {
         $_SESSION['direccion_id'] = (int)$_POST['usar_direccion'];
@@ -95,6 +129,7 @@ if ($usuario_id) {
     while ($row = $resDir->fetch_assoc()) {
         $direccionesUsuario[] = $row;
     }
+    $stmt->close();
 }
 
 /* datos vacíos para formulario de nueva dirección */
@@ -137,6 +172,8 @@ $datos = [
     <?php endif; ?>
 
     <form method="post" id="formCheckout">
+        <!-- ✅ NUEVO: guardamos qué día eligieron (0=hoy,1=mañana,2=pasado) -->
+        <input type="hidden" name="dia_envio" id="diaEnvio" value="0">
 
         <!-- PASO 1 -->
         <section id="paso1" class="checkout-container <?= $paso === 1 ? '' : 'hidden' ?>">
@@ -194,15 +231,26 @@ $datos = [
                                 CP <?= htmlspecialchars($dir['cp']) ?>
                             </div>
 
-                            <div class="saved-form">
+                            <!-- ✅ NUEVO: dos botones (usar + eliminar) -->
+                            <div class="saved-actions">
                                 <button type="submit"
                                         name="usar_direccion"
-                                        value="<?= $dir['id'] ?>"
+                                        value="<?= (int)$dir['id'] ?>"
                                         class="btn-primary btn-sm"
                                         formnovalidate>
                                     Usar esta dirección
                                 </button>
+
+                                <button type="submit"
+                                        name="eliminar_direccion"
+                                        value="<?= (int)$dir['id'] ?>"
+                                        class="btn-danger"
+                                        formnovalidate
+                                        onclick="return confirm('¿Seguro que quieres eliminar esta dirección?');">
+                                    Eliminar dirección
+                                </button>
                             </div>
+
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -339,7 +387,6 @@ $datos = [
 <script src="../JAVASCRIPT/checkout.js"></script>
 </body>
 </html>
-
 
 
 

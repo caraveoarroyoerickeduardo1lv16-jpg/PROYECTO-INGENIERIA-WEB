@@ -318,7 +318,14 @@ body {
 }
 .saved-label { font-size: 13px; font-weight: 800; }
 .saved-text { font-size: 12px; color: #555; margin: 3px 0 8px; }
-.saved-form { text-align: right; }
+
+/* ✅ NUEVO: acciones en fila */
+.saved-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+}
 
 /* ALERTAS */
 .alert-error {
@@ -331,8 +338,7 @@ body {
     font-size: 13px;
 }
 
-
-/* ✅ Botón rojo estilo de tu página */
+/* ✅ Botón rojo */
 .btn-danger{
     border-radius: 999px;
     border: none;
@@ -341,22 +347,13 @@ body {
     cursor: pointer;
     background: #dc2626;
     color: #fff;
-    font-weight: 600;
+    font-weight: 700;
 }
 .btn-danger:hover{ background:#b91c1c; }
 
-/* ✅ para que los botones queden en fila */
-.saved-actions{
-    display:flex;
-    justify-content:flex-end;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-/* ✅ si hoy está agotado, deshabilitamos el botón */
+/* ✅ si hoy está agotado */
 button:disabled{
     opacity:.6;
     cursor:not-allowed;
 }
-
 
