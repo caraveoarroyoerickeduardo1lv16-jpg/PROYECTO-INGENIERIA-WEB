@@ -13,7 +13,7 @@ $conn->set_charset("utf8mb4");
 
 /* ==========================================
    ✅ MES A REPORTAR (por defecto mes actual)
-   Puedes usar: admin_ventas.php?mes=2025-12
+   admin_ventas.php?mes=YYYY-MM
 ========================================== */
 $mes = trim($_GET['mes'] ?? date('Y-m'));
 if (!preg_match('/^\d{4}-\d{2}$/', $mes)) {
@@ -23,57 +23,37 @@ $inicioMes    = $mes . '-01';
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
 
 /* ==========================================
-   ✅ EXPORT EXCEL (CSV) - MISMA PÁGINA
-   URL: admin_ventas.php?export=csv&mes=YYYY-MM
+   ✅ EXPORT EXCEL (CSV) POR PEDIDO + ARTÍCULOS
+   MISMA PÁGINA: POST export_csv=1
 ========================================== */
-if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_csv'])) {
 
-    // Ventas por día (total y # pedidos)
+    // 1) Traer cada línea de pedido (pedido + artículo)
     $stmt = $conn->prepare("
         SELECT
-            DATE(pe.creada_en) AS dia,
-            COUNT(DISTINCT pe.id) AS num_pedidos,
-            SUM(pe.total) AS total_ventas
+            pe.id                      AS pedido_id,
+            pe.creada_en               AS fecha,
+            pe.total                   AS total_pedido,
+            pe.estado                  AS estado_pago,
+            pe.estatus                 AS estatus_envio,
+
+            p.nombre                   AS producto,
+            d.cantidad                 AS cantidad,
+            d.precio_unit              AS precio_unit,
+            (d.cantidad * d.precio_unit) AS subtotal_linea
         FROM pedidos pe
+        INNER JOIN pedido_detalle d ON d.pedido_id = pe.id
+        INNER JOIN producto p       ON p.id = d.producto_id
         WHERE pe.creada_en >= ? AND pe.creada_en < ?
-        GROUP BY DATE(pe.creada_en)
-        ORDER BY dia ASC
+        ORDER BY pe.creada_en ASC, pe.id ASC, p.nombre ASC
     ");
     $stmt->bind_param("ss", $inicioMes, $inicioMesSig);
     $stmt->execute();
-    $ventas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    // “Lo que se llevaron” por día (productos + cantidades)
-    $stmt = $conn->prepare("
-        SELECT t.dia,
-               GROUP_CONCAT(CONCAT(t.nombre, ' x', t.qty) ORDER BY t.nombre SEPARATOR ', ') AS productos
-        FROM (
-            SELECT
-                DATE(pe.creada_en) AS dia,
-                p.nombre AS nombre,
-                SUM(d.cantidad) AS qty
-            FROM pedidos pe
-            INNER JOIN pedido_detalle d ON d.pedido_id = pe.id
-            INNER JOIN producto p ON p.id = d.producto_id
-            WHERE pe.creada_en >= ? AND pe.creada_en < ?
-            GROUP BY DATE(pe.creada_en), p.nombre
-        ) t
-        GROUP BY t.dia
-        ORDER BY t.dia ASC
-    ");
-    $stmt->bind_param("ss", $inicioMes, $inicioMesSig);
-    $stmt->execute();
-    $prodRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
-
-    $productosPorDia = [];
-    foreach ($prodRows as $r) {
-        $productosPorDia[$r['dia']] = $r['productos'] ?? '';
-    }
-
-    // Salida CSV (Excel)
-    $filename = "reporte_ventas_" . $mes . ".csv";
+    // 2) Descargar como CSV (Excel lo abre perfecto)
+    $filename = "reporte_ventas_por_pedido_" . $mes . ".csv";
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
 
@@ -82,21 +62,42 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 
     $out = fopen('php://output', 'w');
 
-    // Encabezados
-    fputcsv($out, ['Fecha', 'Total vendido', '# pedidos', 'Lo que se llevaron']);
+    // Encabezados “entendibles”
+    fputcsv($out, [
+        'Fecha',
+        'Pedido #',
+        'Producto',
+        'Cantidad',
+        'Precio unitario',
+        'Subtotal (artículo)',
+        'Total del pedido',
+        'Estado pago',
+        'Estatus envío'
+    ]);
 
-    // Filas
-    foreach ($ventas as $v) {
-        $dia = $v['dia'];
-        $total = (float)($v['total_ventas'] ?? 0);
-        $num = (int)($v['num_pedidos'] ?? 0);
-        $productos = $productosPorDia[$dia] ?? '';
+    // 3) Escribir filas (opcional: una fila en blanco por pedido para que se vea “separado”)
+    $pedidoAnterior = null;
+
+    foreach ($rows as $r) {
+
+        $pedidoActual = (int)$r['pedido_id'];
+
+        // Separador visual por pedido (fila en blanco)
+        if ($pedidoAnterior !== null && $pedidoActual !== $pedidoAnterior) {
+            fputcsv($out, ['','','','','','','','','']);
+        }
+        $pedidoAnterior = $pedidoActual;
 
         fputcsv($out, [
-            $dia,
-            number_format($total, 2, '.', ''),
-            $num,
-            $productos
+            $r['fecha'], // timestamp o fecha completa
+            $pedidoActual,
+            $r['producto'],
+            (int)$r['cantidad'],
+            number_format((float)$r['precio_unit'], 2, '.', ''),
+            number_format((float)$r['subtotal_linea'], 2, '.', ''),
+            number_format((float)$r['total_pedido'], 2, '.', ''),
+            $r['estado_pago'],
+            $r['estatus_envio']
         ]);
     }
 
@@ -128,7 +129,7 @@ $productoMes = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 /* =========================
-   2) VENTAS DIARIAS DEL MES (TABLA)
+   2) VENTAS DIARIAS DEL MES (para la tabla chica)
 ========================= */
 $stmt = $conn->prepare("
     SELECT
@@ -186,11 +187,13 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
     <div class="ventas-top">
         <h1 class="reports-title">Reporte de ventas</h1>
 
-        <!-- ✅ BOTÓN DESCARGA EXCEL -->
-        <a class="btn-export"
-           href="admin_ventas.php?export=csv&mes=<?= urlencode($mes) ?>">
-            Descargar Excel
-        </a>
+        <!-- ✅ BOTÓN AZUL (NO link) -->
+        <form method="post" class="export-form">
+            <input type="hidden" name="export_csv" value="1">
+            <button type="submit" class="btn-export">
+                Descargar Excel
+            </button>
+        </form>
     </div>
 
     <div class="mes-chip">
@@ -210,7 +213,7 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
                 </div>
                 <div class="highlight-row">
                     Importe total:
-                    <strong>$<?= number_format($productoMes['total_importe'], 2) ?></strong>
+                    <strong>$<?= number_format((float)$productoMes['total_importe'], 2) ?></strong>
                 </div>
                 <div class="highlight-row">
                     Mes:
@@ -222,9 +225,9 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
         <?php endif; ?>
     </section>
 
-    <!-- 2) Reporte de ventas diario (DEL MES) -->
+    <!-- 2) Reporte diario (resumen del mes) -->
     <section>
-        <h2 class="section-title">Reporte de ventas diario (mes seleccionado)</h2>
+        <h2 class="section-title">Resumen diario del mes</h2>
 
         <?php if (!empty($ventasDiarias)): ?>
             <table>
@@ -250,9 +253,9 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
         <?php endif; ?>
     </section>
 
-    <!-- 3) Reporte de ventas mensual -->
+    <!-- 3) Reporte mensual -->
     <section>
-        <h2 class="section-title">Reporte de ventas mensual (últimos 12 meses)</h2>
+        <h2 class="section-title">Reporte mensual (últimos 12 meses)</h2>
 
         <?php if (!empty($ventasMensuales)): ?>
             <table>
@@ -282,5 +285,6 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
 
 </body>
 </html>
+
 
 

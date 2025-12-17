@@ -166,3 +166,40 @@ tbody tr:hover {
   border-radius:999px;
   font-size:13px;
 }
+
+.ventas-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+}
+
+.export-form{ margin:0; }
+
+.btn-export{
+  background:#0071e3;
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  padding:10px 16px;
+  border:none;
+  border-radius:999px;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.12);
+  transition:0.2s;
+}
+
+.btn-export:hover{
+  background:#005bb5;
+}
+
+.mes-chip{
+  margin:10px 0 18px;
+  display:inline-block;
+  background:#ffffff;
+  border:1px solid #dce3f0;
+  padding:8px 12px;
+  border-radius:999px;
+  font-size:13px;
+}
