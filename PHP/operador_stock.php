@@ -15,14 +15,19 @@ if (!isset($_SESSION["user_id"]) || ($_SESSION["user_tipo"] ?? '') !== "operador
 $stockError = $_SESSION['stock_error'] ?? '';
 unset($_SESSION['stock_error']);
 
-/* 1) ACTUALIZAR STOCK */
+/* =========================
+   1) ACTUALIZAR STOCK (POST)
+========================= */
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['producto_id'], $_POST['accion'], $_POST['cantidad'])
 ) {
     $producto_id   = (int)$_POST['producto_id'];
     $accion        = $_POST['accion'];
+
+    // mantener filtros al volver
     $categoriaPost = $_POST['categoria'] ?? 'todas';
+    $qPost         = trim($_POST['q'] ?? '');
 
     $cantidad = (int)$_POST['cantidad'];
     if ($cantidad < 1) {
@@ -57,7 +62,6 @@ if (
             // 2) Si intenta quitar más de lo que hay  NO permitir
             if ($cantidad > $stockActual) {
                 $_SESSION['stock_error'] = "No puedes quitar más unidades de las que hay en stock (stock actual: {$stockActual}).";
-
             } else {
                 $delta = -$cantidad;
 
@@ -73,28 +77,55 @@ if (
         }
     }
 
-    // Redirigir para evitar reenvío y mantener categoría
-    header("Location: operador_stock.php?categoria=" . urlencode($categoriaPost));
+    // Redirigir para evitar reenvío y mantener categoría + búsqueda
+    $params = [
+        'categoria' => $categoriaPost
+    ];
+    if ($qPost !== '') $params['q'] = $qPost;
+
+    header("Location: operador_stock.php?" . http_build_query($params));
     exit;
 }
 
-/* 2) LEER CATEGORÍAS  */
+/* =========================
+   2) LEER CATEGORÍAS (GET)
+========================= */
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto WHERE TRIM(categoria) <> '' ORDER BY categoria");
 while ($rowCat = $resCat->fetch_assoc()) {
     $categorias[] = $rowCat['categoria'];
 }
 
-/*3) FILTRO POR CATEGORÍA  */
+/* =========================
+   3) FILTROS (GET)
+========================= */
 $categoriaFiltro = $_GET['categoria'] ?? 'todas';
+$q = trim($_GET['q'] ?? '');
 
-if ($categoriaFiltro === 'todas' || $categoriaFiltro === '') {
-    $res = $conn->query("
+/* =========================
+   4) LEER PRODUCTOS (con filtro + búsqueda)
+========================= */
+if (($categoriaFiltro === 'todas' || $categoriaFiltro === '') && $q === '') {
+
+    $stmt = $conn->prepare("
         SELECT id, nombre, stock, imagen_url, categoria
         FROM producto
         ORDER BY categoria, nombre
     ");
-} else {
+
+} elseif (($categoriaFiltro === 'todas' || $categoriaFiltro === '') && $q !== '') {
+
+    $like = "%{$q}%";
+    $stmt = $conn->prepare("
+        SELECT id, nombre, stock, imagen_url, categoria
+        FROM producto
+        WHERE nombre LIKE ?
+        ORDER BY categoria, nombre
+    ");
+    $stmt->bind_param("s", $like);
+
+} elseif ($categoriaFiltro !== 'todas' && $categoriaFiltro !== '' && $q === '') {
+
     $stmt = $conn->prepare("
         SELECT id, nombre, stock, imagen_url, categoria
         FROM producto
@@ -102,11 +133,24 @@ if ($categoriaFiltro === 'todas' || $categoriaFiltro === '') {
         ORDER BY nombre
     ");
     $stmt->bind_param("s", $categoriaFiltro);
-    $stmt->execute();
-    $res = $stmt->get_result();
+
+} else {
+    // categoria + q
+    $like = "%{$q}%";
+    $stmt = $conn->prepare("
+        SELECT id, nombre, stock, imagen_url, categoria
+        FROM producto
+        WHERE categoria = ?
+          AND nombre LIKE ?
+        ORDER BY nombre
+    ");
+    $stmt->bind_param("ss", $categoriaFiltro, $like);
 }
 
+$stmt->execute();
+$res = $stmt->get_result();
 $productos = $res->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -119,7 +163,6 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
 
 <div class="page">
 
-
     <header class="topbar">
         <div class="topbar-inner">
             <a href="operador.php" class="logo-link">
@@ -131,7 +174,6 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
         </div>
     </header>
 
-
     <main class="main">
         <h1>Panel de operador</h1>
         <h2 class="subtitle">Existencias</h2>
@@ -142,21 +184,57 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
             </div>
         <?php endif; ?>
 
-        <!-- FILTRO POR CATEGORÍA -->
-        <form method="get" class="category-filter">
-            <label for="categoria">Categoría:</label>
-            <select name="categoria" id="categoria" onchange="this.form.submit()">
-                <option value="todas" <?= ($categoriaFiltro === 'todas' ? 'selected' : '') ?>>
-                    Todas
-                </option>
-                <?php foreach ($categorias as $cat): ?>
-                    <option value="<?= htmlspecialchars($cat) ?>"
-                        <?= ($categoriaFiltro === $cat ? 'selected' : '') ?>>
-                        <?= htmlspecialchars($cat) ?>
+        <div class="stock-top">
+
+            <!-- FILTRO POR CATEGORÍA -->
+            <form method="get" class="category-filter" id="formCategoria">
+                <label for="categoria">Categoría:</label>
+                <select name="categoria" id="categoria" onchange="this.form.submit()">
+                    <option value="todas" <?= ($categoriaFiltro === 'todas' ? 'selected' : '') ?>>
+                        Todas
                     </option>
-                <?php endforeach; ?>
-            </select>
-        </form>
+                    <?php foreach ($categorias as $cat): ?>
+                        <option value="<?= htmlspecialchars($cat) ?>"
+                            <?= ($categoriaFiltro === $cat ? 'selected' : '') ?>>
+                            <?= htmlspecialchars($cat) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <?php if ($q !== ''): ?>
+                    <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
+                <?php endif; ?>
+            </form>
+
+            <!-- ✅ BUSCADOR BONITO (OPERADOR) -->
+            <form method="get" class="op-search" id="formSearch">
+                <input type="hidden" name="categoria" value="<?= htmlspecialchars($categoriaFiltro) ?>">
+
+                <div class="op-search-input">
+                    <span class="op-search-icon">🔎</span>
+                    <input
+                        type="text"
+                        id="opSearchInput"
+                        name="q"
+                        placeholder="Buscar producto por nombre…"
+                        autocomplete="off"
+                        value="<?= htmlspecialchars($q) ?>"
+                    >
+                    <button type="button" id="opClearBtn" class="op-clear" aria-label="Limpiar">✕</button>
+                </div>
+            </form>
+
+        </div>
+
+        <?php if ($q !== ''): ?>
+            <div class="filter-chip">
+                Mostrando resultados para: <strong><?= htmlspecialchars($q) ?></strong>
+                <a class="chip-link"
+                   href="operador_stock.php<?= ($categoriaFiltro !== 'todas' ? '?categoria=' . urlencode($categoriaFiltro) : '') ?>">
+                    Quitar filtro
+                </a>
+            </div>
+        <?php endif; ?>
 
         <section class="stock-card">
             <header class="stock-header">
@@ -183,8 +261,8 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
 
                     <form method="post" class="stock-controles">
                         <input type="hidden" name="producto_id" value="<?= (int)$p['id'] ?>">
-                        <input type="hidden" name="categoria"
-                               value="<?= htmlspecialchars($categoriaFiltro) ?>">
+                        <input type="hidden" name="categoria" value="<?= htmlspecialchars($categoriaFiltro) ?>">
+                        <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
 
                         <input type="number" name="cantidad" class="qty-input" min="1" value="1">
 
@@ -200,14 +278,39 @@ $productos = $res->fetch_all(MYSQLI_ASSOC);
             <?php endforeach; ?>
 
             <?php if (empty($productos)): ?>
-                <p class="no-products">No hay productos en esta categoría.</p>
+                <p class="no-products">No hay productos con ese filtro.</p>
             <?php endif; ?>
         </section>
     </main>
 
 </div>
 
+<script>
+(() => {
+    const input = document.getElementById("opSearchInput");
+    const clearBtn = document.getElementById("opClearBtn");
+    const form = document.getElementById("formSearch");
+
+    function toggleClear() {
+        clearBtn.style.display = (input.value.trim() !== "") ? "inline-flex" : "none";
+    }
+
+    toggleClear();
+
+    clearBtn.addEventListener("click", () => {
+        input.value = "";
+        toggleClear();
+        form.submit(); // manda q vacío, conserva categoria
+    });
+
+    input.addEventListener("input", toggleClear);
+
+    // Enter ya hace submit por default (por ser form GET)
+})();
+</script>
+
 </body>
 </html>
+
 
 

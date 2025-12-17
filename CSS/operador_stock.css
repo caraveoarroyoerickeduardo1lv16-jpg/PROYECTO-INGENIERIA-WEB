@@ -239,3 +239,98 @@ body {
         margin-bottom: 6px;
     }
 }
+
+/* ========= BUSCADOR (OPERADOR) ========= */
+
+.stock-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+}
+
+.op-search{
+    flex:1;
+    min-width:260px;
+    max-width:520px;
+}
+
+.op-search-input{
+    position:relative;
+    display:flex;
+    align-items:center;
+    background:#fff;
+    border:1px solid #d1d5db;
+    border-radius:999px;
+    padding:8px 12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
+.op-search-icon{
+    margin-right:8px;
+    font-size:14px;
+    opacity:.8;
+}
+
+.op-search-input input{
+    border:none;
+    outline:none;
+    width:100%;
+    font-size:14px;
+    background:transparent;
+}
+
+.op-clear{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    border:none;
+    cursor:pointer;
+    background:#f3f4f6;
+    color:#111827;
+    font-weight:700;
+}
+
+.op-clear:hover{
+    background:#e5e7eb;
+}
+
+/* chip de filtro (igual idea que admin) */
+.filter-chip{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#ffffff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:10px 12px;
+    margin:0 0 14px;
+    font-size:14px;
+}
+
+.chip-link{
+    margin-left:auto;
+    text-decoration:none;
+    font-weight:600;
+    color:#0071e3;
+}
+
+.chip-link:hover{
+    text-decoration:underline;
+}
+
+/* error de stock (si no lo tenías) */
+.stock-error{
+    background:#fee2e2;
+    color:#991b1b;
+    border:1px solid #fecaca;
+    padding:10px 12px;
+    border-radius:12px;
+    margin:0 0 14px;
+    font-size:14px;
+}
