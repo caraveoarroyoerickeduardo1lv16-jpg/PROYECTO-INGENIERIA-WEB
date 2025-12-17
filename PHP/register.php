@@ -1,10 +1,8 @@
 <?php
 
-
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-
 
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset('utf8mb4');
@@ -12,10 +10,8 @@ $conn->set_charset('utf8mb4');
 $errores = [];
 $exito   = "";
 
-
 $nombre  = "";
 $correo  = "";
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -27,6 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // VALIDACIONES
     if (strlen($nombre) < 3) {
         $errores[] = "El nombre es muy corto.";
+    }
+
+    // ✅ SOLO LETRAS Y ESPACIOS (acentos incluidos)
+    if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/', $nombre)) {
+        $errores[] = "El nombre solo puede contener letras y espacios.";
     }
 
     if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
@@ -73,7 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $usuario = $correo;
                 $tipo    = "cliente";
 
-                
                 $stmt = $conn->prepare("
                     INSERT INTO usuarios (usuario, contrasena, correo, nombre, tipo, creado_en)
                     VALUES (?, ?, ?, ?, ?, NOW())
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>Crear cuenta - Mi tiendita</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <link rel="stylesheet" href="../CSS/registro.css">
 
     <style>
@@ -148,6 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Nombre completo</label>
                 <input type="text" name="nombre" required
                        placeholder="Ej: Juan Pérez López"
+                       pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]+"
+                       title="Solo letras y espacios"
                        value="<?= htmlspecialchars($nombre) ?>">
             </div>
 
@@ -182,4 +184,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </body>
 </html>
+
 
