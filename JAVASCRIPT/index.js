@@ -328,6 +328,50 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+      // ✅ ENTER: si NO existe -> vuelve a inicio y muestra flotante por ?nf=1
+    searchInput.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+
+        const texto = searchInput.value.trim();
+        if (!texto) return;
+
+        e.preventDefault();
+
+        try {
+            const resp = await fetch("../PHP/buscar_productos.php?q=" + encodeURIComponent(texto));
+            if (!resp.ok) {
+                ocultarSugerencias();
+                // antes: mostrarNoEncontrado(); window.location.href="index.php";
+                window.location.href = "index.php?nf=1";
+                return;
+            }
+
+            const data = await resp.json();
+
+            if (!Array.isArray(data) || data.length === 0) {
+                ocultarSugerencias();
+                // antes: mostrarNoEncontrado(); window.location.href="index.php";
+                window.location.href = "index.php?nf=1";
+                return;
+            }
+
+            const primero = data[0];
+            if (primero && primero.id) {
+                window.location.href = "index.php?producto_id=" + encodeURIComponent(primero.id);
+            } else {
+                ocultarSugerencias();
+                window.location.href = "index.php?nf=1";
+            }
+
+        } catch (err) {
+            console.error(err);
+            ocultarSugerencias();
+            // antes: mostrarNoEncontrado(); window.location.href="index.php";
+            window.location.href = "index.php?nf=1";
+        }
+    });
+
+
     // Ocultar sugerencias al hacer clic fuera
     document.addEventListener("click", (e) => {
         if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {

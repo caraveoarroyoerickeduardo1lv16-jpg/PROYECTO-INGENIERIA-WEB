@@ -307,6 +307,22 @@ if ($productoId > 0 && count($productos) === 1) {
     </div>
 </div>
 
+<?php if (isset($_GET['nf']) && $_GET['nf'] === '1'): ?>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const msg = document.getElementById("searchNotFound");
+    if (!msg) return;
+
+    msg.classList.add("show");
+    setTimeout(() => msg.classList.remove("show"), 2500);
+
+    const u = new URL(window.location.href);
+    u.searchParams.delete("nf");
+    window.history.replaceState({}, "", u.toString());
+});
+</script>
+<?php endif; ?>
+
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
 </html>
