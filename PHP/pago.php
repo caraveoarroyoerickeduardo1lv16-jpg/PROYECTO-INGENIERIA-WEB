@@ -47,7 +47,7 @@ function horarioEsValido($dia_envio, $horario_envio) {
     return true;
 }
 
-/* guardar horario + día en sesión (desde checkout) */
+/* Guardar horario + día en sesión (desde checkout) */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['horario'])) $_SESSION['horario_envio'] = $_POST['horario'];
     if (isset($_POST['dia_envio'])) $_SESSION['dia_envio'] = (int)$_POST['dia_envio'];
@@ -73,7 +73,7 @@ if (!$confirmado) {
     $horario_envio = (string)$_SESSION['horario_envio'];
     $dia_envio     = (int)($_SESSION['dia_envio'] ?? 0);
 
-    /* bloqueo servidor */
+    /* BLOQUEO SERVIDOR */
     if (!horarioEsValido($dia_envio, $horario_envio)) {
         $_SESSION['checkout_error'] = "El horario seleccionado ya no está disponible (hoy cerramos a las 9pm o falta anticipación). Elige otro horario.";
         header("Location: checkout.php?paso=3");
@@ -188,7 +188,6 @@ if (!$confirmado) {
                 $metodo_id_real = $conn->insert_id;
                 $stmt->close();
             }
-
         } elseif (empty($errores)) {
             // método guardado
             $id_mp = (int)$metodo_pago_id;
@@ -292,48 +291,18 @@ if (!$confirmado) {
     <meta charset="UTF-8">
     <title>Pago - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
-
     <style>
-        /* Solo “mejoras” visuales para pago, sin romper tu checkout.css */
-        .pill {
-            display:inline-flex;
-            align-items:center;
-            gap:8px;
-            padding:6px 12px;
-            border-radius:999px;
-            background:#eef6ff;
-            border:1px solid #dbeafe;
-            color:#1e3a8a;
-            font-size:12px;
-            font-weight:700;
-        }
-        .muted { color:#6b7280; font-size:12px; }
-        .section-subtitle { margin-top:10px; font-size:14px; font-weight:800; color:#111827; }
-
-        /* Cards de métodos más bonitos */
         .mp-card{
-            display:flex;
-            align-items:center;
-            gap:10px;
-            border:1px solid #e5e7eb;
-            border-radius:12px;
-            padding:10px;
-            background:#fff;
-            cursor:pointer;
-            transition:.15s;
+            display:flex; align-items:center; gap:10px;
+            border:1px solid #e5e7eb; border-radius:12px;
+            padding:10px; background:#fff; cursor:pointer; transition:.15s;
         }
         .mp-card:hover{ border-color:#0071e3; background:#f8fbff; }
-        .mp-card input{ margin-right:6px; }
         .mp-info{ display:flex; flex-direction:column; gap:2px; }
         .mp-alias{ font-size:14px; font-weight:800; }
         .mp-detalle{ font-size:12px; color:#555; }
-
-        .btn-link{
-            text-decoration:none;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-        }
+        .metodos-guardados{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+        .btn-link{ text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
@@ -356,7 +325,6 @@ if (!$confirmado) {
         <div class="checkout-container">
             <h2 class="section-title">Pago exitoso</h2>
             <p><?= htmlspecialchars($mensaje_exito) ?></p>
-
             <a href="index.php" class="btn-primary btn-full btn-link">Seguir comprando</a>
         </div>
 
@@ -365,19 +333,12 @@ if (!$confirmado) {
         <?php if (!empty($errores)): ?>
             <div class="alert-error">
                 <ul>
-                    <?php foreach ($errores as $e): ?>
-                        <li><?= htmlspecialchars($e) ?></li>
-                    <?php endforeach; ?>
+                    <?php foreach ($errores as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
                 </ul>
-
                 <?php if (!empty($faltantes)): ?>
                     <ul>
                         <?php foreach ($faltantes as $f): ?>
-                            <li>
-                                <?= htmlspecialchars($f['nombre']) ?> —
-                                Pediste: <?= (int)$f['cantidad'] ?>,
-                                disponibles: <?= (int)$f['stock'] ?>
-                            </li>
+                            <li><?= htmlspecialchars($f['nombre']) ?> — Pediste: <?= (int)$f['cantidad'] ?>, disponibles: <?= (int)$f['stock'] ?></li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
@@ -387,12 +348,9 @@ if (!$confirmado) {
         <div class="checkout-container">
             <h2 class="section-title">Resumen de tu pedido</h2>
 
-            <div class="pill">📍 Envío a domicilio</div>
-            <div style="height:10px;"></div>
-
             <div class="resumen-row">
                 <span>Dirección</span>
-                <span class="muted">
+                <span>
                     <?= htmlspecialchars($direccion['etiqueta']) ?>:
                     <?= htmlspecialchars($direccion['calle']) ?>,
                     <?= htmlspecialchars($direccion['colonia']) ?>,
@@ -404,28 +362,19 @@ if (!$confirmado) {
 
             <div class="resumen-row">
                 <span>Horario</span>
-                <span class="muted"><?= htmlspecialchars($horario_envio) ?></span>
+                <span><?= htmlspecialchars($horario_envio) ?></span>
             </div>
 
-            <div class="resumen-row">
-                <span>Subtotal</span>
-                <span>$<?= number_format($subtotal, 2) ?></span>
-            </div>
-            <div class="resumen-row">
-                <span>Envío</span>
-                <span>$<?= number_format($costo_envio, 2) ?></span>
-            </div>
-            <div class="resumen-row resumen-total">
-                <span>Total</span>
-                <span>$<?= number_format($total_pagar, 2) ?></span>
-            </div>
+            <div class="resumen-row"><span>Subtotal</span><span>$<?= number_format($subtotal, 2) ?></span></div>
+            <div class="resumen-row"><span>Envío</span><span>$<?= number_format($costo_envio, 2) ?></span></div>
+            <div class="resumen-row resumen-total"><span>Total</span><span>$<?= number_format($total_pagar, 2) ?></span></div>
         </div>
 
         <form method="post" class="checkout-container" id="formPago">
             <h2 class="section-title">Método de pago</h2>
 
             <?php if (!empty($metodos_guardados)): ?>
-                <div class="metodos-guardados" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+                <div class="metodos-guardados">
                     <?php foreach ($metodos_guardados as $mp): ?>
                         <label class="mp-card">
                             <input type="radio" name="metodo_pago_id" value="<?= (int)$mp['id'] ?>">
@@ -440,16 +389,16 @@ if (!$confirmado) {
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <p class="muted" style="margin-bottom:10px;">Aún no tienes métodos guardados.</p>
+                <p class="mp-empty">Aún no tienes métodos de pago guardados.</p>
             <?php endif; ?>
 
-            <div class="section-subtitle">Usar nueva tarjeta</div>
+            <h3>Usar nueva tarjeta</h3>
 
-            <label class="mp-card" style="margin-top:8px; margin-bottom:10px;">
+            <label class="mp-card" style="margin:8px 0 10px;">
                 <input type="radio" name="metodo_pago_id" value="nuevo" checked>
                 <div class="mp-info">
                     <div class="mp-alias">Pagar con nueva tarjeta</div>
-                    <div class="mp-detalle">Ingresa los datos y se guardará para la próxima</div>
+                    <div class="mp-detalle">Ingresa los datos y se guardará</div>
                 </div>
             </label>
 
@@ -458,7 +407,6 @@ if (!$confirmado) {
                     <label>Alias (ej. Mi VISA)*</label>
                     <input type="text" name="alias" value="<?= htmlspecialchars($_POST['alias'] ?? '') ?>">
                 </div>
-
                 <div class="form-group">
                     <label>Nombre del titular*</label>
                     <input type="text" name="titular" value="<?= htmlspecialchars($_POST['titular'] ?? '') ?>">
@@ -468,20 +416,17 @@ if (!$confirmado) {
                     <label>Número de tarjeta* (16 dígitos)</label>
                     <input type="text" id="numeroTarjeta" name="numero"
                            maxlength="16" inputmode="numeric" autocomplete="cc-number"
-                           pattern="\d{16}" title="Debe tener exactamente 16 dígitos numéricos"
+                           pattern="\d{16}" title="Debe tener exactamente 16 dígitos"
                            value="<?= htmlspecialchars($_POST['numero'] ?? '') ?>">
                 </div>
 
                 <div class="form-group">
                     <label>Mes de expiración (MM)*</label>
-                    <input type="number" name="mes_exp" min="1" max="12"
-                           value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>">
+                    <input type="number" name="mes_exp" min="1" max="12" value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>">
                 </div>
-
                 <div class="form-group">
                     <label>Año de expiración (AAAA)*</label>
-                    <input type="number" name="anio_exp"
-                           value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>">
+                    <input type="number" name="anio_exp" value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>">
                 </div>
             </div>
 
@@ -492,11 +437,9 @@ if (!$confirmado) {
         </form>
 
     <?php endif; ?>
-
 </div>
 
 <script>
-/* tarjeta: solo dígitos y max 16 */
 document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("numeroTarjeta");
     if (!input) return;
