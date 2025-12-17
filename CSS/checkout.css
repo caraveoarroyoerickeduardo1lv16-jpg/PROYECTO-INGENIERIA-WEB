@@ -1,9 +1,4 @@
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
     font-family: Arial, sans-serif;
@@ -11,18 +6,52 @@ body {
     color: #111;
 }
 
-
 .page {
     max-width: 600px;
     margin: 20px auto 40px;
     padding: 0 10px;
 }
 
+/* ===== HEADER BRAND (Mi Tiendita) ===== */
 .header {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     margin-bottom: 15px;
+}
+
+.header-brand{
+    background:#ffffff;
+    border-radius:14px;
+    padding:12px 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border:1px solid #e5e7eb;
+}
+
+.brand-row{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.brand-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.brand-badge{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:#0071e3;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    box-shadow:0 2px 8px rgba(0,113,227,0.25);
 }
 
 .header h1 {
@@ -37,7 +66,7 @@ body {
     margin-top: 2px;
 }
 
-
+/* CONTENEDOR */
 .checkout-container {
     background: #fff;
     border-radius: 10px;
@@ -46,11 +75,17 @@ body {
     margin-bottom: 10px;
 }
 
-.hidden {
-    display: none;
+.hidden { display: none; }
+
+/* TÍTULO SECCIÓN */
+.section-title{
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:10px;
+    color:#111827;
 }
 
-/*TABS DE DÍAS*/
+/* TABS DE DÍAS */
 .days-tabs {
     display: flex;
     gap: 10px;
@@ -61,56 +96,46 @@ body {
     flex: 1;
     border-radius: 999px;
     padding: 8px 0;
-    border: 2px solid #0052cc;
+    border: 2px solid #0071e3;
     background: #fff;
     font-size: 13px;
     text-align: center;
     cursor: pointer;
     line-height: 1.2;
+    transition: 0.2s;
 }
 
-.day-button .date {
-    font-size: 12px;
+.day-button:hover{
+    background:#eef6ff;
 }
+
+.day-button .date { font-size: 12px; }
 
 .day-button.active {
-    background: #0052cc;
+    background: #0071e3;
     color: #fff;
 }
 
-/* TEXTO TIENDA Y ALERTA */
-.from-store {
-    font-size: 13px;
-    margin-bottom: 10px;
-}
-
-.from-store a {
-    color: #0052cc;
-    text-decoration: underline;
-}
-
-.from-store.small {
-    margin-bottom: 5px;
-}
-
+/* ALERTA */
 .alert {
     display: flex;
     align-items: flex-start;
     gap: 6px;
     background: #fff7e0;
     border: 1px solid #ffe0a3;
-    border-radius: 6px;
-    padding: 8px 10px;
+    border-radius: 10px;
+    padding: 10px 12px;
     font-size: 12px;
     margin-bottom: 15px;
 }
 
 .alert a {
-    color: #0052cc;
+    color: #0071e3;
     text-decoration: underline;
+    font-weight:700;
 }
 
-/* SLOTS DE HORARIOS */
+/* SLOTS */
 .slots-group {
     display: flex;
     flex-direction: column;
@@ -121,24 +146,26 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid #e2e2e2;
-    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
     padding: 10px;
     background: #fff;
     cursor: pointer;
+    transition: 0.15s;
 }
 
-.slot input[type="radio"] {
-    margin-right: 5px;
+.slot:hover{
+    border-color:#0071e3;
+    background:#f8fbff;
 }
 
-.slot-info {
-    flex: 1;
-}
+.slot input[type="radio"] { margin-right: 5px; }
+
+.slot-info { flex: 1; }
 
 .slot-title {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .slot-sub {
@@ -149,37 +176,17 @@ body {
 
 .slot-price {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
+    color:#111827;
 }
 
-.slot-icon {
-    font-size: 18px;
+.slot.selected { border: 2px solid #0071e3; }
+
+.slot-disabled{
+    opacity:0.85;
 }
 
-.slot-express {
-    background: #fff7e0;
-}
-
-.slot.selected {
-    border: 2px solid #0052cc;
-}
-
-/* FORMULARIO DE DIRECCIÓN  */
-.use-location {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f2f7ff;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 15px;
-}
-
-.use-location-text {
-    font-size: 12px;
-    color: #555;
-}
-
+/* FORM */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -187,9 +194,7 @@ body {
 }
 
 @media (min-width: 540px) {
-    .form-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+    .form-grid { grid-template-columns: 1fr 1fr; }
 }
 
 .form-group label {
@@ -200,10 +205,17 @@ body {
 
 .form-group input {
     width: 100%;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #d0d0d0;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
     font-size: 13px;
+    outline:none;
+    transition:0.2s;
+}
+
+.form-group input:focus{
+    border-color:#0071e3;
+    box-shadow:0 0 0 3px rgba(0,113,227,0.12);
 }
 
 /* BOTONES */
@@ -212,45 +224,72 @@ body {
 .btn-outline {
     border-radius: 999px;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 16px;
     font-size: 13px;
     cursor: pointer;
+    font-weight:700;
+    transition:0.2s;
 }
 
-/* Que los links con clase btn-primary se vean como botón */
+/* AZUL MI TIENDITA */
+.btn-primary{
+    background:#0071e3;
+    color:#fff;
+    box-shadow:0 2px 10px rgba(0,113,227,0.18);
+}
+
+.btn-primary:hover{
+    background:#005bb5;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #111;
+}
+
+.btn-secondary:hover{
+    background:#d1d5db;
+}
+
+.btn-outline {
+    background: #fff;
+    color: #0071e3;
+    border: 1px solid #0071e3;
+}
+
+.btn-outline:hover{
+    background:#eef6ff;
+}
+
+.btn-full { width: 100%; }
+
+.btn-sm{
+    padding:8px 14px;
+    font-size:13px;
+}
+
+/* LINKS COMO BOTÓN (por si lo usas) */
 a.btn-primary {
     display: inline-block;
     text-decoration: none;
     border-radius: 999px;
     padding: 10px 24px;
-    font-weight: 600;
+    font-weight: 700;
     text-align: center;
-    background-color: #0062e6;
+    background-color: #0071e3;
     color: #fff;
 }
 
+a.btn-primary:hover{
+    background:#005bb5;
+}
 
 a.btn-primary.btn-full {
     display: block;
     width: 100%;
 }
 
-
-.btn-secondary {
-    background: #e1e1e1;
-    color: #111;
-}
-
-.btn-outline {
-    background: #fff;
-    color: #0052cc;
-    border: 1px solid #0052cc;
-}
-
-.btn-full {
-    width: 100%;
-}
-
+/* BOTONES DE PASO */
 .step-buttons {
     margin-top: 15px;
     display: flex;
@@ -258,7 +297,7 @@ a.btn-primary.btn-full {
     gap: 10px;
 }
 
-
+/* STEP HEADER */
 .step-header {
     display: flex;
     align-items: center;
@@ -271,14 +310,19 @@ a.btn-primary.btn-full {
     width: 32px;
     height: 32px;
     border: none;
-    background: #f2f2f2;
+    background: #f3f4f6;
     cursor: pointer;
     font-size: 16px;
+    transition:0.2s;
+}
+
+.back-icon:hover{
+    background:#e5e7eb;
 }
 
 .step-title {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 .step-sub {
@@ -286,18 +330,14 @@ a.btn-primary.btn-full {
     color: #666;
 }
 
-/*ESTADOS Y RESUMEN */
+/* ESTADOS */
 .status-hoy {
     font-size: 12px;
     color: #999;
     margin-bottom: 4px;
 }
 
-.status-dia {
-    font-size: 13px;
-    margin-bottom: 10px;
-}
-
+/* RESUMEN */
 .summary {
     display: flex;
     justify-content: space-between;
@@ -307,12 +347,12 @@ a.btn-primary.btn-full {
     border-top: 1px solid #eee;
 }
 
-/* Direcciones guardadas */
+/* DIRECCIONES GUARDADAS */
 .saved-addresses {
     margin-bottom: 15px;
-    border: 1px solid #e2e2e2;
-    border-radius: 8px;
-    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
     background: #fafafa;
 }
 
@@ -322,9 +362,9 @@ a.btn-primary.btn-full {
 }
 
 .saved-address-card {
-    border-top: 1px solid #e2e2e2;
-    padding-top: 8px;
-    margin-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 10px;
+    margin-top: 10px;
 }
 
 .saved-address-card:first-of-type {
@@ -335,25 +375,26 @@ a.btn-primary.btn-full {
 
 .saved-label {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 .saved-text {
     font-size: 12px;
     color: #555;
-    margin: 2px 0 6px;
+    margin: 3px 0 8px;
 }
 
 .saved-form {
     text-align: right;
 }
 
+/* ALERTAS */
 .alert-exito {
     background: #e6ffed;
     border: 1px solid #b5f5c9;
     color: #1b7a3a;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 10px;
     font-size: 13px;
 }
@@ -363,84 +404,17 @@ a.btn-primary.btn-full {
     border: 1px solid #ffb3b3;
     color: #a30000;
     padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    font-size: 13px;
-}
-
-.alert-error ul {
-    margin-left: 18px;
-}
-
-.resumen-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    margin-top: 6px;
-}
-
-.resumen-total {
-    font-weight: 700;
-    border-top: 1px solid #eee;
-    padding-top: 6px;
-    margin-top: 8px;
-}
-
-.metodos-guardados {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.mp-card {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid #e2e2e2;
     border-radius: 10px;
-    padding: 8px 10px;
-    background: #fafafa;
-    cursor: pointer;
-}
-
-.mp-card input {
-    margin-right: 5px;
-}
-
-.mp-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.mp-alias {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.mp-detalle {
-    font-size: 12px;
-    color: #555;
-}
-
-.mp-empty {
-    font-size: 13px;
     margin-bottom: 10px;
+    font-size: 13px;
 }
 
-.btn-link {
-    text-decoration: none;
-    text-align: center;
-    padding: 8px 16px;
-}
-
-/* Quitar las flechas en la parte del check */
+/* Quitar flechas number */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-
 
 
 

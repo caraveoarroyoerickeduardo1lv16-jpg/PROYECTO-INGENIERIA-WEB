@@ -21,7 +21,6 @@ $paso   = isset($_GET['paso']) ? (int)$_GET['paso'] : 1;
 $error  = '';
 $direccionesUsuario = [];
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* usar dirección existente  */
@@ -63,8 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $paso  = 2;
         }
     }
-
-    
 }
 
 /*  DIRECCIONES GUARDADAS */
@@ -101,28 +98,32 @@ $datos = [
     <link rel="stylesheet" href="../CSS/checkout.css">
 
     <style>
-        ::placeholder {
-            color: #999;
-            opacity: 1;
-        }
+        ::placeholder { color: #999; opacity: 1; }
     </style>
 </head>
 <body>
 
 <div class="page">
-    <header class="header">
-        <h1>Mi Tiendita</h1>
-        <span class="header-sub">Checkout - Envío</span>
+
+    <header class="header header-brand">
+        <div class="brand-row">
+            <div class="brand-left">
+                <div class="brand-badge">*</div>
+                <div>
+                    <h1>Mi Tiendita</h1>
+                    <span class="header-sub">Checkout - Envío</span>
+                </div>
+            </div>
+        </div>
     </header>
 
     <?php if ($error !== ''): ?>
-        <div style="color:red; margin-bottom:10px;"><?= htmlspecialchars($error) ?></div>
+        <div class="alert-error"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    
     <form method="post" id="formCheckout">
 
-     
+        <!-- PASO 1 -->
         <section id="paso1" class="checkout-container <?= $paso === 1 ? '' : 'hidden' ?>">
             <div class="days-tabs">
                 <button type="button" class="day-button active" data-dia="0" data-step="1">
@@ -148,7 +149,7 @@ $datos = [
                 <?php for ($h = 9; $h < 21; $h++):
                     $label = formatHourLabel($h) . '-' . formatHourLabel($h + 1);
                 ?>
-                    <label class="slot" data-hora="<?= $h ?>">
+                    <label class="slot slot-disabled" data-hora="<?= $h ?>">
                         <input type="radio" disabled>
                         <div class="slot-info">
                             <div class="slot-title"><?= $label ?></div>
@@ -160,9 +161,9 @@ $datos = [
             </div>
         </section>
 
-        <!--DIRECCIÓN -->
+        <!-- PASO 2 -->
         <section id="paso2" class="checkout-container <?= $paso === 2 ? '' : 'hidden' ?>">
-            <h2>Agregar dirección</h2>
+            <h2 class="section-title">Agregar dirección</h2>
 
             <?php if (!empty($direccionesUsuario)): ?>
                 <div class="saved-addresses">
@@ -178,12 +179,11 @@ $datos = [
                                 CP <?= htmlspecialchars($dir['cp']) ?>
                             </div>
 
-                            <!-- Botón que no valida campos de nueva dirección -->
                             <div class="saved-form">
                                 <button type="submit"
                                         name="usar_direccion"
                                         value="<?= $dir['id'] ?>"
-                                        class="btn-secondary"
+                                        class="btn-primary btn-sm"
                                         formnovalidate>
                                     Usar esta dirección
                                 </button>
@@ -196,69 +196,53 @@ $datos = [
             <div class="form-grid">
                 <div class="form-group">
                     <label>Etiqueta*</label>
-                    <input type="text"
-                           name="etiqueta"
+                    <input type="text" name="etiqueta"
                            value="<?= htmlspecialchars($datos['etiqueta']) ?>"
-                           required
-                           placeholder="Ej: Casa, Trabajo">
+                           required placeholder="Ej: Casa, Trabajo">
                 </div>
                 <div class="form-group">
                     <label>Calle*</label>
-                    <input type="text"
-                           name="calle"
+                    <input type="text" name="calle"
                            value="<?= htmlspecialchars($datos['calle']) ?>"
-                           required
-                           placeholder="Ej: Av. Reforma 123">
+                           required placeholder="Ej: Av. Reforma 123">
                 </div>
                 <div class="form-group">
                     <label>Colonia*</label>
-                    <input type="text"
-                           name="colonia"
+                    <input type="text" name="colonia"
                            value="<?= htmlspecialchars($datos['colonia']) ?>"
-                           required
-                           placeholder="Ej: Centro">
+                           required placeholder="Ej: Centro">
                 </div>
                 <div class="form-group">
                     <label>Ciudad*</label>
-                    <input type="text"
-                           name="ciudad"
+                    <input type="text" name="ciudad"
                            value="<?= htmlspecialchars($datos['ciudad']) ?>"
-                           required
-                           placeholder="Ej: Ciudad de México">
+                           required placeholder="Ej: Ciudad de México">
                 </div>
                 <div class="form-group">
                     <label>Estado*</label>
-                    <input type="text"
-                           name="estado"
+                    <input type="text" name="estado"
                            value="<?= htmlspecialchars($datos['estado']) ?>"
-                           required
-                           placeholder="Ej: CDMX">
+                           required placeholder="Ej: CDMX">
                 </div>
                 <div class="form-group">
                     <label>Código postal*</label>
-                    <input type="text"
-                           name="cp"
+                    <input type="text" name="cp"
                            value="<?= htmlspecialchars($datos['cp']) ?>"
-                           required
-                           placeholder="Ej: 01234"
-                           maxlength="5"
-                           pattern="\d{5}"
-                           inputmode="numeric"
+                           required placeholder="Ej: 01234"
+                           maxlength="5" pattern="\d{5}" inputmode="numeric"
                            title="Ingresa 5 dígitos numéricos">
                 </div>
             </div>
 
             <div class="step-buttons">
-                <button type="button" class="btn-secondary" id="btnVolverPaso1">
-                    ← Volver
-                </button>
+                <button type="button" class="btn-secondary" id="btnVolverPaso1">← Volver</button>
                 <button type="submit" name="guardar_direccion" class="btn-primary" id="btnGuardarDireccion">
                     Guardar dirección
                 </button>
             </div>
         </section>
 
-        <!--  HORARIO  -->
+        <!-- PASO 3 -->
         <section id="paso3" class="checkout-container <?= $paso === 3 ? '' : 'hidden' ?>">
             <header class="step-header">
                 <button type="button" class="back-icon" id="btnVolverPaso2">←</button>
@@ -270,16 +254,13 @@ $datos = [
 
             <div class="days-tabs">
                 <button type="button" class="day-button active" data-dia="0" data-step="3">
-                    <span>Hoy</span><br>
-                    <span class="date"><?= date('j/n') ?></span>
+                    <span>Hoy</span><br><span class="date"><?= date('j/n') ?></span>
                 </button>
                 <button type="button" class="day-button" data-dia="1" data-step="3">
-                    <span>Mañana</span><br>
-                    <span class="date"><?= date('j/n', strtotime('+1 day')) ?></span>
+                    <span>Mañana</span><br><span class="date"><?= date('j/n', strtotime('+1 day')) ?></span>
                 </button>
                 <button type="button" class="day-button" data-dia="2" data-step="3">
-                    <span>Pasado mañana</span><br>
-                    <span class="date"><?= date('j/n', strtotime('+2 day')) ?></span>
+                    <span>Pasado mañana</span><br><span class="date"><?= date('j/n', strtotime('+2 day')) ?></span>
                 </button>
             </div>
 
@@ -310,7 +291,6 @@ $datos = [
             </div>
 
             <div class="step-buttons">
-                <!-- AQUÍ mandamos directo a pago.php y sin validar los campos de dirección -->
                 <button type="submit"
                         class="btn-primary btn-full"
                         formaction="pago.php"
@@ -326,7 +306,6 @@ $datos = [
 <script src="../JAVASCRIPT/checkout.js"></script>
 </body>
 </html>
-
 
 
 
