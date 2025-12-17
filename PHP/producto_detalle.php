@@ -11,7 +11,9 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 
 $errorResena = "";
 
-
+/* =========================
+   GUARDAR RESEÑA
+========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva_resena') {
     $productoPostId = isset($_POST['producto_id']) ? (int)$_POST['producto_id'] : 0;
     $calif          = isset($_POST['calificacion']) ? (int)$_POST['calificacion'] : 0;
@@ -24,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
     } elseif ($comentario === '') {
         $errorResena = "Escribe un comentario sobre el producto.";
     } else {
-      
+
         if ($estaLogueado) {
             $stmt = $conn->prepare("
                 INSERT INTO resena_producto (producto_id, usuario_id, calificacion, comentario)
@@ -32,7 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
             ");
             $stmt->bind_param("iiis", $productoPostId, $usuario_id, $calif, $comentario);
         } else {
-            // invitado usuario_id = NULL
             $stmt = $conn->prepare("
                 INSERT INTO resena_producto (producto_id, calificacion, comentario)
                 VALUES (?, ?, ?)
@@ -70,14 +71,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
     }
 }
 
-/* 1) OBTENER ID DE PRODUCTO */
+/* =========================
+   1) OBTENER ID DE PRODUCTO
+========================= */
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     header("Location: index.php");
     exit;
 }
 
-/*2) LEER CATEGORÍAS PARA EL MENÚ */
+/* =========================
+   2) LEER CATEGORÍAS
+========================= */
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -86,7 +91,10 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-/* 3) LEER CARRITO ACTUAL  */
+/* =========================
+   3) LEER CARRITO ACTUAL
+   ✅ IMPORTANTE: invitado = session_id + usuario_id IS NULL
+========================= */
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -95,7 +103,7 @@ if ($estaLogueado) {
         SELECT id, total
         FROM carrito
         WHERE session_id = ?
-          AND (usuario_id IS NULL OR usuario_id = 0)
+          AND usuario_id IS NULL
         LIMIT 1
     ");
     $stmt->bind_param("s", $sessionId);
@@ -110,20 +118,20 @@ $total_items   = 0;
 
 if ($carrito_id) {
     $stmt = $conn->prepare("
-        SELECT producto_id, cantidad
+        SELECT COALESCE(SUM(cantidad),0) AS items
         FROM carrito_detalle
         WHERE carrito_id = ?
     ");
     $stmt->bind_param("i", $carrito_id);
     $stmt->execute();
-    $resDet = $stmt->get_result();
-    while ($row = $resDet->fetch_assoc()) {
-        $total_items += (int)$row['cantidad'];
-    }
+    $rowItems = $stmt->get_result()->fetch_assoc();
     $stmt->close();
+    $total_items = (int)($rowItems['items'] ?? 0);
 }
 
-/* 4) LEER DATOS DEL PRODUCTO*/
+/* =========================
+   4) LEER DATOS DEL PRODUCTO
+========================= */
 $stmt = $conn->prepare("
     SELECT id, nombre, precio, stock, imagen_url, marca, categoria,
            calificacion, num_resenas
@@ -141,7 +149,9 @@ if (!$producto) {
     exit;
 }
 
-/* Cantidad en carrito de ESTE producto */
+/* =========================
+   Cantidad en carrito de ESTE producto
+========================= */
 $cantidadEnCarrito = 0;
 if ($carrito_id) {
     $stmt = $conn->prepare("
@@ -154,13 +164,13 @@ if ($carrito_id) {
     $stmt->execute();
     $rowCant = $stmt->get_result()->fetch_assoc();
     $stmt->close();
-    if ($rowCant) {
-        $cantidadEnCarrito = (int)$rowCant['cantidad'];
-    }
+    if ($rowCant) $cantidadEnCarrito = (int)$rowCant['cantidad'];
 }
 $estaEnCarrito = $cantidadEnCarrito > 0;
 
-/* 5) LEER IMÁGENES DEL PRODUCT */
+/* =========================
+   5) LEER IMÁGENES DEL PRODUCTO
+========================= */
 $stmt = $conn->prepare("
     SELECT url
     FROM producto_imagen
@@ -177,7 +187,9 @@ if (count($imagenes) === 0 && !empty($producto['imagen_url'])) {
     $imagenes[] = ['url' => $producto['imagen_url']];
 }
 
-/* 6) LEER RESEÑAS DEL PRODUCTO*/
+/* =========================
+   6) LEER RESEÑAS
+========================= */
 $stmt = $conn->prepare("
     SELECT r.calificacion, r.comentario, r.creado_en,
            u.usuario
@@ -204,7 +216,6 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
     <link rel="stylesheet" href="../CSS/producto_detalle.css">
 </head>
 <body>
-
 
 <header class="header">
     <div class="header-left">
@@ -243,7 +254,6 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
     </div>
 </header>
 
-<!--  NAV CATEGORÍAS -->
 <nav class="nav-categorias">
     <a href="index.php" class="nav-item">Inicio</a>
     <?php foreach ($categorias as $cat): ?>
@@ -253,10 +263,8 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
     <?php endforeach; ?>
 </nav>
 
-
 <main class="detalle-container">
 
-   
     <section class="detalle-galeria">
         <div class="detalle-thumbs">
             <?php foreach ($imagenes as $idx => $img): ?>
@@ -278,65 +286,44 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
         </div>
     </section>
 
-    <!-- Columna derecha: info, carrito, reseñas -->
     <section class="detalle-info">
 
-        <div class="detalle-marca">
-            <?php echo htmlspecialchars($producto['marca']); ?>
-        </div>
+        <div class="detalle-marca"><?php echo htmlspecialchars($producto['marca']); ?></div>
 
-        <h1 class="detalle-titulo">
-            <?php echo htmlspecialchars($producto['nombre']); ?>
-        </h1>
+        <h1 class="detalle-titulo"><?php echo htmlspecialchars($producto['nombre']); ?></h1>
 
         <div class="detalle-rating">
-            <span class="rating-num">
-                <?php echo number_format($producto['calificacion'], 1); ?>
-            </span>
+            <span class="rating-num"><?php echo number_format($producto['calificacion'], 1); ?></span>
             <span class="rating-stars">
                 <?php
                 $rating = (float)$producto['calificacion'];
-                for ($i = 1; $i <= 5; $i++) {
-                    echo ($rating >= $i) ? "★" : "☆";
-                }
+                for ($i = 1; $i <= 5; $i++) echo ($rating >= $i) ? "★" : "☆";
                 ?>
             </span>
-            <span class="rating-count">
-                (<?php echo (int)$producto['num_resenas']; ?> reseñas)
-            </span>
+            <span class="rating-count">(<?php echo (int)$producto['num_resenas']; ?> reseñas)</span>
         </div>
 
-        <div class="detalle-precio">
-            $<?php echo number_format($producto['precio'], 2); ?>
-        </div>
+        <div class="detalle-precio">$<?php echo number_format($producto['precio'], 2); ?></div>
 
         <div class="detalle-stock">
             Disponible: <?php echo (int)$producto['stock']; ?> pieza(s)
         </div>
 
-        <!-- Botones tipo landing: agregar / + / - -->
-        <div
-            class="detalle-actions"
-            data-id="<?php echo $producto['id']; ?>"
-            data-logged="<?php echo $estaLogueado ? '1' : '0'; ?>"
-        >
+        <div class="detalle-actions"
+             data-id="<?php echo (int)$producto['id']; ?>"
+             data-logged="<?php echo $estaLogueado ? '1' : '0'; ?>">
             <?php if (!$estaLogueado): ?>
-                <!-- NO logueado: botón que manda a login -->
                 <a href="../PHP/login.php" class="detalle-btn-agregar detalle-btn-login">
                     Agregar al carrito
                 </a>
             <?php else: ?>
-                <!-- Logueado: botones reales de carrito -->
-                <button
-                    class="detalle-btn-agregar"
-                    style="<?php echo $estaEnCarrito ? 'display:none;' : ''; ?>"
-                >
+                <button class="detalle-btn-agregar" style="<?php echo $estaEnCarrito ? 'display:none;' : ''; ?>">
                     Agregar al carrito
                 </button>
 
                 <div class="detalle-cantidad-control <?php echo $estaEnCarrito ? '' : 'oculto'; ?>">
                     <button class="detalle-btn-menos">−</button>
-                    <span class="detalle-cantidad"><?php echo $estaEnCarrito ? $cantidadEnCarrito : 0; ?></span>
+                    <span class="detalle-cantidad"><?php echo $estaEnCarrito ? (int)$cantidadEnCarrito : 0; ?></span>
                     <button class="detalle-btn-mas">+</button>
                 </div>
             <?php endif; ?>
@@ -346,27 +333,20 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
             Precio y disponibilidad sujetos a cambios. Imágenes ilustrativas.
         </div>
 
-        <!-- Mensajes de reseña -->
         <?php if ($resenaOk): ?>
-            <div class="detalle-mensaje-ok">
-                ¡Gracias por tu reseña!
-            </div>
+            <div class="detalle-mensaje-ok">¡Gracias por tu reseña!</div>
         <?php endif; ?>
 
         <?php if ($errorResena !== ''): ?>
-            <div class="detalle-mensaje-error">
-                <?php echo htmlspecialchars($errorResena); ?>
-            </div>
+            <div class="detalle-mensaje-error"><?php echo htmlspecialchars($errorResena); ?></div>
         <?php endif; ?>
 
-   
         <section class="detalle-resenas">
             <h2>Opiniones del producto</h2>
 
-            <!-- Formulario para nueva reseña -->
             <form method="post" class="resena-form">
                 <input type="hidden" name="accion" value="nueva_resena">
-                <input type="hidden" name="producto_id" value="<?php echo $producto['id']; ?>">
+                <input type="hidden" name="producto_id" value="<?php echo (int)$producto['id']; ?>">
                 <input type="hidden" name="calificacion" id="inputCalificacion" value="0">
 
                 <label>Tu calificación:</label>
@@ -377,16 +357,11 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
                 </div>
 
                 <label for="comentario">Tu reseña:</label>
-                <textarea
-                    name="comentario"
-                    id="comentario"
-                    placeholder="Cuéntanos qué te pareció el producto..."
-                ></textarea>
+                <textarea name="comentario" id="comentario" placeholder="Cuéntanos qué te pareció el producto..."></textarea>
 
                 <button type="submit">Enviar reseña</button>
             </form>
 
-            <!-- Lista de reseñas existentes -->
             <div class="lista-resenas">
                 <?php if (count($resenas) === 0): ?>
                     <p>No hay reseñas todavía. ¡Sé el primero en opinar!</p>
@@ -394,24 +369,16 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
                     <?php foreach ($resenas as $r): ?>
                         <article class="resena-item">
                             <div class="resena-header">
-                                <span class="resena-usuario">
-                                    <?php echo htmlspecialchars($r['usuario'] ?? 'Anónimo'); ?>
-                                </span>
-                                <span class="resena-fecha">
-                                    <?php echo htmlspecialchars($r['creado_en']); ?>
-                                </span>
+                                <span class="resena-usuario"><?php echo htmlspecialchars($r['usuario'] ?? 'Anónimo'); ?></span>
+                                <span class="resena-fecha"><?php echo htmlspecialchars($r['creado_en']); ?></span>
                             </div>
                             <div class="resena-rating">
                                 <?php
                                 $rc = (int)$r['calificacion'];
-                                for ($i = 1; $i <= 5; $i++) {
-                                    echo ($i <= $rc) ? "★" : "☆";
-                                }
+                                for ($i = 1; $i <= 5; $i++) echo ($i <= $rc) ? "★" : "☆";
                                 ?>
                             </div>
-                            <div class="resena-comentario">
-                                <?php echo nl2br(htmlspecialchars($r['comentario'])); ?>
-                            </div>
+                            <div class="resena-comentario"><?php echo nl2br(htmlspecialchars($r['comentario'])); ?></div>
                         </article>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -422,164 +389,163 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
 
 </main>
 
-
 <script>
-//  GALERÍA DE IMÁGENES 
+// =========================
+// GALERÍA DE IMÁGENES
+// =========================
 const thumbs   = document.querySelectorAll('.thumb-img');
 const mainImg  = document.getElementById('mainImage');
 let currentIdx = 0;
 
 thumbs.forEach((img, index) => {
-    img.addEventListener('click', () => {
-        currentIdx = index;
-        mainImg.src = img.dataset.large;
-        document.querySelectorAll('.thumb-img').forEach(t => t.classList.remove('activa'));
-        img.classList.add('activa');
-    });
+  img.addEventListener('click', () => {
+    currentIdx = index;
+    mainImg.src = img.dataset.large;
+    document.querySelectorAll('.thumb-img').forEach(t => t.classList.remove('activa'));
+    img.classList.add('activa');
+  });
 });
 
-// Pase automático cada 4s si hay varias imágenes
 if (thumbs.length > 1) {
-    setInterval(() => {
-        currentIdx = (currentIdx + 1) % thumbs.length;
-        const img = thumbs[currentIdx];
-        mainImg.src = img.dataset.large;
-        document.querySelectorAll('.thumb-img').forEach(t => t.classList.remove('activa'));
-        img.classList.add('activa');
-    }, 4000);
+  setInterval(() => {
+    currentIdx = (currentIdx + 1) % thumbs.length;
+    const img = thumbs[currentIdx];
+    mainImg.src = img.dataset.large;
+    document.querySelectorAll('.thumb-img').forEach(t => t.classList.remove('activa'));
+    img.classList.add('activa');
+  }, 4000);
 }
 
-
+// =========================
+// CARRITO (PRODUCTO DETALLE)
+// =========================
 async function actualizarCarrito(productoId, accion) {
-    const formData = new FormData();
-    formData.append("producto_id", productoId);
-    formData.append("accion", accion);
+  const formData = new FormData();
+  formData.append("producto_id", productoId);
+  formData.append("accion", accion);
 
-    const response = await fetch("../PHP/carrito_actualizar.php", {
-        method: "POST",
-        body: formData
-    });
-    return await response.json();
+  const response = await fetch("../PHP/carrito_actualizar.php", {
+    method: "POST",
+    body: formData
+  });
+  return await response.json();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const acciones = document.querySelector(".detalle-actions");
-    if (!acciones) return;
+  const acciones = document.querySelector(".detalle-actions");
+  if (!acciones) return;
 
-    const estaLogueado = acciones.dataset.logged === "1";
+  const estaLogueado = acciones.dataset.logged === "1";
+  if (!estaLogueado) return;
 
-    if (!estaLogueado) {
+  const productoId    = parseInt(acciones.dataset.id, 10);
+  const btnAgregar    = acciones.querySelector(".detalle-btn-agregar");
+  const contCant      = acciones.querySelector(".detalle-cantidad-control");
+  const btnMas        = acciones.querySelector(".detalle-btn-mas");
+  const btnMenos      = acciones.querySelector(".detalle-btn-menos");
+  const spanCantidad  = acciones.querySelector(".detalle-cantidad");
+
+  const cartTotalItems = document.getElementById("cartTotalItems");
+  const cartTotalPrice = document.getElementById("cartTotalPrice");
+
+  function actualizarHeader(items, total) {
+    if (!cartTotalItems || !cartTotalPrice) return;
+    const it = parseInt(items, 10) || 0;
+    const tt = Number(total) || 0;
+    cartTotalItems.textContent = it + " artículo" + (it !== 1 ? "s" : "");
+    cartTotalPrice.textContent = "$" + tt.toFixed(2);
+  }
+
+  let cantidadLocal = parseInt(spanCantidad?.textContent || "0", 10) || 0;
+
+  if (btnAgregar) {
+    btnAgregar.addEventListener("click", async () => {
+      const data = await actualizarCarrito(productoId, "add");
+      if (!data.success) {
+        alert(data.message || "Error al agregar al carrito");
         return;
+      }
+      cantidadLocal = data.cantidad;
+      if (spanCantidad) spanCantidad.textContent = cantidadLocal;
+      btnAgregar.style.display = "none";
+      if (contCant) contCant.classList.remove("oculto");
+      actualizarHeader(data.total_items, data.total_carrito);
+    });
+  }
+
+  if (btnMas) {
+    btnMas.addEventListener("click", async () => {
+      const data = await actualizarCarrito(productoId, "add");
+      if (!data.success) {
+        alert(data.message || "Error al agregar");
+        return;
+      }
+      cantidadLocal = data.cantidad;
+      if (spanCantidad) spanCantidad.textContent = cantidadLocal;
+      actualizarHeader(data.total_items, data.total_carrito);
+    });
+  }
+
+  if (btnMenos) {
+    btnMenos.addEventListener("click", async () => {
+      const data = await actualizarCarrito(productoId, "remove");
+      if (!data.success) {
+        alert(data.message || "Error al quitar");
+        return;
+      }
+      cantidadLocal = data.cantidad;
+
+      if (cantidadLocal <= 0) {
+        if (contCant) contCant.classList.add("oculto");
+        if (btnAgregar) btnAgregar.style.display = "inline-block";
+        if (spanCantidad) spanCantidad.textContent = "0";
+      } else {
+        if (spanCantidad) spanCantidad.textContent = cantidadLocal;
+      }
+
+      actualizarHeader(data.total_items, data.total_carrito);
+    });
+  }
+
+  // =========================
+  // ESTRELLAS DINÁMICAS
+  // =========================
+  const estrellasContainer = document.getElementById("resenaEstrellas");
+  const inputCalif         = document.getElementById("inputCalificacion");
+
+  if (estrellasContainer && inputCalif) {
+    const estrellas = estrellasContainer.querySelectorAll(".resena-estrella");
+    let califActual = parseInt(inputCalif.value || "0", 10) || 0;
+
+    function pintarEstrellas(n) {
+      estrellas.forEach(star => {
+        const val = parseInt(star.dataset.value, 10);
+        if (val <= n) star.classList.add("activa");
+        else star.classList.remove("activa");
+      });
     }
 
-    const productoId    = parseInt(acciones.dataset.id, 10);
-    const btnAgregar    = acciones.querySelector(".detalle-btn-agregar");
-    const contCant      = acciones.querySelector(".detalle-cantidad-control");
-    const btnMas        = acciones.querySelector(".detalle-btn-mas");
-    const btnMenos      = acciones.querySelector(".detalle-btn-menos");
-    const spanCantidad  = acciones.querySelector(".detalle-cantidad");
+    estrellas.forEach(star => {
+      const val = parseInt(star.dataset.value, 10);
 
-    const cartTotalItems = document.getElementById("cartTotalItems");
-    const cartTotalPrice = document.getElementById("cartTotalPrice");
+      star.addEventListener("click", () => {
+        califActual = val;
+        inputCalif.value = String(val);
+        pintarEstrellas(val);
+      });
 
-    function actualizarHeader(items, total) {
-        if (!cartTotalItems || !cartTotalPrice) return;
-        cartTotalItems.textContent =
-            items + " artículo" + (items !== 1 ? "s" : "");
-        cartTotalPrice.textContent = "$" + total.toFixed(2);
-    }
+      star.addEventListener("mouseenter", () => pintarEstrellas(val));
+      star.addEventListener("mouseleave", () => pintarEstrellas(califActual));
+    });
 
-    let cantidadLocal = parseInt(spanCantidad.textContent, 10) || 0;
-
-    if (btnAgregar) {
-        btnAgregar.addEventListener("click", async () => {
-            const data = await actualizarCarrito(productoId, "add");
-            if (!data.success) {
-                alert(data.message || "Error al agregar al carrito");
-                return;
-            }
-            cantidadLocal = data.cantidad;
-            spanCantidad.textContent = cantidadLocal;
-            btnAgregar.style.display = "none";
-            contCant.classList.remove("oculto");
-            actualizarHeader(data.total_items, data.total_carrito);
-        });
-    }
-
-    if (btnMas) {
-        btnMas.addEventListener("click", async () => {
-            const data = await actualizarCarrito(productoId, "add");
-            if (!data.success) {
-                alert(data.message || "Error al agregar");
-                return;
-            }
-            cantidadLocal = data.cantidad;
-            spanCantidad.textContent = cantidadLocal;
-            actualizarHeader(data.total_items, data.total_carrito);
-        });
-    }
-
-    if (btnMenos) {
-        btnMenos.addEventListener("click", async () => {
-            const data = await actualizarCarrito(productoId, "remove");
-            if (!data.success) {
-                alert(data.message || "Error al quitar");
-                return;
-            }
-            cantidadLocal = data.cantidad;
-            if (cantidadLocal <= 0) {
-                contCant.classList.add("oculto");
-                btnAgregar.style.display = "inline-block";
-                spanCantidad.textContent = "0";
-            } else {
-                spanCantidad.textContent = cantidadLocal;
-            }
-            actualizarHeader(data.total_items, data.total_carrito);
-        });
-    }
-
-    //  ESTRELLAS DINÁMICAS 
-    const estrellasContainer = document.getElementById("resenaEstrellas");
-    const inputCalif         = document.getElementById("inputCalificacion");
-
-    if (estrellasContainer && inputCalif) {
-        const estrellas = estrellasContainer.querySelectorAll(".resena-estrella");
-        let califActual = 0;
-
-        function pintarEstrellas(n) {
-            estrellas.forEach(star => {
-                const val = parseInt(star.dataset.value, 10);
-                if (val <= n) {
-                    star.classList.add("activa");
-                } else {
-                    star.classList.remove("activa");
-                }
-            });
-        }
-
-        estrellas.forEach(star => {
-            const val = parseInt(star.dataset.value, 10);
-
-            star.addEventListener("click", () => {
-                califActual = val;
-                inputCalif.value = val;
-                pintarEstrellas(val);
-            });
-
-            star.addEventListener("mouseenter", () => {
-                pintarEstrellas(val);
-            });
-
-            star.addEventListener("mouseleave", () => {
-                pintarEstrellas(califActual);
-            });
-        });
-    }
+    pintarEstrellas(califActual);
+  }
 });
 </script>
 
 </body>
 </html>
+
 
 
 

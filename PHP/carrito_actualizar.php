@@ -1,6 +1,4 @@
 <?php
-// Manejo del carrito invitado o logueado
-
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 header('Content-Type: application/json; charset=utf-8');
 session_start();
@@ -17,7 +15,8 @@ try {
             "success" => false,
             "ok" => false,
             "message" => "Datos inválidos.",
-            "msg" => "Datos inválidos."
+            "msg" => "Datos inválidos.",
+            "session_id" => $sessionId
         ]);
         exit;
     }
@@ -34,8 +33,7 @@ try {
         $stmt->bind_param("s", $sessionId);
     }
     $stmt->execute();
-    $res = $stmt->get_result();
-    $carrito = $res->fetch_assoc();
+    $carrito = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
     if ($carrito) {
@@ -58,8 +56,7 @@ try {
     $stmt = $conn->prepare("SELECT precio, stock FROM producto WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $producto_id);
     $stmt->execute();
-    $res = $stmt->get_result();
-    $producto = $res->fetch_assoc();
+    $producto = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
     if (!$producto) {
@@ -67,7 +64,9 @@ try {
             "success" => false,
             "ok" => false,
             "message" => "Producto no encontrado.",
-            "msg" => "Producto no encontrado."
+            "msg" => "Producto no encontrado.",
+            "session_id" => $sessionId,
+            "carrito_id" => $carrito_id
         ]);
         exit;
     }
@@ -75,12 +74,11 @@ try {
     $precio = (float)$producto['precio'];
     $stock  = (int)$producto['stock'];
 
-    /* 3) Leer detalle actual del carrito */
+    /* 3) Leer detalle actual */
     $stmt = $conn->prepare("SELECT cantidad FROM carrito_detalle WHERE carrito_id = ? AND producto_id = ? LIMIT 1");
     $stmt->bind_param("ii", $carrito_id, $producto_id);
     $stmt->execute();
-    $res = $stmt->get_result();
-    $detalle = $res->fetch_assoc();
+    $detalle = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
     $cantidad = $detalle ? (int)$detalle['cantidad'] : 0;
@@ -94,7 +92,9 @@ try {
                 "success" => false,
                 "ok" => false,
                 "message" => "No hay más stock disponible.",
-                "msg" => "No hay más stock disponible."
+                "msg" => "No hay más stock disponible.",
+                "session_id" => $sessionId,
+                "carrito_id" => $carrito_id
             ]);
             exit;
         }
@@ -133,40 +133,49 @@ try {
     }
 
     /* 6) Recalcular total del carrito */
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(subtotal),0) AS total, COALESCE(SUM(cantidad),0) AS items
-                            FROM carrito_detalle
-                            WHERE carrito_id = ?");
+    $stmt = $conn->prepare("
+        SELECT COALESCE(SUM(subtotal),0) AS total,
+               COALESCE(SUM(cantidad),0) AS items
+        FROM carrito_detalle
+        WHERE carrito_id = ?
+    ");
     $stmt->bind_param("i", $carrito_id);
     $stmt->execute();
-    $res = $stmt->get_result();
-    $totales = $res->fetch_assoc();
+    $totales = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
     $total_carrito = (float)($totales['total'] ?? 0);
     $total_items   = (int)($totales['items'] ?? 0);
 
-    // Guardar el total en la tabla carrito
+    // Guardar total en carrito
     $stmt = $conn->prepare("UPDATE carrito SET total = ? WHERE id = ?");
     $stmt->bind_param("di", $total_carrito, $carrito_id);
     $stmt->execute();
     $stmt->close();
 
-    /* 7) Respuesta final (COMPATIBLE con ambos JS) */
+    // Textos listos para header
+    $header_items_text = $total_items . " artículo" . ($total_items === 1 ? "" : "s");
+    $header_total_text = "$" . number_format($total_carrito, 2, ".", "");
+
     echo json_encode([
-        // tu formato
         "success"       => true,
+        "ok"            => true,
+
         "cantidad"      => $cantidad,
         "total_items"   => $total_items,
         "total_carrito" => $total_carrito,
 
-        // compatibilidad con el JS del carrito que te pasé
-        "ok"            => true,
         "item_qty"      => $cantidad,
         "item_subtotal" => $item_subtotal,
 
-        // mensajes por si tu JS usa "message" o "msg"
-        "message"       => "OK",
-        "msg"           => "OK"
+        "header_items_text" => $header_items_text,
+        "header_total_text" => $header_total_text,
+
+        "session_id" => $sessionId,
+        "carrito_id" => $carrito_id,
+
+        "message" => "OK",
+        "msg"     => "OK"
     ]);
     exit;
 
@@ -175,8 +184,10 @@ try {
         "success" => false,
         "ok" => false,
         "message" => "Error en el servidor: " . $e->getMessage(),
-        "msg" => "Error en el servidor: " . $e->getMessage()
+        "msg" => "Error en el servidor: " . $e->getMessage(),
+        "session_id" => session_id()
     ]);
     exit;
 }
+
 
