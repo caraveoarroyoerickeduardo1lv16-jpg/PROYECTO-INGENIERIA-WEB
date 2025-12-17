@@ -478,3 +478,27 @@ body {
     margin:0 0 14px;
     font-size:14px;
 }
+
+/* ===== FORZAR HOVER CLICKEABLE EN SUGERENCIAS ===== */
+.op-suggestions .op-sug-item{
+  cursor: pointer !important;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+}
+
+.op-suggestions .op-sug-item:hover{
+  background: #eef6ff !important;
+  color: #005bb5 !important;
+  transform: scale(1.01) !important;
+}
+
+.op-suggestions .op-sug-item::after{
+  content: "→" !important;
+  opacity: 0 !important;
+  transform: translateX(-6px) !important;
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+.op-suggestions .op-sug-item:hover::after{
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+}
