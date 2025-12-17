@@ -28,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) 
 
     if ($uid > 0) {
 
-        // 1) Eliminar detalles de pedidos del usuario
         $stmt = $conn->prepare("
             DELETE pd
             FROM pedido_detalle pd
@@ -39,13 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) 
         $stmt->execute();
         $stmt->close();
 
-        // 2) Eliminar pedidos
         $stmt = $conn->prepare("DELETE FROM pedidos WHERE usuario_id = ?");
         $stmt->bind_param("i", $uid);
         $stmt->execute();
         $stmt->close();
 
-        // 3) Eliminar detalles de carrito
         $stmt = $conn->prepare("
             DELETE cd
             FROM carrito_detalle cd
@@ -56,25 +53,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) 
         $stmt->execute();
         $stmt->close();
 
-        // 4) Eliminar carrito
         $stmt = $conn->prepare("DELETE FROM carrito WHERE usuario_id = ?");
         $stmt->bind_param("i", $uid);
         $stmt->execute();
         $stmt->close();
 
-        // 5) Eliminar métodos de pago
         $stmt = $conn->prepare("DELETE FROM metodos_pago WHERE usuario_id = ?");
         $stmt->bind_param("i", $uid);
         $stmt->execute();
         $stmt->close();
 
-        // 6) Eliminar direcciones
         $stmt = $conn->prepare("DELETE FROM direcciones WHERE usuario_id = ?");
         $stmt->bind_param("i", $uid);
         $stmt->execute();
         $stmt->close();
 
-        // 7) Eliminar usuario
         $stmt = $conn->prepare("DELETE FROM usuarios WHERE id = ?");
         $stmt->bind_param("i", $uid);
         $stmt->execute();
@@ -88,13 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) 
 /* =========================
    GUARDAR CAMBIOS
 ========================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    // Si viene eliminar_usuario ya salimos arriba. Aquí solo llega cuando guardas.
-    if (isset($_POST['eliminar_usuario'])) {
-        header("Location: admin_usuarios.php");
-        exit;
-    }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario'])) {
 
     $usuario    = trim($_POST['usuario'] ?? '');
     $contrasena = trim($_POST['contrasena'] ?? '');
@@ -110,18 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = "El rol seleccionado no es válido.";
     }
 
-    // ✅ Validar correo (servidor)
+    // ✅ VALIDAR CORREO
     if ($correo !== '' && !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
         $errores[] = "El correo no tiene un formato válido.";
     }
 
-    // ✅ Validar contraseña:
-    // - mínimo 8 caracteres
-    // - al menos 1 mayúscula
-    // - al menos 1 número
-    // - al menos 1 carácter especial
+    // ✅ VALIDAR NOMBRE: SOLO LETRAS Y ESPACIOS
+    if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/', $nombre)) {
+        $errores[] = "El nombre solo puede contener letras y espacios.";
+    }
+
+    // ✅ VALIDAR CONTRASEÑA
     $regexPass = '/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
-    if ($contrasena !== '' && !preg_match($regexPass, $contrasena)) {
+    if (!preg_match($regexPass, $contrasena)) {
         $errores[] = "La contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial.";
     }
 
@@ -175,7 +163,6 @@ if (!$usuarioData) {
             <div class="logo-icon"><span class="logo-star">*</span></div>
             <span class="logo-text">Mi tiendita</span>
         </a>
-
         <div class="logout-container">
             <a href="logout.php" class="logout-button">Cerrar sesión</a>
         </div>
@@ -209,18 +196,11 @@ if (!$usuarioData) {
 
         <div class="form-group">
             <label>Contraseña</label>
-            <input
-                type="text"
-                name="contrasena"
-                value="<?= htmlspecialchars($usuarioData['contrasena']) ?>"
-                required
-                minlength="8"
-                pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}"
-                title="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial."
-            >
-            <small class="help-text">
-                Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial.
-            </small>
+            <input type="text" name="contrasena"
+                   value="<?= htmlspecialchars($usuarioData['contrasena']) ?>"
+                   required
+                   pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}"
+                   title="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial">
         </div>
 
         <div class="form-group">
@@ -230,7 +210,11 @@ if (!$usuarioData) {
 
         <div class="form-group">
             <label>Nombre</label>
-            <input type="text" name="nombre" value="<?= htmlspecialchars($usuarioData['nombre']) ?>" required>
+            <input type="text" name="nombre"
+                   value="<?= htmlspecialchars($usuarioData['nombre']) ?>"
+                   required
+                   pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]+"
+                   title="Solo letras y espacios">
         </div>
 
         <div class="form-group">
@@ -245,8 +229,6 @@ if (!$usuarioData) {
 
     <div class="edit-actions">
         <button type="submit" class="btn-guardar">Guardar cambios</button>
-
-        <!-- BOTÓN ELIMINAR -->
         <button type="button" class="btn-eliminar" onclick="confirmarEliminar(<?= (int)$usuarioData['id'] ?>)">
             Eliminar usuario
         </button>
@@ -261,12 +243,10 @@ function confirmarEliminar(id) {
     if (confirm("¿Seguro que quieres eliminar este usuario?\nSe eliminarán pedidos, carritos, direcciones y métodos de pago.")) {
         const f = document.createElement("form");
         f.method = "POST";
-
         const i = document.createElement("input");
         i.type = "hidden";
         i.name = "eliminar_usuario";
         i.value = id;
-
         f.appendChild(i);
         document.body.appendChild(f);
         f.submit();
@@ -276,4 +256,5 @@ function confirmarEliminar(id) {
 
 </body>
 </html>
+
 
