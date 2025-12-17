@@ -203,13 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ===== BUSCADOR =====
-    const searchInput     = document.getElementById("searchInput");
-    const suggestionsBox  = document.getElementById("searchSuggestions");
-    const searchNotFound  = document.getElementById("searchNotFound");
-
-    // ✅ Mensaje grande (en área de productos)
-    const productsMessage = document.getElementById("productsMessage");
-    const productsArea    = document.querySelector(".carrusel-wrapper"); // contenedor de productos
+    const searchInput    = document.getElementById("searchInput");
+    const suggestionsBox = document.getElementById("searchSuggestions");
+    const searchNotFound = document.getElementById("searchNotFound");
 
     if (!searchInput || !suggestionsBox) {
         console.warn("Buscador: no se encontró searchInput o searchSuggestions");
@@ -221,32 +217,15 @@ document.addEventListener("DOMContentLoaded", () => {
         suggestionsBox.style.display = "none";
     }
 
-    function mostrarNoEncontradoPequeno() {
+    function mostrarNoEncontrado() {
         if (!searchNotFound) return;
         searchNotFound.classList.add("show");
         setTimeout(() => searchNotFound.classList.remove("show"), 2000);
     }
 
-    function mostrarMensajeGrande(texto) {
-        if (productsMessage) {
-            productsMessage.textContent = texto || "Producto no existente";
-            productsMessage.style.display = "block";
-        }
-        if (productsArea) {
-            productsArea.style.display = "none"; // ocultamos productos para que se note el aviso
-        }
-    }
-
-    function ocultarMensajeGrande() {
-        if (productsMessage) productsMessage.style.display = "none";
-        if (productsArea) productsArea.style.display = "";
-    }
-
-    // Sugerencias (al escribir, quitamos mensaje grande si existía)
+    // Sugerencias
     searchInput.addEventListener("input", async () => {
         const texto = searchInput.value.trim();
-
-        ocultarMensajeGrande();
 
         if (texto.length < 1) {
             ocultarSugerencias();
@@ -305,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ✅ ENTER: si NO existe -> aviso GRANDE en área de productos (sin redirigir)
+    // ✅ ENTER: si no existe, mostrar "Producto no encontrado" y QUITAR FILTRO
     searchInput.addEventListener("keydown", async (e) => {
         if (e.key !== "Enter") return;
 
@@ -318,8 +297,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const resp = await fetch("../PHP/buscar_productos.php?q=" + encodeURIComponent(texto));
             if (!resp.ok) {
                 ocultarSugerencias();
-                mostrarNoEncontradoPequeno();
-                mostrarMensajeGrande("Producto no existente");
+                mostrarNoEncontrado();
+                window.location.href = "index.php"; // ✅ quita filtro
                 return;
             }
 
@@ -327,26 +306,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!Array.isArray(data) || data.length === 0) {
                 ocultarSugerencias();
-                mostrarNoEncontradoPequeno();
-                mostrarMensajeGrande("Producto no existente");
+                mostrarNoEncontrado();
+                window.location.href = "index.php"; // ✅ quita filtro
                 return;
             }
 
-            // si hay resultados, manda al primero
             const primero = data[0];
             if (primero && primero.id) {
                 window.location.href = "index.php?producto_id=" + encodeURIComponent(primero.id);
             } else {
                 ocultarSugerencias();
-                mostrarNoEncontradoPequeno();
-                mostrarMensajeGrande("Producto no existente");
+                mostrarNoEncontrado();
+                window.location.href = "index.php"; // ✅ quita filtro
             }
 
         } catch (err) {
             console.error(err);
             ocultarSugerencias();
-            mostrarNoEncontradoPequeno();
-            mostrarMensajeGrande("Producto no existente");
+            mostrarNoEncontrado();
+            window.location.href = "index.php"; // ✅ quita filtro
         }
     });
 
@@ -357,7 +335,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
-
 
 
 
