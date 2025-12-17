@@ -332,5 +332,31 @@ body {
 }
 
 
+/* ✅ Botón rojo estilo de tu página */
+.btn-danger{
+    border-radius: 999px;
+    border: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #dc2626;
+    color: #fff;
+    font-weight: 600;
+}
+.btn-danger:hover{ background:#b91c1c; }
+
+/* ✅ para que los botones queden en fila */
+.saved-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+/* ✅ si hoy está agotado, deshabilitamos el botón */
+button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
 
 
