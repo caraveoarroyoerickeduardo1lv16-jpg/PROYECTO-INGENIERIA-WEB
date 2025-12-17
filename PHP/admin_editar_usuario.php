@@ -19,64 +19,37 @@ if ($id <= 0) {
 
 $errores = [];
 
-
+/* =========================
+   INVALIDAR USUARIO (ANTES BORRABA)
+========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) {
 
     $uid = (int)$_POST['eliminar_usuario'];
 
     if ($uid > 0) {
 
-        $stmt = $conn->prepare("
-            DELETE pd
-            FROM pedido_detalle pd
-            INNER JOIN pedidos p ON p.id = pd.pedido_id
-            WHERE p.usuario_id = ?
-        ");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
+        // Evitar que el admin se invalide a sí mismo
+        if (!empty($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $uid) {
+            $errores[] = "No puedes invalidar tu propio usuario.";
+        } else {
 
-        $stmt = $conn->prepare("DELETE FROM pedidos WHERE usuario_id = ?");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
+            // Solo invalidar: NO borrar nada relacionado (pedidos/ventas se conservan)
+            $stmt = $conn->prepare("UPDATE usuarios SET estatus = 0 WHERE id = ?");
+            $stmt->bind_param("i", $uid);
+            $stmt->execute();
+            $stmt->close();
 
-        $stmt = $conn->prepare("
-            DELETE cd
-            FROM carrito_detalle cd
-            INNER JOIN carrito c ON c.id = cd.carrito_id
-            WHERE c.usuario_id = ?
-        ");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
-
-        $stmt = $conn->prepare("DELETE FROM carrito WHERE usuario_id = ?");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
-
-        $stmt = $conn->prepare("DELETE FROM metodos_pago WHERE usuario_id = ?");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
-
-        $stmt = $conn->prepare("DELETE FROM direcciones WHERE usuario_id = ?");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
-
-        $stmt = $conn->prepare("DELETE FROM usuarios WHERE id = ?");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
+            header("Location: admin_usuarios.php?invalido=1");
+            exit;
+        }
+    } else {
+        $errores[] = "ID de usuario inválido.";
     }
-
-    header("Location: admin_usuarios.php?eliminado=1");
-    exit;
 }
 
-
+/* =========================
+   GUARDAR CAMBIOS (EDITAR)
+========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario'])) {
 
     $usuario    = trim($_POST['usuario'] ?? '');
@@ -119,14 +92,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario']))
         $stmt->execute();
         $stmt->close();
 
-        header("Location: admin_usuarios.php");
+        header("Location: admin_usuarios.php?editado=1");
         exit;
     }
 }
 
-
+/* =========================
+   CARGAR USUARIO
+========================= */
 $stmt = $conn->prepare("
-    SELECT id, usuario, contrasena, correo, nombre, tipo, creado_en
+    SELECT id, usuario, contrasena, correo, nombre, tipo, estatus, creado_en
     FROM usuarios
     WHERE id = ?
 ");
@@ -169,6 +144,12 @@ if (!$usuarioData) {
     <h1>Editar usuario</h1>
     <a href="admin_usuarios.php" class="btn-volver">← Volver a usuarios</a>
 </div>
+
+<?php if ((int)$usuarioData['estatus'] === 0): ?>
+    <div class="alert-error" style="margin-bottom: 12px;">
+        Este usuario está <strong>INVALIDADO</strong> (estatus = 0). No debería poder iniciar sesión.
+    </div>
+<?php endif; ?>
 
 <?php if (!empty($errores)): ?>
     <div class="alert-error">
@@ -223,8 +204,10 @@ if (!$usuarioData) {
 
     <div class="edit-actions">
         <button type="submit" class="btn-guardar">Guardar cambios</button>
+
+        <!-- Este botón YA NO BORRA: invalida (estatus = 0) -->
         <button type="button" class="btn-eliminar" onclick="confirmarEliminar(<?= (int)$usuarioData['id'] ?>)">
-            Eliminar usuario
+            Invalidar usuario
         </button>
     </div>
 </form>
@@ -234,13 +217,15 @@ if (!$usuarioData) {
 
 <script>
 function confirmarEliminar(id) {
-    if (confirm("¿Seguro que quieres eliminar este usuario?\nSe eliminarán pedidos, carritos, direcciones y métodos de pago.")) {
+    if (confirm("¿Seguro que quieres INVALIDAR este usuario?\nNo se borrarán pedidos/ventas, pero ya no podrá iniciar sesión.")) {
         const f = document.createElement("form");
         f.method = "POST";
+
         const i = document.createElement("input");
         i.type = "hidden";
-        i.name = "eliminar_usuario";
+        i.name = "eliminar_usuario"; // se queda igual para reutilizar tu lógica
         i.value = id;
+
         f.appendChild(i);
         document.body.appendChild(f);
         f.submit();
@@ -250,5 +235,6 @@ function confirmarEliminar(id) {
 
 </body>
 </html>
+
 
 
