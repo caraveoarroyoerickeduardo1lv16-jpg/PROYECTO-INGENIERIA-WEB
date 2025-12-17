@@ -10,7 +10,6 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-// Clientes = usuarios con tipo 'cliente'
 $sql = "SELECT id, correo, nombre FROM usuarios WHERE tipo = 'cliente' ORDER BY id ASC";
 $res = $conn->query($sql);
 $clientes = $res->fetch_all(MYSQLI_ASSOC);
@@ -36,7 +35,12 @@ $clientes = $res->fetch_all(MYSQLI_ASSOC);
 </header>
 
 <main class="reports-main">
-    <a href="admin_reportes.php" class="btn-back">← Volver a reportes</a>
+
+    <!-- ✅ BOTÓN AZUL VOLVER A REPORTES -->
+    <a href="admin_reportes.php" class="btn-volver-reportes">
+        ← Volver a reportes
+    </a>
+
     <h1 class="reports-title">Clientes</h1>
 
     <div class="table-wrapper">
@@ -65,6 +69,7 @@ $clientes = $res->fetch_all(MYSQLI_ASSOC);
             </table>
         <?php endif; ?>
     </div>
+
 </main>
 
 </body>
