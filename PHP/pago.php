@@ -473,7 +473,7 @@ if (!$confirmado) {
             <div class="form-grid">
                 <div class="form-group">
                     <label>Alias (ej. Mi VISA)*</label>
-                    <input type="text" name="alias" value="<?= htmlspecialchars($_POST['alias'] ?? '') ?>" required>
+                    <input id="aliasInput" type="text" name="alias" value="<?= htmlspecialchars($_POST['alias'] ?? '') ?>" required>
                 </div>
 
                 <div class="form-group">
@@ -508,12 +508,12 @@ if (!$confirmado) {
 
                 <div class="form-group">
                     <label>Mes de expiración (MM)*</label>
-                    <input type="number" name="mes_exp" min="1" max="12" value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>" required>
+                    <input id="mesExpInput" type="number" name="mes_exp" min="1" max="12" value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>" required>
                 </div>
 
                 <div class="form-group">
                     <label>Año de expiración (AAAA)*</label>
-                    <input type="number" name="anio_exp" value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>" required>
+                    <input id="anioExpInput" type="number" name="anio_exp" value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>" required>
                 </div>
             </div>
 
@@ -528,6 +528,7 @@ if (!$confirmado) {
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+
     // ✅ Tarjeta: solo dígitos y max 16
     const num = document.getElementById("numeroTarjeta");
     if (num) {
@@ -551,11 +552,50 @@ document.addEventListener("DOMContentLoaded", () => {
             titular.value = (txt || "").replace(/[^\p{L} ]/gu, "");
         });
     }
+
+    // ✅ CAMBIO: si eliges tarjeta guardada, NO pedir campos de nueva tarjeta
+    const radios = document.querySelectorAll('input[name="metodo_pago_id"]');
+
+    const aliasInput   = document.getElementById("aliasInput");
+    const titularInput = document.getElementById("titularInput");
+    const numeroInput  = document.getElementById("numeroTarjeta");
+    const mesInput     = document.getElementById("mesExpInput");
+    const anioInput    = document.getElementById("anioExpInput");
+
+    const campos = [aliasInput, titularInput, numeroInput, mesInput, anioInput].filter(Boolean);
+
+    function setCamposNuevaTarjetaActivos(activo) {
+        campos.forEach(el => {
+            el.disabled = !activo;
+            if (activo) {
+                el.setAttribute("required", "required");
+            } else {
+                el.removeAttribute("required");
+            }
+        });
+    }
+
+    function revisarSeleccion() {
+        const seleccionado = document.querySelector('input[name="metodo_pago_id"]:checked');
+        if (!seleccionado) return;
+
+        if (seleccionado.value === "nuevo") {
+            setCamposNuevaTarjetaActivos(true);
+        } else {
+            setCamposNuevaTarjetaActivos(false);
+        }
+    }
+
+    radios.forEach(r => r.addEventListener("change", revisarSeleccion));
+
+    // aplicar al cargar
+    revisarSeleccion();
 });
 </script>
 
 </body>
 </html>
+
 
 
 
