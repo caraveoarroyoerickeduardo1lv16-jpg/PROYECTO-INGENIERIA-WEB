@@ -11,13 +11,102 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-
-// 1) PRODUCTO MÁS VENDIDO DEL MES
-
-
-$inicioMes    = date('Y-m-01');
+/* ==========================================
+   ✅ MES A REPORTAR (por defecto mes actual)
+   Puedes usar: admin_ventas.php?mes=2025-12
+========================================== */
+$mes = trim($_GET['mes'] ?? date('Y-m'));
+if (!preg_match('/^\d{4}-\d{2}$/', $mes)) {
+    $mes = date('Y-m');
+}
+$inicioMes    = $mes . '-01';
 $inicioMesSig = date('Y-m-01', strtotime('+1 month', strtotime($inicioMes)));
 
+/* ==========================================
+   ✅ EXPORT EXCEL (CSV) - MISMA PÁGINA
+   URL: admin_ventas.php?export=csv&mes=YYYY-MM
+========================================== */
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+
+    // Ventas por día (total y # pedidos)
+    $stmt = $conn->prepare("
+        SELECT
+            DATE(pe.creada_en) AS dia,
+            COUNT(DISTINCT pe.id) AS num_pedidos,
+            SUM(pe.total) AS total_ventas
+        FROM pedidos pe
+        WHERE pe.creada_en >= ? AND pe.creada_en < ?
+        GROUP BY DATE(pe.creada_en)
+        ORDER BY dia ASC
+    ");
+    $stmt->bind_param("ss", $inicioMes, $inicioMesSig);
+    $stmt->execute();
+    $ventas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    // “Lo que se llevaron” por día (productos + cantidades)
+    $stmt = $conn->prepare("
+        SELECT t.dia,
+               GROUP_CONCAT(CONCAT(t.nombre, ' x', t.qty) ORDER BY t.nombre SEPARATOR ', ') AS productos
+        FROM (
+            SELECT
+                DATE(pe.creada_en) AS dia,
+                p.nombre AS nombre,
+                SUM(d.cantidad) AS qty
+            FROM pedidos pe
+            INNER JOIN pedido_detalle d ON d.pedido_id = pe.id
+            INNER JOIN producto p ON p.id = d.producto_id
+            WHERE pe.creada_en >= ? AND pe.creada_en < ?
+            GROUP BY DATE(pe.creada_en), p.nombre
+        ) t
+        GROUP BY t.dia
+        ORDER BY t.dia ASC
+    ");
+    $stmt->bind_param("ss", $inicioMes, $inicioMesSig);
+    $stmt->execute();
+    $prodRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    $productosPorDia = [];
+    foreach ($prodRows as $r) {
+        $productosPorDia[$r['dia']] = $r['productos'] ?? '';
+    }
+
+    // Salida CSV (Excel)
+    $filename = "reporte_ventas_" . $mes . ".csv";
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    // BOM para Excel (UTF-8)
+    echo "\xEF\xBB\xBF";
+
+    $out = fopen('php://output', 'w');
+
+    // Encabezados
+    fputcsv($out, ['Fecha', 'Total vendido', '# pedidos', 'Lo que se llevaron']);
+
+    // Filas
+    foreach ($ventas as $v) {
+        $dia = $v['dia'];
+        $total = (float)($v['total_ventas'] ?? 0);
+        $num = (int)($v['num_pedidos'] ?? 0);
+        $productos = $productosPorDia[$dia] ?? '';
+
+        fputcsv($out, [
+            $dia,
+            number_format($total, 2, '.', ''),
+            $num,
+            $productos
+        ]);
+    }
+
+    fclose($out);
+    exit;
+}
+
+/* =========================
+   1) PRODUCTO MÁS VENDIDO DEL MES
+========================= */
 $sqlMasVendido = "
     SELECT 
         p.id,
@@ -32,34 +121,33 @@ $sqlMasVendido = "
     ORDER BY total_vendida DESC
     LIMIT 1
 ";
-
 $stmt = $conn->prepare($sqlMasVendido);
 $stmt->bind_param("ss", $inicioMes, $inicioMesSig);
 $stmt->execute();
-$resMasVendido = $stmt->get_result();
-$productoMes   = $resMasVendido->fetch_assoc();
+$productoMes = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-
-// 2) REPORTE DE VENTAS DIARIO
-
-
-$sqlVentasDiarias = "
-    SELECT DATE(creada_en) AS dia,
-           COUNT(*)        AS num_pedidos,
-           SUM(total)      AS total_ventas
-    FROM pedidos
-    GROUP BY DATE(creada_en)
+/* =========================
+   2) VENTAS DIARIAS DEL MES (TABLA)
+========================= */
+$stmt = $conn->prepare("
+    SELECT
+        DATE(pe.creada_en) AS dia,
+        COUNT(DISTINCT pe.id) AS num_pedidos,
+        SUM(pe.total) AS total_ventas
+    FROM pedidos pe
+    WHERE pe.creada_en >= ? AND pe.creada_en < ?
+    GROUP BY DATE(pe.creada_en)
     ORDER BY dia DESC
-    LIMIT 30
-";
-$resDiario     = $conn->query($sqlVentasDiarias);
-$ventasDiarias = $resDiario->fetch_all(MYSQLI_ASSOC);
+");
+$stmt->bind_param("ss", $inicioMes, $inicioMesSig);
+$stmt->execute();
+$ventasDiarias = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 
-
-// 3) REPORTE DE VENTAS MENSUAL
-
-
+/* =========================
+   3) VENTAS MENSUALES (últimos 12 meses)
+========================= */
 $sqlVentasMensuales = "
     SELECT DATE_FORMAT(creada_en, '%Y-%m') AS mes,
            COUNT(*)                        AS num_pedidos,
@@ -85,9 +173,7 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
 <header class="topbar">
     <div class="topbar-inner">
         <a href="admin_reportes.php" class="logo-link">
-            <div class="logo-icon">
-                <span class="logo-star">*</span>
-            </div>
+            <div class="logo-icon"><span class="logo-star">*</span></div>
             <span class="logo-text">Mi tiendita</span>
         </a>
     </div>
@@ -97,7 +183,19 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
 
     <a href="admin_reportes.php" class="back-link">← Volver a reportes</a>
 
-    <h1 class="reports-title">Reporte de ventas</h1>
+    <div class="ventas-top">
+        <h1 class="reports-title">Reporte de ventas</h1>
+
+        <!-- ✅ BOTÓN DESCARGA EXCEL -->
+        <a class="btn-export"
+           href="admin_ventas.php?export=csv&mes=<?= urlencode($mes) ?>">
+            Descargar Excel
+        </a>
+    </div>
+
+    <div class="mes-chip">
+        Mes del reporte: <strong><?= htmlspecialchars($mes) ?></strong>
+    </div>
 
     <!-- 1) Producto más vendido del mes -->
     <section>
@@ -120,13 +218,13 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
                 </div>
             </div>
         <?php else: ?>
-            <p>No hay ventas registradas en el mes actual.</p>
+            <p>No hay ventas registradas en el mes seleccionado.</p>
         <?php endif; ?>
     </section>
 
-    <!-- 2) Reporte de ventas diario -->
+    <!-- 2) Reporte de ventas diario (DEL MES) -->
     <section>
-        <h2 class="section-title">Reporte de ventas diario (últimos 30 días)</h2>
+        <h2 class="section-title">Reporte de ventas diario (mes seleccionado)</h2>
 
         <?php if (!empty($ventasDiarias)): ?>
             <table>
@@ -142,7 +240,7 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
                         <tr>
                             <td><?= htmlspecialchars($fila['dia']) ?></td>
                             <td><?= (int)$fila['num_pedidos'] ?></td>
-                            <td>$<?= number_format($fila['total_ventas'], 2) ?></td>
+                            <td>$<?= number_format((float)$fila['total_ventas'], 2) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -170,7 +268,7 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
                         <tr>
                             <td><?= htmlspecialchars($fila['mes']) ?></td>
                             <td><?= (int)$fila['num_pedidos'] ?></td>
-                            <td>$<?= number_format($fila['total_ventas'], 2) ?></td>
+                            <td>$<?= number_format((float)$fila['total_ventas'], 2) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -184,6 +282,5 @@ $ventasMensuales = $resMensual->fetch_all(MYSQLI_ASSOC);
 
 </body>
 </html>
-
 
 
