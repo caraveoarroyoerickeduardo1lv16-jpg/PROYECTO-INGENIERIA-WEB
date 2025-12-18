@@ -30,18 +30,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errores[] = "Todos los campos son obligatorios.";
     } else {
 
+        // ✅ Solo usuarios activos (estatus = 1)
         $stmt = $conn->prepare("
-            SELECT * 
-            FROM usuarios 
-            WHERE usuario = ? OR correo = ?
+            SELECT *
+            FROM usuarios
+            WHERE (usuario = ? OR correo = ?)
+              AND estatus = 1
             LIMIT 1
         ");
         $stmt->bind_param("ss", $usuarioInput, $usuarioInput);
         $stmt->execute();
         $res = $stmt->get_result();
         $row = $res->fetch_assoc();
+        $stmt->close();
 
-        if (!$row || $password !== $row["contrasena"]) {
+        // Si no existe o está invalidado, no entra
+        if (!$row) {
+            $errores[] = "Usuario o contraseña incorrectos.";
+        } else if ($password !== $row["contrasena"]) {
             $errores[] = "Usuario o contraseña incorrectos.";
         } else {
 
@@ -132,6 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </div>
 </body>
 </html>
+
 
 
 
