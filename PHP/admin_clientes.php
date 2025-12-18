@@ -10,7 +10,14 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-$sql = "SELECT id, correo, nombre FROM usuarios WHERE tipo = 'cliente' ORDER BY id ASC";
+// ✅ SOLO clientes ACTIVOS
+$sql = "
+    SELECT id, correo, nombre
+    FROM usuarios
+    WHERE tipo = 'cliente'
+      AND estatus = 1
+    ORDER BY id ASC
+";
 $res = $conn->query($sql);
 $clientes = $res->fetch_all(MYSQLI_ASSOC);
 ?>
@@ -36,7 +43,6 @@ $clientes = $res->fetch_all(MYSQLI_ASSOC);
 
 <main class="reports-main">
 
-    <!-- ✅ BOTÓN AZUL VOLVER A REPORTES -->
     <a href="admin_reportes.php" class="btn-volver-reportes">
         ← Volver a reportes
     </a>
@@ -47,7 +53,7 @@ $clientes = $res->fetch_all(MYSQLI_ASSOC);
         <div class="table-title">Listado de clientes</div>
 
         <?php if (empty($clientes)): ?>
-            <p>No hay clientes registrados.</p>
+            <p>No hay clientes activos registrados.</p>
         <?php else: ?>
             <table>
                 <thead>
