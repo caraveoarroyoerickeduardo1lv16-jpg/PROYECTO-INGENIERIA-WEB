@@ -51,6 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!preg_match('/[a-z]/', $contrasena)) {
             $errores[] = "La contraseña debe contener al menos 1 letra minúscula.";
         }
+        if (!preg_match('/\d/', $contrasena)) {
+            $errores[] = "La contraseña debe contener al menos 1 número.";
+         }
+
         if (!preg_match('/[^A-Za-z0-9]/', $contrasena)) {
             $errores[] = "La contraseña debe contener al menos 1 carácter especial.";
         }
