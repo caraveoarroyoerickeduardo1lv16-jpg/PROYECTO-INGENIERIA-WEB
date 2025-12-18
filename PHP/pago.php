@@ -20,7 +20,9 @@ $errores = [];
 $mensaje_exito = "";
 $faltantes = [];
 
-
+/* =========================
+   FUNCIONES
+========================= */
 function parseStartHour($label) {
     $label = trim((string)$label);
     if (!preg_match('/^(\d{1,2})(am|pm)\-/i', $label, $m)) return null;
@@ -53,7 +55,9 @@ function soloNombre($txt) {
     return (bool)preg_match('/^[\p{L} ]{2,}$/u', trim((string)$txt));
 }
 
-
+/* =========================
+   GUARDAR HORARIO/DIA EN SESIÓN
+========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['horario'])) {
         $_SESSION['horario_envio'] = $_POST['horario'];
@@ -63,7 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-
+/* =========================
+   SI NO CONFIRMADO, REQUIERE CHECKOUT
+========================= */
 if (!$confirmado) {
     if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
         header("Location: checkout.php");
@@ -74,14 +80,18 @@ if (!$confirmado) {
     }
 }
 
-
+/* =========================
+   MENSAJE DE ÉXITO
+========================= */
 if ($confirmado) {
     $mensaje_exito = $pedido_id_confirm > 0
         ? "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}"
         : "Tu pago se realizó correctamente.";
 }
 
-
+/* =========================
+   VARIABLES
+========================= */
 $direccion = null;
 $metodos_guardados = [];
 $subtotal = 0;
@@ -102,7 +112,31 @@ if (!$confirmado) {
         exit;
     }
 
-    // Carrito actual
+    /* =========================
+       ELIMINAR MÉTODO (SOFT DELETE: estatus=0)
+    ========================= */
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_metodo_pago'])) {
+        $mpId = (int)$_POST['eliminar_metodo_pago'];
+
+        if ($mpId > 0) {
+            $stmt = $conn->prepare("
+                UPDATE metodos_pago
+                SET estatus = 0
+                WHERE id = ? AND usuario_id = ?
+                LIMIT 1
+            ");
+            $stmt->bind_param("ii", $mpId, $usuario_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        header("Location: pago.php");
+        exit;
+    }
+
+    /* =========================
+       CARRITO ACTUAL
+    ========================= */
     $stmt = $conn->prepare("
         SELECT id, total
         FROM carrito
@@ -124,7 +158,9 @@ if (!$confirmado) {
     $subtotal    = (float)$carrito['total'];
     $total_pagar = $subtotal + $costo_envio;
 
-    // Dirección seleccionada (solo estatus=1)
+    /* =========================
+       DIRECCIÓN SELECCIONADA (solo estatus=1)
+    ========================= */
     $stmt = $conn->prepare("
         SELECT etiqueta, calle, colonia, ciudad, estado, cp
         FROM direcciones
@@ -142,27 +178,9 @@ if (!$confirmado) {
         exit;
     }
 
-  
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_metodo_pago'])) {
-        $mpId = (int)$_POST['eliminar_metodo_pago'];
-
-        if ($mpId > 0) {
-            $stmt = $conn->prepare("
-                UPDATE metodos_pago
-                SET estatus = 0
-                WHERE id = ? AND usuario_id = ?
-                LIMIT 1
-            ");
-            $stmt->bind_param("ii", $mpId, $usuario_id);
-            $stmt->execute();
-            $stmt->close();
-        }
-
-        header("Location: pago.php"); // refrescar lista
-        exit;
-    }
-
-    // Métodos de pago guardados (solo estatus=1)
+    /* =========================
+       MÉTODOS GUARDADOS (solo estatus=1)
+    ========================= */
     $stmt = $conn->prepare("
         SELECT id, alias, marca, ultimos4, mes_exp, anio_exp
         FROM metodos_pago
@@ -173,12 +191,12 @@ if (!$confirmado) {
     $stmt->bind_param("i", $usuario_id);
     $stmt->execute();
     $resMP = $stmt->get_result();
-    while ($row = $resMP->fetch_assoc()) {
-        $metodos_guardados[] = $row;
-    }
+    while ($row = $resMP->fetch_assoc()) $metodos_guardados[] = $row;
     $stmt->close();
 
-   
+    /* =========================
+       PAGAR
+    ========================= */
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
 
         if (!horarioEsValido($dia_envio, $horario_envio)) {
@@ -192,15 +210,16 @@ if (!$confirmado) {
 
         $metodo_id_real = null;
 
-        // Nueva tarjeta
+        /* ===== NUEVA TARJETA ===== */
         if (empty($errores) && $metodo_pago_id === 'nuevo') {
+
             $alias    = trim($_POST['alias'] ?? '');
             $titular  = trim($_POST['titular'] ?? '');
             $numero   = preg_replace('/\D/', '', $_POST['numero'] ?? '');
-            $mes_exp  = (int)($_POST['mes_exp'] ?? 0);
-            $anio_exp = (int)($_POST['anio_exp'] ?? 0);
+            $mes_exp  = trim($_POST['mes_exp'] ?? '');
+            $anio_exp = trim($_POST['anio_exp'] ?? '');
 
-            if ($alias === '' || $titular === '' || $numero === '' || !$mes_exp || !$anio_exp) {
+            if ($alias === '' || $titular === '' || $numero === '' || $mes_exp === '' || $anio_exp === '') {
                 $errores[] = "Todos los campos de la nueva tarjeta son obligatorios.";
             }
 
@@ -212,18 +231,31 @@ if (!$confirmado) {
                 $errores[] = "El número de tarjeta debe tener exactamente 16 dígitos numéricos.";
             }
 
-            if ($mes_exp < 1 || $mes_exp > 12) {
-                $errores[] = "El mes de expiración no es válido.";
+            // MES: exactamente 2 dígitos 01-12
+            if (!preg_match('/^\d{2}$/', $mes_exp) || (int)$mes_exp < 1 || (int)$mes_exp > 12) {
+                $errores[] = "El mes de expiración no es válido (usa 01 a 12).";
             }
 
+            // AÑO: exactamente 4 dígitos y rango
             $yearNow = (int)date('Y');
-            if ($anio_exp < $yearNow || $anio_exp > $yearNow + 15) {
-                $errores[] = "El año de expiración no es válido.";
+            $yearMax = $yearNow + 15;
+
+            if (!preg_match('/^\d{4}$/', $anio_exp)) {
+                $errores[] = "El año de expiración debe tener 4 dígitos (AAAA).";
+            } else {
+                $anioInt = (int)$anio_exp;
+                if ($anioInt < $yearNow || $anioInt > $yearMax) {
+                    $errores[] = "El año de expiración no es válido (debe estar entre {$yearNow} y {$yearMax}).";
+                }
             }
 
+            // vencida
             if (empty($errores)) {
                 $monthNow = (int)date('n');
-                if ($anio_exp == $yearNow && $mes_exp < $monthNow) {
+                $anioInt  = (int)$anio_exp;
+                $mesInt   = (int)$mes_exp;
+
+                if ($anioInt == $yearNow && $mesInt < $monthNow) {
                     $errores[] = "La tarjeta está vencida.";
                 }
             }
@@ -235,22 +267,24 @@ if (!$confirmado) {
                 elseif (preg_match('/^3[47]/', $numero))  $marca = 'American Express';
 
                 $ultimos4 = substr($numero, -4);
+                $mesInt   = (int)$mes_exp;
+                $anioInt  = (int)$anio_exp;
 
                 $stmt = $conn->prepare("
                     INSERT INTO metodos_pago (usuario_id, alias, titular, marca, ultimos4, mes_exp, anio_exp, estatus, creada_en)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())
                 ");
-                $stmt->bind_param("issssii", $usuario_id, $alias, $titular, $marca, $ultimos4, $mes_exp, $anio_exp);
+                $stmt->bind_param("issssii", $usuario_id, $alias, $titular, $marca, $ultimos4, $mesInt, $anioInt);
                 $stmt->execute();
                 $metodo_id_real = $conn->insert_id;
                 $stmt->close();
             }
 
-        } elseif (empty($errores)) {
-            // Método guardado (solo estatus=1)
+        } else if (empty($errores)) {
+            /* ===== MÉTODO GUARDADO (solo estatus=1) ===== */
             $id_mp = (int)$metodo_pago_id;
 
-            $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ? AND estatus = 1");
+            $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ? AND estatus = 1 LIMIT 1");
             $stmt->bind_param("ii", $id_mp, $usuario_id);
             $stmt->execute();
             $resChk = $stmt->get_result();
@@ -263,7 +297,7 @@ if (!$confirmado) {
             }
         }
 
-        // Verificar stock
+        /* ===== VERIFICAR STOCK ===== */
         $items = [];
         if (empty($errores) && $metodo_id_real) {
             $stmt = $conn->prepare("
@@ -281,24 +315,20 @@ if (!$confirmado) {
                 $errores[] = "Tu carrito está vacío.";
             } else {
                 foreach ($items as $it) {
-                    if ((int)$it['cantidad'] > (int)$it['stock']) {
-                        $faltantes[] = $it;
-                    }
+                    if ((int)$it['cantidad'] > (int)$it['stock']) $faltantes[] = $it;
                 }
-                if (!empty($faltantes)) {
-                    $errores[] = "No hay stock suficiente para algunos productos. Ajusta cantidades.";
-                }
+                if (!empty($faltantes)) $errores[] = "No hay stock suficiente para algunos productos. Ajusta cantidades.";
             }
         }
 
-        // Crear pedido
+        /* ===== CREAR PEDIDO ===== */
         if (empty($errores) && $metodo_id_real) {
             $estado = 'pagado';
 
             try {
                 $conn->begin_transaction();
 
-                // Descontar stock
+                // descontar stock
                 $stmtUpd = $conn->prepare("UPDATE producto SET stock = stock - ? WHERE id = ?");
                 foreach ($items as $it) {
                     $cant = (int)$it['cantidad'];
@@ -308,7 +338,7 @@ if (!$confirmado) {
                 }
                 $stmtUpd->close();
 
-                // Insertar pedido
+                // insertar pedido
                 $stmt = $conn->prepare("
                     INSERT INTO pedidos (usuario_id, carrito_id, direccion_id, metodo_pago_id, horario_envio, total, estado, creada_en)
                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
@@ -318,7 +348,7 @@ if (!$confirmado) {
                 $pedido_id = $conn->insert_id;
                 $stmt->close();
 
-                // Copiar detalle del carrito a pedido_detalle
+                // copiar detalle
                 $stmt = $conn->prepare("
                     INSERT INTO pedido_detalle (pedido_id, producto_id, cantidad, precio_unit)
                     SELECT ?, cd.producto_id, cd.cantidad,
@@ -330,7 +360,7 @@ if (!$confirmado) {
                 $stmt->execute();
                 $stmt->close();
 
-                // Vaciar carrito
+                // vaciar carrito
                 $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE carrito_id = ?");
                 $stmt->bind_param("i", $carrito_id);
                 $stmt->execute();
@@ -364,7 +394,7 @@ if (!$confirmado) {
     <link rel="stylesheet" href="../CSS/checkout.css">
 
     <style>
-        /* ===== CSS PROPIO SOLO PARA PAGO (sin chocar con checkout.css) ===== */
+        /* ===== CSS PROPIO SOLO PARA PAGO ===== */
         .pay-wrap{ display:flex; flex-direction:column; gap:12px; }
         .pay-card{
             background:#fff;
@@ -415,6 +445,19 @@ if (!$confirmado) {
 
         .pay-actions{ display:flex; justify-content:space-between; gap:10px; margin-top:14px; }
         .btn-link{ text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+
+        /* inputs mejor */
+        .pay-card .form-group input{
+            border-radius:10px;
+            border:1px solid #d1d5db;
+            padding:9px 10px;
+            font-size:13px;
+            outline:none;
+        }
+        .pay-card .form-group input:focus{
+            border-color:#0071e3;
+            box-shadow:0 0 0 3px rgba(0,113,227,0.12);
+        }
     </style>
 </head>
 <body>
@@ -574,28 +617,38 @@ if (!$confirmado) {
 
                         <div class="form-group">
                             <label>Mes de expiración (MM)*</label>
-                          <input
-  id="mesExpInput"
-  type="text"
-  name="mes_exp"
-  inputmode="numeric"
-  maxlength="2"
-  pattern="^(0[1-9]|1[0-2])$"
-  placeholder="MM"
-  title="Mes válido: 01 a 12"
-  value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>"
-  required
->
-
+                            <input
+                                id="mesExpInput"
+                                type="text"
+                                name="mes_exp"
+                                inputmode="numeric"
+                                maxlength="2"
+                                pattern="^\d{2}$"
+                                placeholder="MM"
+                                title="Ingresa 2 dígitos (01 a 12)"
+                                value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>"
+                                required
+                            >
                         </div>
 
                         <div class="form-group">
                             <label>Año de expiración (AAAA)*</label>
-                            <input id="anioExpInput" type="number" name="anio_exp" value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>" required>
+                            <input
+                                id="anioExpInput"
+                                type="text"
+                                name="anio_exp"
+                                inputmode="numeric"
+                                maxlength="4"
+                                pattern="^\d{4}$"
+                                placeholder="AAAA"
+                                title="Ingresa un año válido (ej. 2026)"
+                                value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>"
+                                required
+                            >
                         </div>
                     </div>
 
-                    <p class="hint">Tus datos se guardan como referencia (últimos 4 dígitos). No guardamos el número completo.</p>
+                    <p class="hint">Guardamos alias, marca y últimos 4 dígitos. No guardamos el número completo.</p>
                 </div>
 
                 <div class="pay-actions">
@@ -612,42 +665,10 @@ if (!$confirmado) {
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-   =
-const mes = document.getElementById("mesExpInput");
-if (mes) {
-  
-  mes.addEventListener("input", () => {
-    mes.value = (mes.value || "").replace(/\D/g, "").slice(0, 2);
-  });
-
- 
-  mes.addEventListener("blur", () => {
-    let v = (mes.value || "").trim();
-    if (v === "") return;
-
-    
-    if (v.length === 1) v = "0" + v;
-
-    
-    const n = parseInt(v, 10);
-    if (Number.isNaN(n) || n < 1 || n > 12) {
-      mes.value = "";
-      mes.setCustomValidity("Mes inválido. Usa 01 a 12.");
-    } else {
-      mes.value = String(v).padStart(2, "0");
-      mes.setCustomValidity("");
-    }
-  });
-
-  
-  mes.addEventListener("focus", () => mes.setCustomValidity(""));
-}
-
-
-    // Tarjeta: solo dígitos y max 16
+    // ===== TARJETA: solo dígitos y max 16 =====
     const num = document.getElementById("numeroTarjeta");
     if (num) {
-        const normalizar = () => { num.value = num.value.replace(/\D/g, "").slice(0, 16); };
+        const normalizar = () => { num.value = (num.value || "").replace(/\D/g, "").slice(0, 16); };
         num.addEventListener("input", normalizar);
         num.addEventListener("paste", (e) => {
             e.preventDefault();
@@ -656,10 +677,10 @@ if (mes) {
         });
     }
 
-    // Titular: solo letras y espacios
+    // ===== TITULAR: solo letras y espacios =====
     const titular = document.getElementById("titularInput");
     if (titular) {
-        const limpiar = () => { titular.value = titular.value.replace(/[^\p{L} ]/gu, ""); };
+        const limpiar = () => { titular.value = (titular.value || "").replace(/[^\p{L} ]/gu, ""); };
         titular.addEventListener("input", limpiar);
         titular.addEventListener("paste", (e) => {
             e.preventDefault();
@@ -668,7 +689,67 @@ if (mes) {
         });
     }
 
-    // Si eliges tarjeta guardada, NO pedir campos de nueva tarjeta
+    // ===== MES EXP: solo números, 2 dígitos, y 1->01 =====
+    const mes = document.getElementById("mesExpInput");
+    if (mes) {
+        mes.addEventListener("input", () => {
+            mes.value = (mes.value || "").replace(/\D/g, "").slice(0, 2);
+        });
+
+        mes.addEventListener("blur", () => {
+            let v = (mes.value || "").trim();
+            if (v === "") return;
+
+            v = v.replace(/\D/g, "").slice(0, 2);
+            if (v.length === 1) v = v.padStart(2, "0");
+
+            const n = parseInt(v, 10);
+            if (isNaN(n) || n < 1 || n > 12) {
+                mes.value = "";
+                mes.setCustomValidity("Mes inválido. Usa 01 a 12.");
+            } else {
+                mes.value = v;
+                mes.setCustomValidity("");
+            }
+        });
+
+        mes.addEventListener("focus", () => mes.setCustomValidity(""));
+    }
+
+    // ===== AÑO EXP: solo números, 4 dígitos y rango =====
+    const anio = document.getElementById("anioExpInput");
+    if (anio) {
+
+        anio.addEventListener("input", () => {
+            anio.value = (anio.value || "").replace(/\D/g, "").slice(0, 4);
+        });
+
+        anio.addEventListener("blur", () => {
+            const v = (anio.value || "").trim();
+            if (v === "") return;
+
+            if (!/^\d{4}$/.test(v)) {
+                anio.value = "";
+                anio.setCustomValidity("El año debe tener 4 dígitos (AAAA).");
+                return;
+            }
+
+            const year = parseInt(v, 10);
+            const yearNow = new Date().getFullYear();
+            const yearMax = yearNow + 15;
+
+            if (year < yearNow || year > yearMax) {
+                anio.value = "";
+                anio.setCustomValidity(`Año inválido. Debe estar entre ${yearNow} y ${yearMax}.`);
+            } else {
+                anio.setCustomValidity("");
+            }
+        });
+
+        anio.addEventListener("focus", () => anio.setCustomValidity(""));
+    }
+
+    // ===== si eliges tarjeta guardada, NO pedir campos nueva tarjeta =====
     const radios = document.querySelectorAll('input[name="metodo_pago_id"]');
 
     const aliasInput   = document.getElementById("aliasInput");
@@ -702,6 +783,7 @@ if (mes) {
 
 </body>
 </html>
+
 
 
 
