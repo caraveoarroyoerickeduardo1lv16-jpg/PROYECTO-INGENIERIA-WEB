@@ -6,6 +6,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
+// Si ya está logueado, redirigir según rol
 if (!empty($_SESSION['user_id'])) {
     if ($_SESSION["user_tipo"] === "administrador") {
         header("Location: admin.php");
@@ -30,12 +31,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errores[] = "Todos los campos son obligatorios.";
     } else {
 
-        // ✅ Solo usuarios activos (estatus = 1)
+        // 1️⃣ Buscar usuario (NO filtramos estatus aquí)
         $stmt = $conn->prepare("
-            SELECT *
+            SELECT id, usuario, correo, contrasena, tipo, estatus
             FROM usuarios
-            WHERE (usuario = ? OR correo = ?)
-              AND estatus = 1
+            WHERE usuario = ? OR correo = ?
             LIMIT 1
         ");
         $stmt->bind_param("ss", $usuarioInput, $usuarioInput);
@@ -44,12 +44,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $row = $res->fetch_assoc();
         $stmt->close();
 
-        // Si no existe o está invalidado, no entra
+        // 2️⃣ No existe
         if (!$row) {
             $errores[] = "Usuario o contraseña incorrectos.";
-        } else if ($password !== $row["contrasena"]) {
+        }
+        // 3️⃣ Existe pero está invalidado
+        elseif ((int)$row['estatus'] === 0) {
+            $errores[] = "Este usuario ha sido invalidado. Contacta al administrador.";
+        }
+        // 4️⃣ Contraseña incorrecta
+        elseif ($password !== $row["contrasena"]) {
             $errores[] = "Usuario o contraseña incorrectos.";
-        } else {
+        }
+        // 5️⃣ Login correcto
+        else {
 
             $_SESSION["user_id"]   = $row["id"];
             $_SESSION["user_tipo"] = $row["tipo"];
@@ -138,6 +146,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </div>
 </body>
 </html>
+
 
 
 
