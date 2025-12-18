@@ -66,7 +66,7 @@ $envio = max(0, $total - $subtotal);
 <meta charset="UTF-8">
 <title>Detalle pedido #<?= (int)$idPedido ?></title>
 
-<!-- ✅ CSS propio SOLO para esta página -->
+
 <link rel="stylesheet" href="../CSS/admin_pedido_detalle.css">
 </head>
 <body>

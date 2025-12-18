@@ -34,9 +34,7 @@ if (!empty($_SESSION['checkout_error'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* =========================
-       ELIMINAR (INVALIDAR) DIRECCIÓN
-       ========================= */
+ 
     if (isset($_POST['eliminar_direccion'])) {
         $dirId = (int)$_POST['eliminar_direccion'];
 
@@ -56,9 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    /* =========================
-       USAR DIRECCIÓN EXISTENTE (solo estatus=1)
-       ========================= */
+   
     if (isset($_POST['usar_direccion'])) {
         $dirId = (int)$_POST['usar_direccion'];
 
@@ -88,9 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    /* =========================
-       GUARDAR NUEVA DIRECCIÓN
-       ========================= */
+   
     if (isset($_POST['guardar_direccion'])) {
         $etiqueta = $_POST['etiqueta'] ?? 'Casa';
         $calle    = trim($_POST['calle'] ?? '');
@@ -134,9 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/* =========================
-   DIRECCIONES GUARDADAS (solo estatus=1)
-   ========================= */
+
 if ($usuario_id) {
     $stmt = $conn->prepare("
         SELECT id, etiqueta, calle, colonia, ciudad, estado, cp

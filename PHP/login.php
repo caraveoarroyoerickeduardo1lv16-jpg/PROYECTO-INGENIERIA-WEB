@@ -27,10 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $usuarioInput  = trim($_POST["usuario"] ?? "");
     $password      = trim($_POST["password"] ?? "");
 
-    /* =========================
-       1) VALIDACIONES DE FORMATO
-       (sin consultar BD)
-    ========================= */
+   
 
     if ($usuarioInput === "") {
         $errores[] = "Debes ingresar tu usuario o correo.";
@@ -66,9 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
     }
 
-    /* =========================
-       2) SOLO SI FORMATO OK -> BD
-    ========================= */
+ 
     if (empty($errores)) {
 
         $stmt = $conn->prepare("

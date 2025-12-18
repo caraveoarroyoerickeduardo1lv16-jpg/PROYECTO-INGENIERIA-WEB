@@ -11,9 +11,7 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 
 $errorResena = "";
 
-/* =========================
-   GUARDAR RESEÑA
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva_resena') {
     $productoPostId = isset($_POST['producto_id']) ? (int)$_POST['producto_id'] : 0;
     $calif          = isset($_POST['calificacion']) ? (int)$_POST['calificacion'] : 0;
@@ -71,18 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'nueva
     }
 }
 
-/* =========================
-   1) OBTENER ID DE PRODUCTO
-========================= */
+
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     header("Location: index.php");
     exit;
 }
 
-/* =========================
-   2) LEER CATEGORÍAS
-========================= */
+
 $categorias = [];
 $resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
@@ -91,10 +85,7 @@ while ($row = $resCat->fetch_assoc()) {
     }
 }
 
-/* =========================
-   3) LEER CARRITO ACTUAL
-   ✅ IMPORTANTE: invitado = session_id + usuario_id IS NULL
-========================= */
+
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -129,9 +120,7 @@ if ($carrito_id) {
     $total_items = (int)($rowItems['items'] ?? 0);
 }
 
-/* =========================
-   4) LEER DATOS DEL PRODUCTO
-========================= */
+
 $stmt = $conn->prepare("
     SELECT id, nombre, precio, stock, imagen_url, marca, categoria,
            calificacion, num_resenas
@@ -149,9 +138,7 @@ if (!$producto) {
     exit;
 }
 
-/* =========================
-   Cantidad en carrito de ESTE producto
-========================= */
+
 $cantidadEnCarrito = 0;
 if ($carrito_id) {
     $stmt = $conn->prepare("
@@ -168,9 +155,7 @@ if ($carrito_id) {
 }
 $estaEnCarrito = $cantidadEnCarrito > 0;
 
-/* =========================
-   5) LEER IMÁGENES DEL PRODUCTO
-========================= */
+
 $stmt = $conn->prepare("
     SELECT url
     FROM producto_imagen
@@ -187,9 +172,7 @@ if (count($imagenes) === 0 && !empty($producto['imagen_url'])) {
     $imagenes[] = ['url' => $producto['imagen_url']];
 }
 
-/* =========================
-   6) LEER RESEÑAS
-========================= */
+
 $stmt = $conn->prepare("
     SELECT r.calificacion, r.comentario, r.creado_en,
            u.usuario
@@ -390,9 +373,7 @@ $resenaOk = isset($_GET['resena_ok']) && $_GET['resena_ok'] == 1;
 </main>
 
 <script>
-// =========================
-// GALERÍA DE IMÁGENES
-// =========================
+
 const thumbs   = document.querySelectorAll('.thumb-img');
 const mainImg  = document.getElementById('mainImage');
 let currentIdx = 0;
@@ -416,9 +397,7 @@ if (thumbs.length > 1) {
   }, 4000);
 }
 
-// =========================
-// CARRITO (PRODUCTO DETALLE)
-// =========================
+
 async function actualizarCarrito(productoId, accion) {
   const formData = new FormData();
   formData.append("producto_id", productoId);
@@ -507,9 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // =========================
-  // ESTRELLAS DINÁMICAS
-  // =========================
+
   const estrellasContainer = document.getElementById("resenaEstrellas");
   const inputCalif         = document.getElementById("inputCalificacion");
 

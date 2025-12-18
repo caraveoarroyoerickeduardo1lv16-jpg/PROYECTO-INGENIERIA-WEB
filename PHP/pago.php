@@ -20,9 +20,7 @@ $errores = [];
 $mensaje_exito = "";
 $faltantes = [];
 
-/* =========================
-   HELPERS
-========================= */
+
 function parseStartHour($label) {
     $label = trim((string)$label);
     if (!preg_match('/^(\d{1,2})(am|pm)\-/i', $label, $m)) return null;
@@ -55,9 +53,7 @@ function soloNombre($txt) {
     return (bool)preg_match('/^[\p{L} ]{2,}$/u', trim((string)$txt));
 }
 
-/* =========================
-   Si viene desde checkout (guardar horario/dia en sesión)
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['horario'])) {
         $_SESSION['horario_envio'] = $_POST['horario'];
@@ -67,9 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/* =========================
-   Si NO es confirmación, requiere dirección/horario
-========================= */
+
 if (!$confirmado) {
     if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
         header("Location: checkout.php");
@@ -80,18 +74,14 @@ if (!$confirmado) {
     }
 }
 
-/* =========================
-   Mensaje al confirmar
-========================= */
+
 if ($confirmado) {
     $mensaje_exito = $pedido_id_confirm > 0
         ? "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}"
         : "Tu pago se realizó correctamente.";
 }
 
-/* =========================
-   PROCESO NORMAL DE PAGO
-========================= */
+
 $direccion = null;
 $metodos_guardados = [];
 $subtotal = 0;
@@ -152,9 +142,7 @@ if (!$confirmado) {
         exit;
     }
 
-    /* =========================
-       ELIMINAR (INVALIDAR) MÉTODO DE PAGO
-       ========================= */
+  
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_metodo_pago'])) {
         $mpId = (int)$_POST['eliminar_metodo_pago'];
 
@@ -190,9 +178,7 @@ if (!$confirmado) {
     }
     $stmt->close();
 
-    /* =========================
-       PAGAR
-       ========================= */
+   
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
 
         if (!horarioEsValido($dia_envio, $horario_envio)) {

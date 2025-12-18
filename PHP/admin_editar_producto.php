@@ -274,7 +274,7 @@ $stmt->close();
                 <div class="edit-actions">
                     <button type="submit" class="btn-guardar">Guardar cambios</button>
 
-                    <!-- Este botón YA NO BORRA: invalida (estatus = 0) -->
+                    <!-- invalida (estatus = 0) -->
                     <button type="button" class="btn-eliminar"
                             onclick="confirmarEliminar(<?php echo (int)$producto['id']; ?>)">
                         Invalidar producto
@@ -294,7 +294,7 @@ function confirmarEliminar(id) {
         f.method = "POST";
         const i = document.createElement("input");
         i.type = "hidden";
-        i.name = "eliminar_producto"; // se queda igual para no cambiar tu backend
+        i.name = "eliminar_producto"; 
         i.value = id;
         f.appendChild(i);
         document.body.appendChild(f);
@@ -318,11 +318,11 @@ document.getElementById("btnAgregarImagen")?.addEventListener("click", () => {
     document.getElementById("extraImagesContainer").appendChild(div);
 });
 
-/* ========= TOAST AUTO-OCULTAR ========= */
+
 const toast = document.getElementById("toast");
 if (toast) setTimeout(() => toast.remove(), 3500);
 
-/* ========= VALIDACIÓN FRONT: solo imágenes ========= */
+
 function esUrlImagen(url){
   url = (url || "").trim();
   if (url === "") return true;
@@ -380,7 +380,7 @@ document.getElementById("editForm")?.addEventListener("submit", (e) => {
   }
 });
 
-// Validar al salir del input (blur)
+
 document.addEventListener("blur", (e) => {
   if (e.target && (e.target.id === "imgPrincipal" || e.target.classList.contains("imgExtra"))) {
     marcarInvalido(e.target, !esUrlImagen(e.target.value));

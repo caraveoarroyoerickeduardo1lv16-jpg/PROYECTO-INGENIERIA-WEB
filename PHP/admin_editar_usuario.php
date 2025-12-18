@@ -19,9 +19,7 @@ if ($id <= 0) {
 
 $errores = [];
 
-/* =========================
-   INVALIDAR USUARIO (ANTES BORRABA)
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) {
 
     $uid = (int)$_POST['eliminar_usuario'];
@@ -47,9 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_usuario'])) 
     }
 }
 
-/* =========================
-   GUARDAR CAMBIOS (EDITAR)
-========================= */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario'])) {
 
     $usuario    = trim($_POST['usuario'] ?? '');
@@ -97,9 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['eliminar_usuario']))
     }
 }
 
-/* =========================
-   CARGAR USUARIO
-========================= */
+
 $stmt = $conn->prepare("
     SELECT id, usuario, contrasena, correo, nombre, tipo, estatus, creado_en
     FROM usuarios
@@ -205,7 +199,7 @@ if (!$usuarioData) {
     <div class="edit-actions">
         <button type="submit" class="btn-guardar">Guardar cambios</button>
 
-        <!-- Este botón YA NO BORRA: invalida (estatus = 0) -->
+        <!-- invalida (estatus = 0) -->
         <button type="button" class="btn-eliminar" onclick="confirmarEliminar(<?= (int)$usuarioData['id'] ?>)">
             Invalidar usuario
         </button>
@@ -223,7 +217,7 @@ function confirmarEliminar(id) {
 
         const i = document.createElement("input");
         i.type = "hidden";
-        i.name = "eliminar_usuario"; // se queda igual para reutilizar tu lógica
+        i.name = "eliminar_usuario"; 
         i.value = id;
 
         f.appendChild(i);
