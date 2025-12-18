@@ -328,3 +328,18 @@ body {
   margin-bottom: 10px;
   font-size: 13px;
 }
+
+/* Botón rojo eliminar dirección */
+.btn-danger{
+  background:#dc2626;
+  color:#fff;
+  box-shadow:0 2px 10px rgba(220,38,38,0.18);
+}
+.btn-danger:hover{ background:#b91c1c; }
+
+/* Alinear botones en tarjetas de direcciones */
+.saved-form{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}

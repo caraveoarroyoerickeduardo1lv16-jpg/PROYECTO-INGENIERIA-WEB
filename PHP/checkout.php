@@ -34,14 +34,63 @@ if (!empty($_SESSION['checkout_error'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* usar dirección existente */
-    if (isset($_POST['usar_direccion'])) {
-        $_SESSION['direccion_id'] = (int)$_POST['usar_direccion'];
-        header("Location: checkout.php?paso=3");
+    /* =========================
+       ELIMINAR (INVALIDAR) DIRECCIÓN
+       ========================= */
+    if (isset($_POST['eliminar_direccion'])) {
+        $dirId = (int)$_POST['eliminar_direccion'];
+
+        if ($usuario_id && $dirId > 0) {
+            $stmt = $conn->prepare("
+                UPDATE direcciones
+                SET estatus = 0
+                WHERE id = ? AND usuario_id = ?
+                LIMIT 1
+            ");
+            $stmt->bind_param("ii", $dirId, $usuario_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        header("Location: checkout.php?paso=2");
         exit;
     }
 
-    /* guardar nueva dirección */
+    /* =========================
+       USAR DIRECCIÓN EXISTENTE (solo estatus=1)
+       ========================= */
+    if (isset($_POST['usar_direccion'])) {
+        $dirId = (int)$_POST['usar_direccion'];
+
+        if ($usuario_id && $dirId > 0) {
+            $stmt = $conn->prepare("
+                SELECT id
+                FROM direcciones
+                WHERE id = ? AND usuario_id = ? AND estatus = 1
+                LIMIT 1
+            ");
+            $stmt->bind_param("ii", $dirId, $usuario_id);
+            $stmt->execute();
+            $ok = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if ($ok) {
+                $_SESSION['direccion_id'] = $dirId;
+                header("Location: checkout.php?paso=3");
+                exit;
+            } else {
+                $error = "La dirección seleccionada no es válida o fue eliminada.";
+                $paso  = 2;
+            }
+        } else {
+            $error = "No se pudo seleccionar la dirección.";
+            $paso  = 2;
+        }
+    }
+
+    /* =========================
+       GUARDAR NUEVA DIRECCIÓN
+       ========================= */
     if (isset($_POST['guardar_direccion'])) {
         $etiqueta = $_POST['etiqueta'] ?? 'Casa';
         $calle    = trim($_POST['calle'] ?? '');
@@ -66,13 +115,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $paso  = 2;
             } else {
                 $stmt = $conn->prepare("
-                    INSERT INTO direcciones (usuario_id, etiqueta, calle, colonia, ciudad, estado, cp, creada_en)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                    INSERT INTO direcciones (usuario_id, etiqueta, calle, colonia, ciudad, estado, cp, estatus, creada_en)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())
                 ");
                 $stmt->bind_param("issssss", $usuario_id, $etiqueta, $calle, $colonia, $ciudad, $estado, $cp);
                 $stmt->execute();
 
                 $_SESSION['direccion_id'] = $conn->insert_id;
+                $stmt->close();
+
                 header("Location: checkout.php?paso=3");
                 exit;
             }
@@ -83,12 +134,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/* DIRECCIONES GUARDADAS */
+/* =========================
+   DIRECCIONES GUARDADAS (solo estatus=1)
+   ========================= */
 if ($usuario_id) {
     $stmt = $conn->prepare("
         SELECT id, etiqueta, calle, colonia, ciudad, estado, cp
         FROM direcciones
         WHERE usuario_id = ?
+          AND estatus = 1
         ORDER BY creada_en DESC
     ");
     $stmt->bind_param("i", $usuario_id);
@@ -194,13 +248,22 @@ $datos = [
                                 CP <?= htmlspecialchars($dir['cp']) ?>
                             </div>
 
-                            <div class="saved-form" style="text-align:right;">
+                            <div class="saved-form">
                                 <button type="submit"
                                         name="usar_direccion"
                                         value="<?= (int)$dir['id'] ?>"
                                         class="btn-primary btn-sm"
                                         formnovalidate>
                                     Usar esta dirección
+                                </button>
+
+                                <button type="submit"
+                                        name="eliminar_direccion"
+                                        value="<?= (int)$dir['id'] ?>"
+                                        class="btn-danger btn-sm"
+                                        formnovalidate
+                                        onclick="return confirm('¿Seguro que quieres eliminar esta dirección?');">
+                                    Eliminar
                                 </button>
                             </div>
                         </div>
@@ -322,7 +385,6 @@ $datos = [
 <script src="../JAVASCRIPT/checkout.js"></script>
 </body>
 </html>
-
 
 
 
