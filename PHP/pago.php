@@ -20,9 +20,10 @@ $errores = [];
 $mensaje_exito = "";
 $faltantes = [];
 
-
+/* =========================
+   HELPERS
+========================= */
 function parseStartHour($label) {
-    
     $label = trim((string)$label);
     if (!preg_match('/^(\d{1,2})(am|pm)\-/i', $label, $m)) return null;
 
@@ -39,26 +40,24 @@ function horarioEsValido($dia_envio, $horario_envio) {
     $start = parseStartHour($horario_envio);
     if ($start === null) return false;
 
-    
     if ($start < 9 || $start >= 21) return false;
 
-    // HOY: 2 horas de anticipación y antes de cierre 9pm
     if ($dia_envio === 0) {
-        $nowHour = (int)date('G'); 
-        if ($nowHour >= 21) return false;          
-        if ($start < ($nowHour + 2)) return false; 
+        $nowHour = (int)date('G');
+        if ($nowHour >= 21) return false;
+        if ($start < ($nowHour + 2)) return false;
     }
 
     return true;
 }
 
-
 function soloNombre($txt) {
-    // Solo letras (incluye acentos/ñ) y espacios. Mínimo 2 chars.
     return (bool)preg_match('/^[\p{L} ]{2,}$/u', trim((string)$txt));
 }
 
-
+/* =========================
+   Si viene desde checkout (guardar horario/dia en sesión)
+========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['horario'])) {
         $_SESSION['horario_envio'] = $_POST['horario'];
@@ -68,7 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-
+/* =========================
+   Si NO es confirmación, requiere dirección/horario
+========================= */
 if (!$confirmado) {
     if (empty($_SESSION['direccion_id']) || empty($_SESSION['horario_envio'])) {
         header("Location: checkout.php");
@@ -79,12 +80,25 @@ if (!$confirmado) {
     }
 }
 
+/* =========================
+   Mensaje al confirmar
+========================= */
 if ($confirmado) {
     $mensaje_exito = $pedido_id_confirm > 0
         ? "Tu pago se realizó correctamente. Pedido #{$pedido_id_confirm}"
         : "Tu pago se realizó correctamente.";
 }
 
+/* =========================
+   PROCESO NORMAL DE PAGO
+========================= */
+$direccion = null;
+$metodos_guardados = [];
+$subtotal = 0;
+$costo_envio = 49.00;
+$total_pagar = 0;
+$horario_envio = '';
+$dia_envio = 0;
 
 if (!$confirmado) {
 
@@ -92,7 +106,6 @@ if (!$confirmado) {
     $horario_envio = (string)$_SESSION['horario_envio'];
     $dia_envio     = (int)($_SESSION['dia_envio'] ?? 0);
 
-    
     if (!horarioEsValido($dia_envio, $horario_envio)) {
         $_SESSION['checkout_error'] = "El horario seleccionado ya no está disponible (hoy cerramos a las 9pm o falta anticipación). Elige otro horario.";
         header("Location: checkout.php?paso=3");
@@ -119,14 +132,14 @@ if (!$confirmado) {
 
     $carrito_id  = (int)$carrito['id'];
     $subtotal    = (float)$carrito['total'];
-    $costo_envio = 49.00;
     $total_pagar = $subtotal + $costo_envio;
 
-    // Dirección seleccionada
+    // Dirección seleccionada (solo estatus=1)
     $stmt = $conn->prepare("
         SELECT etiqueta, calle, colonia, ciudad, estado, cp
         FROM direcciones
-        WHERE id = ? AND usuario_id = ?
+        WHERE id = ? AND usuario_id = ? AND estatus = 1
+        LIMIT 1
     ");
     $stmt->bind_param("ii", $direccion_id, $usuario_id);
     $stmt->execute();
@@ -134,30 +147,54 @@ if (!$confirmado) {
     $stmt->close();
 
     if (!$direccion) {
-        header("Location: checkout.php");
+        $_SESSION['checkout_error'] = "La dirección seleccionada ya no existe o fue eliminada. Agrega/selecciona otra.";
+        header("Location: checkout.php?paso=2");
         exit;
     }
 
-    // Métodos de pago guardados
+    /* =========================
+       ELIMINAR (INVALIDAR) MÉTODO DE PAGO
+       ========================= */
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_metodo_pago'])) {
+        $mpId = (int)$_POST['eliminar_metodo_pago'];
+
+        if ($mpId > 0) {
+            $stmt = $conn->prepare("
+                UPDATE metodos_pago
+                SET estatus = 0
+                WHERE id = ? AND usuario_id = ?
+                LIMIT 1
+            ");
+            $stmt->bind_param("ii", $mpId, $usuario_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        header("Location: pago.php"); // refrescar lista
+        exit;
+    }
+
+    // Métodos de pago guardados (solo estatus=1)
     $stmt = $conn->prepare("
         SELECT id, alias, marca, ultimos4, mes_exp, anio_exp
         FROM metodos_pago
         WHERE usuario_id = ?
+          AND estatus = 1
         ORDER BY creada_en DESC
     ");
     $stmt->bind_param("i", $usuario_id);
     $stmt->execute();
     $resMP = $stmt->get_result();
-    $metodos_guardados = [];
     while ($row = $resMP->fetch_assoc()) {
         $metodos_guardados[] = $row;
     }
     $stmt->close();
 
-
+    /* =========================
+       PAGAR
+       ========================= */
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pagar'])) {
 
-      
         if (!horarioEsValido($dia_envio, $horario_envio)) {
             $errores[] = "El horario seleccionado ya no está disponible. Regresa y elige otro.";
         }
@@ -181,12 +218,10 @@ if (!$confirmado) {
                 $errores[] = "Todos los campos de la nueva tarjeta son obligatorios.";
             }
 
-            
             if ($titular !== '' && !soloNombre($titular)) {
                 $errores[] = "El nombre del titular solo debe contener letras y espacios (sin números ni caracteres especiales).";
             }
 
-            // Tarjeta exactamente 16 dígitos
             if (!preg_match('/^\d{16}$/', $numero)) {
                 $errores[] = "El número de tarjeta debe tener exactamente 16 dígitos numéricos.";
             }
@@ -216,8 +251,8 @@ if (!$confirmado) {
                 $ultimos4 = substr($numero, -4);
 
                 $stmt = $conn->prepare("
-                    INSERT INTO metodos_pago (usuario_id, alias, titular, marca, ultimos4, mes_exp, anio_exp, creada_en)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                    INSERT INTO metodos_pago (usuario_id, alias, titular, marca, ultimos4, mes_exp, anio_exp, estatus, creada_en)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())
                 ");
                 $stmt->bind_param("issssii", $usuario_id, $alias, $titular, $marca, $ultimos4, $mes_exp, $anio_exp);
                 $stmt->execute();
@@ -226,10 +261,10 @@ if (!$confirmado) {
             }
 
         } elseif (empty($errores)) {
-            // Método guardado
+            // Método guardado (solo estatus=1)
             $id_mp = (int)$metodo_pago_id;
 
-            $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ?");
+            $stmt = $conn->prepare("SELECT id FROM metodos_pago WHERE id = ? AND usuario_id = ? AND estatus = 1");
             $stmt->bind_param("ii", $id_mp, $usuario_id);
             $stmt->execute();
             $resChk = $stmt->get_result();
@@ -238,7 +273,7 @@ if (!$confirmado) {
             if ($resChk->fetch_assoc()) {
                 $metodo_id_real = $id_mp;
             } else {
-                $errores[] = "El método de pago seleccionado no es válido.";
+                $errores[] = "El método de pago seleccionado no es válido o fue eliminado.";
             }
         }
 
@@ -320,7 +355,6 @@ if (!$confirmado) {
                 $stmt->execute();
                 $stmt->close();
 
-                // Limpiar sesión envío
                 unset($_SESSION['horario_envio'], $_SESSION['direccion_id'], $_SESSION['dia_envio']);
 
                 $conn->commit();
@@ -342,20 +376,59 @@ if (!$confirmado) {
     <meta charset="UTF-8">
     <title>Pago - Mi Tiendita</title>
     <link rel="stylesheet" href="../CSS/checkout.css">
+
     <style>
-        /* Mini estilos para que pago se vea igual de bonito sin otro CSS */
-        .mp-card{
-            display:flex; align-items:center; gap:10px;
-            border:1px solid #e5e7eb; border-radius:12px;
-            padding:10px; background:#fff; cursor:pointer; transition:.15s;
+        /* ===== CSS PROPIO SOLO PARA PAGO (sin chocar con checkout.css) ===== */
+        .pay-wrap{ display:flex; flex-direction:column; gap:12px; }
+        .pay-card{
+            background:#fff;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+            padding:14px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.06);
         }
-        .mp-card:hover{ border-color:#0071e3; background:#f8fbff; }
-        .mp-info{ display:flex; flex-direction:column; gap:2px; }
-        .mp-alias{ font-size:14px; font-weight:800; }
-        .mp-detalle{ font-size:12px; color:#555; }
-        .metodos-guardados{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+        .pay-title{ font-size:16px; font-weight:800; color:#111827; margin-bottom:10px; }
+        .pay-row{
+            display:flex; justify-content:space-between; gap:12px;
+            font-size:13px; padding:6px 0; border-bottom:1px dashed #eee;
+        }
+        .pay-row:last-child{ border-bottom:none; }
+        .pay-row strong{ font-weight:800; }
+        .pay-total{ font-weight:900; font-size:14px; }
+
+        .mp-list{ display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+        .mp-item{
+            display:flex; gap:10px; align-items:stretch;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+            padding:10px;
+            background:#fafafa;
+            transition:.15s;
+        }
+        .mp-item:hover{ border-color:#0071e3; background:#f8fbff; }
+        .mp-radio{ display:flex; align-items:center; padding-left:4px; }
+        .mp-body{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:3px; }
+        .mp-alias{ font-weight:900; font-size:14px; color:#111827; }
+        .mp-det{ font-size:12px; color:#6b7280; }
+
+        .mp-actions{ display:flex; align-items:center; }
+        .btn-danger{
+            background:#dc2626; color:#fff;
+            border:none; border-radius:999px;
+            padding:9px 14px; font-size:13px; font-weight:800;
+            cursor:pointer; transition:.15s;
+        }
+        .btn-danger:hover{ background:#b91c1c; }
+
+        .new-card{
+            margin-top:10px;
+            border-top:1px solid #eee;
+            padding-top:12px;
+        }
+        .hint{ font-size:12px; color:#6b7280; margin-top:6px; }
+
+        .pay-actions{ display:flex; justify-content:space-between; gap:10px; margin-top:14px; }
         .btn-link{ text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
-        .mp-empty{ font-size:13px; color:#666; }
     </style>
 </head>
 <body>
@@ -375,8 +448,8 @@ if (!$confirmado) {
 
     <?php if ($confirmado): ?>
 
-        <div class="checkout-container">
-            <h2 class="section-title">Pago exitoso</h2>
+        <div class="pay-card">
+            <div class="pay-title">Pago exitoso</div>
             <p><?= htmlspecialchars($mensaje_exito) ?></p>
             <a href="index.php" class="btn-primary btn-full btn-link">Seguir comprando</a>
         </div>
@@ -401,115 +474,139 @@ if (!$confirmado) {
             </div>
         <?php endif; ?>
 
-        <div class="checkout-container">
-            <h2 class="section-title">Resumen de tu pedido</h2>
+        <div class="pay-wrap">
 
-            <div class="resumen-row">
-                <span>Dirección</span>
-                <span>
-                    <?= htmlspecialchars($direccion['etiqueta']) ?>:
-                    <?= htmlspecialchars($direccion['calle']) ?>,
-                    <?= htmlspecialchars($direccion['colonia']) ?>,
-                    <?= htmlspecialchars($direccion['ciudad']) ?>,
-                    <?= htmlspecialchars($direccion['estado']) ?>,
-                    CP <?= htmlspecialchars($direccion['cp']) ?>
-                </span>
+            <div class="pay-card">
+                <div class="pay-title">Resumen de tu pedido</div>
+
+                <div class="pay-row">
+                    <span>Dirección</span>
+                    <span>
+                        <?= htmlspecialchars($direccion['etiqueta']) ?>:
+                        <?= htmlspecialchars($direccion['calle']) ?>,
+                        <?= htmlspecialchars($direccion['colonia']) ?>,
+                        <?= htmlspecialchars($direccion['ciudad']) ?>,
+                        <?= htmlspecialchars($direccion['estado']) ?>,
+                        CP <?= htmlspecialchars($direccion['cp']) ?>
+                    </span>
+                </div>
+
+                <div class="pay-row">
+                    <span>Horario</span>
+                    <span><?= htmlspecialchars($horario_envio) ?></span>
+                </div>
+
+                <div class="pay-row"><span>Subtotal</span><strong>$<?= number_format($subtotal, 2) ?></strong></div>
+                <div class="pay-row"><span>Envío</span><strong>$<?= number_format($costo_envio, 2) ?></strong></div>
+                <div class="pay-row pay-total"><span>Total</span><strong>$<?= number_format($total_pagar, 2) ?></strong></div>
             </div>
 
-            <div class="resumen-row">
-                <span>Horario</span>
-                <span><?= htmlspecialchars($horario_envio) ?></span>
-            </div>
+            <form method="post" class="pay-card" id="formPago">
+                <div class="pay-title">Método de pago</div>
 
-            <div class="resumen-row"><span>Subtotal</span><span>$<?= number_format($subtotal, 2) ?></span></div>
-            <div class="resumen-row"><span>Envío</span><span>$<?= number_format($costo_envio, 2) ?></span></div>
-            <div class="resumen-row resumen-total"><span>Total</span><span>$<?= number_format($total_pagar, 2) ?></span></div>
-        </div>
+                <?php if (!empty($metodos_guardados)): ?>
+                    <div class="mp-list">
+                        <?php foreach ($metodos_guardados as $mp): ?>
+                            <div class="mp-item">
+                                <div class="mp-radio">
+                                    <input type="radio" name="metodo_pago_id" value="<?= (int)$mp['id'] ?>">
+                                </div>
 
-        <form method="post" class="checkout-container" id="formPago">
-            <h2 class="section-title">Método de pago</h2>
+                                <div class="mp-body">
+                                    <div class="mp-alias"><?= htmlspecialchars($mp['alias']) ?></div>
+                                    <div class="mp-det">
+                                        <?= htmlspecialchars($mp['marca']) ?> •••• <?= htmlspecialchars($mp['ultimos4']) ?>
+                                        &nbsp; Vence <?= sprintf('%02d/%d', (int)$mp['mes_exp'], (int)$mp['anio_exp']) ?>
+                                    </div>
+                                </div>
 
-            <?php if (!empty($metodos_guardados)): ?>
-                <div class="metodos-guardados">
-                    <?php foreach ($metodos_guardados as $mp): ?>
-                        <label class="mp-card">
-                            <input type="radio" name="metodo_pago_id" value="<?= (int)$mp['id'] ?>">
-                            <div class="mp-info">
-                                <div class="mp-alias"><?= htmlspecialchars($mp['alias']) ?></div>
-                                <div class="mp-detalle">
-                                    <?= htmlspecialchars($mp['marca']) ?> •••• <?= htmlspecialchars($mp['ultimos4']) ?>
-                                    &nbsp; Vence <?= sprintf('%02d/%d', $mp['mes_exp'], $mp['anio_exp']) ?>
+                                <div class="mp-actions">
+                                    <button
+                                        type="submit"
+                                        name="eliminar_metodo_pago"
+                                        value="<?= (int)$mp['id'] ?>"
+                                        class="btn-danger"
+                                        formnovalidate
+                                        onclick="return confirm('¿Seguro que quieres eliminar este método de pago?');"
+                                    >
+                                        Eliminar
+                                    </button>
                                 </div>
                             </div>
-                        </label>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="hint">Aún no tienes métodos de pago guardados.</p>
+                <?php endif; ?>
+
+                <div class="new-card">
+                    <label class="mp-item" style="background:#fff;">
+                        <div class="mp-radio">
+                            <input type="radio" name="metodo_pago_id" value="nuevo" checked>
+                        </div>
+                        <div class="mp-body">
+                            <div class="mp-alias">Pagar con nueva tarjeta</div>
+                            <div class="mp-det">Ingresa los datos y se guardará</div>
+                        </div>
+                    </label>
+
+                    <div class="form-grid" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label>Alias (ej. Mi VISA)*</label>
+                            <input id="aliasInput" type="text" name="alias" value="<?= htmlspecialchars($_POST['alias'] ?? '') ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nombre del titular*</label>
+                            <input
+                                type="text"
+                                id="titularInput"
+                                name="titular"
+                                value="<?= htmlspecialchars($_POST['titular'] ?? '') ?>"
+                                required
+                                autocomplete="cc-name"
+                                pattern="[\p{L} ]{2,}"
+                                title="Solo letras y espacios (sin números ni caracteres especiales)."
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Número de tarjeta* (16 dígitos)</label>
+                            <input
+                                type="text"
+                                id="numeroTarjeta"
+                                name="numero"
+                                maxlength="16"
+                                inputmode="numeric"
+                                autocomplete="cc-number"
+                                pattern="\d{16}"
+                                title="Debe tener exactamente 16 dígitos"
+                                value="<?= htmlspecialchars($_POST['numero'] ?? '') ?>"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mes de expiración (MM)*</label>
+                            <input id="mesExpInput" type="number" name="mes_exp" min="1" max="12" value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Año de expiración (AAAA)*</label>
+                            <input id="anioExpInput" type="number" name="anio_exp" value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>" required>
+                        </div>
+                    </div>
+
+                    <p class="hint">Tus datos se guardan como referencia (últimos 4 dígitos). No guardamos el número completo.</p>
                 </div>
-            <?php else: ?>
-                <p class="mp-empty">Aún no tienes métodos de pago guardados.</p>
-            <?php endif; ?>
 
-            <h3>Usar nueva tarjeta</h3>
-
-            <label class="mp-card" style="margin:8px 0 10px;">
-                <input type="radio" name="metodo_pago_id" value="nuevo" checked>
-                <div class="mp-info">
-                    <div class="mp-alias">Pagar con nueva tarjeta</div>
-                    <div class="mp-detalle">Ingresa los datos y se guardará</div>
+                <div class="pay-actions">
+                    <a href="checkout.php?paso=3" class="btn-secondary btn-link">← Volver</a>
+                    <button type="submit" name="pagar" class="btn-primary">Pagar ahora</button>
                 </div>
-            </label>
+            </form>
 
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Alias (ej. Mi VISA)*</label>
-                    <input id="aliasInput" type="text" name="alias" value="<?= htmlspecialchars($_POST['alias'] ?? '') ?>" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Nombre del titular*</label>
-                    <input
-                        type="text"
-                        id="titularInput"
-                        name="titular"
-                        value="<?= htmlspecialchars($_POST['titular'] ?? '') ?>"
-                        required
-                        autocomplete="cc-name"
-                        pattern="[\p{L} ]{2,}"
-                        title="Solo letras y espacios (sin números ni caracteres especiales)."
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label>Número de tarjeta* (16 dígitos)</label>
-                    <input
-                        type="text"
-                        id="numeroTarjeta"
-                        name="numero"
-                        maxlength="16"
-                        inputmode="numeric"
-                        autocomplete="cc-number"
-                        pattern="\d{16}"
-                        title="Debe tener exactamente 16 dígitos"
-                        value="<?= htmlspecialchars($_POST['numero'] ?? '') ?>"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label>Mes de expiración (MM)*</label>
-                    <input id="mesExpInput" type="number" name="mes_exp" min="1" max="12" value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Año de expiración (AAAA)*</label>
-                    <input id="anioExpInput" type="number" name="anio_exp" value="<?= htmlspecialchars($_POST['anio_exp'] ?? '') ?>" required>
-                </div>
-            </div>
-
-            <div class="step-buttons">
-                <a href="checkout.php?paso=3" class="btn-secondary btn-link">← Volver</a>
-                <button type="submit" name="pagar" class="btn-primary">Pagar ahora</button>
-            </div>
-        </form>
+        </div>
 
     <?php endif; ?>
 </div>
@@ -541,7 +638,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // si eliges tarjeta guardada, NO pedir campos de nueva tarjeta
+    // Si eliges tarjeta guardada, NO pedir campos de nueva tarjeta
     const radios = document.querySelectorAll('input[name="metodo_pago_id"]');
 
     const aliasInput   = document.getElementById("aliasInput");
@@ -555,11 +652,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function setCamposNuevaTarjetaActivos(activo) {
         campos.forEach(el => {
             el.disabled = !activo;
-            if (activo) {
-                el.setAttribute("required", "required");
-            } else {
-                el.removeAttribute("required");
-            }
+            if (activo) el.setAttribute("required", "required");
+            else el.removeAttribute("required");
         });
     }
 
@@ -567,16 +661,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const seleccionado = document.querySelector('input[name="metodo_pago_id"]:checked');
         if (!seleccionado) return;
 
-        if (seleccionado.value === "nuevo") {
-            setCamposNuevaTarjetaActivos(true);
-        } else {
-            setCamposNuevaTarjetaActivos(false);
-        }
+        if (seleccionado.value === "nuevo") setCamposNuevaTarjetaActivos(true);
+        else setCamposNuevaTarjetaActivos(false);
     }
 
     radios.forEach(r => r.addEventListener("change", revisarSeleccion));
-
-    
     revisarSeleccion();
 });
 </script>
