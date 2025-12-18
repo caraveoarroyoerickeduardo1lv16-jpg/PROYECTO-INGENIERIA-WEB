@@ -27,11 +27,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $usuarioInput  = trim($_POST["usuario"] ?? "");
     $password      = trim($_POST["password"] ?? "");
 
-    if ($usuarioInput === "" || $password === "") {
-        $errores[] = "Todos los campos son obligatorios.";
-    } else {
+    /* =========================
+       1) VALIDACIONES LOCALES
+       (antes de consultar BD)
+    ========================= */
 
-        // 1️⃣ Buscar usuario (NO filtramos estatus aquí)
+    if ($usuarioInput === "") {
+        $errores[] = "Debes ingresar tu usuario o correo.";
+    } else {
+        // Si parece correo (contiene @), validamos formato
+        if (strpos($usuarioInput, '@') !== false) {
+            if (!filter_var($usuarioInput, FILTER_VALIDATE_EMAIL)) {
+                $errores[] = "El correo no tiene un formato válido.";
+            }
+        }
+        // Si NO es correo, lo tomamos como usuario y no exigimos formato especial
+        // (si quieres, aquí puedes validar mínimo de caracteres del usuario)
+    }
+
+    if ($password === "") {
+        $errores[] = "Debes ingresar tu contraseña.";
+    } else {
+        // Contraseña: mínimo 8, 1 mayúscula, 1 número, 1 caracter especial
+        $regexPass = '/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
+        if (!preg_match($regexPass, $password)) {
+            $errores[] = "La contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial.";
+        }
+    }
+
+    /* =========================
+       2) SI TODO OK -> CONSULTAR BD
+    ========================= */
+    if (empty($errores)) {
+
+        // Buscar usuario (NO filtramos estatus aquí)
         $stmt = $conn->prepare("
             SELECT id, usuario, correo, contrasena, tipo, estatus
             FROM usuarios
@@ -44,21 +73,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $row = $res->fetch_assoc();
         $stmt->close();
 
-        // 2️⃣ No existe
+        // No existe
         if (!$row) {
             $errores[] = "Usuario o contraseña incorrectos.";
         }
-        // 3️⃣ Existe pero está invalidado
+        // Existe pero invalidado
         elseif ((int)$row['estatus'] === 0) {
             $errores[] = "Este usuario ha sido invalidado. Contacta al administrador.";
         }
-        // 4️⃣ Contraseña incorrecta
+        // Contraseña incorrecta (ya validamos formato, aquí validamos match)
         elseif ($password !== $row["contrasena"]) {
             $errores[] = "Usuario o contraseña incorrectos.";
         }
-        // 5️⃣ Login correcto
+        // Login correcto
         else {
-
             $_SESSION["user_id"]   = $row["id"];
             $_SESSION["user_tipo"] = $row["tipo"];
             $_SESSION["usuario"]   = $row["usuario"];
@@ -120,7 +148,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div class="form-group">
                 <label>Usuario o correo</label>
-                <input type="text" name="usuario" required>
+                <input type="text" name="usuario" required value="<?= htmlspecialchars($_POST['usuario'] ?? '') ?>">
             </div>
 
             <div class="form-group">
@@ -146,6 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </div>
 </body>
 </html>
+
 
 
 
