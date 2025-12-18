@@ -574,7 +574,19 @@ if (!$confirmado) {
 
                         <div class="form-group">
                             <label>Mes de expiración (MM)*</label>
-                            <input id="mesExpInput" type="number" name="mes_exp" min="1" max="12" value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>" required>
+                          <input
+  id="mesExpInput"
+  type="text"
+  name="mes_exp"
+  inputmode="numeric"
+  maxlength="2"
+  pattern="^(0[1-9]|1[0-2])$"
+  placeholder="MM"
+  title="Mes válido: 01 a 12"
+  value="<?= htmlspecialchars($_POST['mes_exp'] ?? '') ?>"
+  required
+>
+
                         </div>
 
                         <div class="form-group">
@@ -599,6 +611,38 @@ if (!$confirmado) {
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+
+   =
+const mes = document.getElementById("mesExpInput");
+if (mes) {
+  
+  mes.addEventListener("input", () => {
+    mes.value = (mes.value || "").replace(/\D/g, "").slice(0, 2);
+  });
+
+ 
+  mes.addEventListener("blur", () => {
+    let v = (mes.value || "").trim();
+    if (v === "") return;
+
+    
+    if (v.length === 1) v = "0" + v;
+
+    
+    const n = parseInt(v, 10);
+    if (Number.isNaN(n) || n < 1 || n > 12) {
+      mes.value = "";
+      mes.setCustomValidity("Mes inválido. Usa 01 a 12.");
+    } else {
+      mes.value = String(v).padStart(2, "0");
+      mes.setCustomValidity("");
+    }
+  });
+
+  
+  mes.addEventListener("focus", () => mes.setCustomValidity(""));
+}
+
 
     // Tarjeta: solo dígitos y max 16
     const num = document.getElementById("numeroTarjeta");
