@@ -18,7 +18,6 @@ if ($id <= 0) {
     exit;
 }
 
-
 function esUrlImagen($url) {
     $url = trim((string)$url);
     if ($url === '') return true; // vacío permitido
@@ -33,45 +32,23 @@ function esUrlImagen($url) {
     return (bool)preg_match('~\.(png|jpe?g|gif|webp|bmp|svg)$~i', $path);
 }
 
-
 $flashImgError = $_SESSION['flash_error_img'] ?? '';
 unset($_SESSION['flash_error_img']);
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* ---- ELIMINAR PRODUCTO ---- */
+    /* ---- INVALIDAR PRODUCTO (ANTES BORRABA) ---- */
     if (isset($_POST['eliminar_producto'])) {
         $idEliminar = (int)$_POST['eliminar_producto'];
 
         if ($idEliminar > 0) {
-            $stmt = $conn->prepare("DELETE FROM producto_imagen WHERE producto_id = ?");
-            $stmt->bind_param("i", $idEliminar);
-            $stmt->execute();
-            $stmt->close();
-
-            $stmt = $conn->prepare("DELETE FROM resena_producto WHERE producto_id = ?");
-            $stmt->bind_param("i", $idEliminar);
-            $stmt->execute();
-            $stmt->close();
-
-            $stmt = $conn->prepare("DELETE FROM pedido_detalle WHERE producto_id = ?");
-            $stmt->bind_param("i", $idEliminar);
-            $stmt->execute();
-            $stmt->close();
-
-            $stmt = $conn->prepare("DELETE FROM carrito_detalle WHERE producto_id = ?");
-            $stmt->bind_param("i", $idEliminar);
-            $stmt->execute();
-            $stmt->close();
-
-            $stmt = $conn->prepare("DELETE FROM producto WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE producto SET estatus = 0 WHERE id = ?");
             $stmt->bind_param("i", $idEliminar);
             $stmt->execute();
             $stmt->close();
         }
 
-        header("Location: admin_inventario.php?eliminado=1");
+        header("Location: admin_inventario.php?invalido=1");
         exit;
     }
 
@@ -83,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $marca      = $_POST['marca']      ?? '';
     $categoria  = $_POST['categoria']  ?? '';
 
-    //  Validar imagen principal
+    // Validar imagen principal
     if (!esUrlImagen($imagen_url)) {
         $_SESSION['flash_error_img'] = "Esta imagen no es compatible. Solo se permiten: png, jpg, jpeg, gif, webp, bmp, svg.";
         header("Location: admin_editar_producto.php?id=" . (int)$id);
@@ -107,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $urlsLimpias[] = $u;
     }
 
-    // Guardar producto
+    // Guardar producto (OJO: no tocamos estatus aquí, solo datos)
     $stmt = $conn->prepare("
         UPDATE producto
         SET nombre = ?, precio = ?, stock = ?, imagen_url = ?, marca = ?, categoria = ?
@@ -137,13 +114,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    header("Location: admin_inventario.php");
+    header("Location: admin_inventario.php?editado=1");
     exit;
 }
 
-
+// Cargar producto (incluye estatus)
 $stmt = $conn->prepare("
-    SELECT id, nombre, precio, stock, imagen_url, marca, categoria
+    SELECT id, nombre, precio, stock, imagen_url, marca, categoria, estatus
     FROM producto
     WHERE id = ?
     LIMIT 1
@@ -207,6 +184,12 @@ $stmt->close();
             <h1>Editar producto</h1>
             <a href="admin_inventario.php" class="btn-volver">← Volver al inventario</a>
         </section>
+
+        <?php if ((int)$producto['estatus'] === 0): ?>
+            <div class="alert-error" style="margin-bottom: 12px;">
+                Este producto está <strong>INVALIDADO</strong> (estatus = 0). No debería mostrarse en la tienda.
+            </div>
+        <?php endif; ?>
 
         <section class="edit-card">
             <form method="post" class="edit-form" id="editForm">
@@ -290,9 +273,11 @@ $stmt->close();
 
                 <div class="edit-actions">
                     <button type="submit" class="btn-guardar">Guardar cambios</button>
+
+                    <!-- Este botón YA NO BORRA: invalida (estatus = 0) -->
                     <button type="button" class="btn-eliminar"
                             onclick="confirmarEliminar(<?php echo (int)$producto['id']; ?>)">
-                        Eliminar producto
+                        Invalidar producto
                     </button>
                 </div>
 
@@ -304,12 +289,12 @@ $stmt->close();
 
 <script>
 function confirmarEliminar(id) {
-    if (confirm("¿Seguro que quieres eliminar este producto?")) {
+    if (confirm("¿Seguro que quieres INVALIDAR este producto?\nYa no se mostrará en la tienda, pero se conserva el historial de ventas.")) {
         const f = document.createElement("form");
         f.method = "POST";
         const i = document.createElement("input");
         i.type = "hidden";
-        i.name = "eliminar_producto";
+        i.name = "eliminar_producto"; // se queda igual para no cambiar tu backend
         i.value = id;
         f.appendChild(i);
         document.body.appendChild(f);
@@ -405,4 +390,5 @@ document.addEventListener("blur", (e) => {
 
 </body>
 </html>
+
 
