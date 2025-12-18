@@ -100,7 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Agregar usuario - Mi Tiendita</title>
-    <link rel="stylesheet" href="../CSS/admin_usuarios.css">
+    <link rel="stylesheet" href="../CSS/admin_agregar_usuario.css">
+
 </head>
 <body>
 
