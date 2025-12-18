@@ -9,22 +9,16 @@ $usuario_id   = $estaLogueado ? (int)$_SESSION['user_id'] : null;
 $conn = new mysqli("localhost", "walmartuser", "1234", "walmart");
 $conn->set_charset("utf8mb4");
 
-/*
-    ✅ IMPORTANTE:
-    Quité el bloque que borraba el carrito del invitado por referrer,
-    porque eso te rompe el header al volver desde producto_detalle.
-*/
-
-/* 1) CATEGORÍAS */
+/* 1) CATEGORÍAS (solo de productos activos) */
 $categorias = [];
-$resCat = $conn->query("SELECT DISTINCT categoria FROM producto ORDER BY categoria");
+$resCat = $conn->query("SELECT DISTINCT categoria FROM producto WHERE estatus = 1 ORDER BY categoria");
 while ($row = $resCat->fetch_assoc()) {
     if (trim($row['categoria']) !== '') {
         $categorias[] = $row['categoria'];
     }
 }
 
-/* 2) PRODUCTOS */
+/* 2) PRODUCTOS (solo activos) */
 $categoriaActual = trim($_GET['categoria'] ?? '');
 $productoId      = isset($_GET['producto_id']) ? (int)$_GET['producto_id'] : 0;
 
@@ -33,6 +27,7 @@ if ($productoId > 0) {
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
         WHERE id = ?
+          AND estatus = 1
         LIMIT 1
     ");
     $stmt->bind_param("i", $productoId);
@@ -41,6 +36,7 @@ if ($productoId > 0) {
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
+    // Si el producto está invalidado o no existe, regresamos al inicio
     if (count($productos) === 0) {
         header("Location: index.php");
         exit;
@@ -51,6 +47,7 @@ if ($productoId > 0) {
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
         WHERE categoria = ?
+          AND estatus = 1
     ");
     $stmt->bind_param("s", $categoriaActual);
     $stmt->execute();
@@ -61,11 +58,12 @@ if ($productoId > 0) {
     $resProd = $conn->query("
         SELECT id, nombre, precio, stock, imagen_url, marca, categoria
         FROM producto
+        WHERE estatus = 1
     ");
     $productos = $resProd->fetch_all(MYSQLI_ASSOC);
 }
 
-/* 3) CARRITO (✅ CONSISTENTE CON carrito_actualizar.php) */
+/* 3) CARRITO CONSISTENTE CON carrito_actualizar.php */
 if ($estaLogueado) {
     $stmt = $conn->prepare("SELECT id, total FROM carrito WHERE usuario_id = ? LIMIT 1");
     $stmt->bind_param("i", $usuario_id);
@@ -294,4 +292,3 @@ document.addEventListener("DOMContentLoaded", () => {
 <script src="../JAVASCRIPT/index.js"></script>
 </body>
 </html>
-
