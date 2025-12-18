@@ -28,39 +28,49 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password      = trim($_POST["password"] ?? "");
 
     /* =========================
-       1) VALIDACIONES LOCALES
-       (antes de consultar BD)
+       1) VALIDACIONES DE FORMATO
+       (sin consultar BD)
     ========================= */
 
     if ($usuarioInput === "") {
         $errores[] = "Debes ingresar tu usuario o correo.";
     } else {
-        // Si parece correo (contiene @), validamos formato
-        if (strpos($usuarioInput, '@') !== false) {
-            if (!filter_var($usuarioInput, FILTER_VALIDATE_EMAIL)) {
+        // Heurística: si contiene '.' o '@' asumimos que está intentando usar CORREO
+        $pareceCorreo = (strpos($usuarioInput, '@') !== false) || (strpos($usuarioInput, '.') !== false);
+
+        if ($pareceCorreo) {
+            if (strpos($usuarioInput, '@') === false) {
+                $errores[] = "Te falta un arroba (@) en el correo.";
+            } else if (!filter_var($usuarioInput, FILTER_VALIDATE_EMAIL)) {
                 $errores[] = "El correo no tiene un formato válido.";
             }
         }
-        // Si NO es correo, lo tomamos como usuario y no exigimos formato especial
-        // (si quieres, aquí puedes validar mínimo de caracteres del usuario)
+        // Si no parece correo, lo tratamos como usuario (sin reglas extra)
     }
 
     if ($password === "") {
         $errores[] = "Debes ingresar tu contraseña.";
     } else {
-        // Contraseña: mínimo 8, 1 mayúscula, 1 número, 1 caracter especial
-        $regexPass = '/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
-        if (!preg_match($regexPass, $password)) {
-            $errores[] = "La contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial.";
+        // Mensajes por partes (qué falta)
+        if (strlen($password) < 8) {
+            $errores[] = "La contraseña debe tener mínimo 8 caracteres.";
+        }
+        if (!preg_match('/[A-Z]/', $password)) {
+            $errores[] = "A la contraseña le falta al menos 1 letra mayúscula.";
+        }
+        if (!preg_match('/\d/', $password)) {
+            $errores[] = "A la contraseña le falta al menos 1 número.";
+        }
+        if (!preg_match('/[^A-Za-z0-9]/', $password)) {
+            $errores[] = "A la contraseña le falta al menos 1 carácter especial.";
         }
     }
 
     /* =========================
-       2) SI TODO OK -> CONSULTAR BD
+       2) SOLO SI FORMATO OK -> BD
     ========================= */
     if (empty($errores)) {
 
-        // Buscar usuario (NO filtramos estatus aquí)
         $stmt = $conn->prepare("
             SELECT id, usuario, correo, contrasena, tipo, estatus
             FROM usuarios
@@ -73,15 +83,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $row = $res->fetch_assoc();
         $stmt->close();
 
-        // No existe
+        // Si no existe, mensaje genérico (porque ya pasó formato)
         if (!$row) {
             $errores[] = "Usuario o contraseña incorrectos.";
         }
-        // Existe pero invalidado
+        // Si existe pero está invalidado (solo aparece si formato OK)
         elseif ((int)$row['estatus'] === 0) {
             $errores[] = "Este usuario ha sido invalidado. Contacta al administrador.";
         }
-        // Contraseña incorrecta (ya validamos formato, aquí validamos match)
+        // Existe pero contraseña no coincide
         elseif ($password !== $row["contrasena"]) {
             $errores[] = "Usuario o contraseña incorrectos.";
         }
@@ -94,15 +104,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($row["tipo"] === "administrador") {
                 header("Location: admin.php");
                 exit;
-            }
-
-            if ($row["tipo"] === "operador") {
+            } elseif ($row["tipo"] === "operador") {
                 header("Location: operador.php");
                 exit;
+            } else {
+                header("Location: index.php");
+                exit;
             }
-
-            header("Location: index.php");
-            exit;
         }
     }
 }
@@ -174,6 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </div>
 </body>
 </html>
+
 
 
 
